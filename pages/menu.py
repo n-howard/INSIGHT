@@ -13,7 +13,7 @@ def unauthenticated_menu():
 def menu():
     # Determine if a user is logged in or not, then show the correct
     # navigation menu
-    if "org" not in st.session_state:
+    if "org_input" not in st.session_state:
         unauthenticated_menu()
         return
     authenticated_menu()
@@ -21,6 +21,6 @@ def menu():
 def menu_with_redirect():
     # Redirect users to the main page if not logged in, otherwise continue to
     # render the navigation menu
-    if "org" not in st.session_state:
+    if "org_input" not in st.session_state:
         st.switch_page("app.py")
     menu()
