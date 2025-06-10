@@ -32,7 +32,12 @@ def login():
             prompt="consent" 
         )
         st.session_state.oauth_state = state
-        st.markdown(f"[Click here to sign in with Google]({auth_url})")
+        # st.markdown(f"[Click here to sign in with Google]({auth_url})")
+        st.html(f"""
+            <a href="{auth_url}" style="text-decoration: none">
+                <button type="button" style="text-align: center; border-radius: 20px; color: #084c61; background-color: white; outline-color: white; outline-style: hidden; border-style: hidden; border-color: white; padding: 7px; display: block; margin: auto; font-size: 30px; margin-top: 5vh">Log In With Google</button>
+            </a>
+        """)
     except Exception as e:
         st.error("Google OAuth failed:")
         st.exception(e)

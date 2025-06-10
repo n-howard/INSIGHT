@@ -46,15 +46,15 @@ if "code" in query_params and "google_token" not in st.session_state:
 
 # --- Step 1: Ask to sign in ---
 if "google_token" not in st.session_state:
-    st.subheader("Please sign in with Google to continue")
     login()
     st.stop()
 
 # --- Step 2: Ask for org info if not present ---
 if "org_input" not in st.session_state:
-    st.subheader("Enter Your Organization Info")
-    org_input = st.text_input("Enter Your Organization Name")
-    site_input = st.text_input("Enter Your Site Name (optional)")
+    st.subheader("Enter Your Organization Information")
+    org_input = st.text_input("Please enter your organization name.")
+    site_input = st.text_input("If your organization has multiple sites, please enter your site name.")
+    admin_input = st.text_input("If you are an administrator, please enter your admin number.")
 
     if st.button("Continue") and org_input:
         st.session_state["org_input"] = org_input.strip()

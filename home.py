@@ -8,9 +8,6 @@ from urllib.parse import urlparse, parse_qs
 import streamlit.components.v1 as components
 from streamlit_option_menu import option_menu
 import numpy as np
-import random
-from tkinter import * 
-from tkinter.ttk import *
 # -------- CONFIGURATION --------
 
 st.html("""
@@ -22,8 +19,6 @@ st.html("""
     </style>"""
     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
 )
-
-
 
 
 ASSESSMENTS = {
@@ -54,53 +49,11 @@ ASSESSMENTS = {
 }
 
 
-# -------- BUTTON-BASED NAVIGATION --------
-
-# Initialize session state for assessment and mode
-if "selected_assessment" not in st.session_state:
-    st.session_state.selected_assessment = None
-
-if "selected_mode" not in st.session_state:
-    st.session_state.selected_mode = None
-
-mode = st.session_state.selected_mode #initializing mode as a global variable
-
-
-# Show buttons only if no assessment is selected
-if st.session_state.selected_assessment == None or st.button("Select a Form", use_container_width=True):
-    st.session_state.selected_mode = None
-    st.session_state.selected_assessment = None
-    mode = None
-
-    st.markdown("## Choose an Assessment")
-    cols = st.columns(2)
-    for i, (assessment_name, details) in enumerate(ASSESSMENTS.items()):
-        with cols[i % 2]:
-            if st.button(assessment_name, use_container_width=True):
-                st.session_state.selected_assessment = assessment_name
-                st.rerun()
-
-
-
-
-
-
-
-
-
-
-
-
-if st.session_state.selected_assessment and not st.session_state.selected_mode:
-    # st.markdown(f"## {st.session_state.selected_assessment}")
-    mode = st.selectbox("Choose mode", ("Self-Assess", "View Results"))
-    
-
-
-assessment = st.session_state.selected_assessment
+# -------- SIDEBAR NAVIGATION --------
+assessment = st.sidebar.selectbox("Choose an Assessment", list(ASSESSMENTS.keys()))
+mode = st.sidebar.radio("Mode", ["Self-Assess", "View Results"])
 
 # -------- SELF-ASSESSMENT MODE --------
-
 if mode == "Self-Assess":
     # st.subheader(f"{assessment} Self-Assessment")
     selfSes = assessment + " Self-Assessment"
@@ -226,64 +179,73 @@ elif mode == "View Results":
             multi_cols = st.multiselect("Select at least one score type to chart", filtered_df.columns)
 
             if multi_cols:
+                chart_type = st.radio("Select chart type", ["Bar Chart", "Line Chart", "Histogram"])
                 data_series = filtered_df[multi_cols].dropna().reset_index(drop=True)
-                types = []
-                if len(data_series.index)==1:
-                    types = ["Bar Chart", "Scatter Plot"]
-                else:
-                    types = ["Bar Chart", "Line Chart", "Area"]
-                chart_type = st.selectbox("Select chart type", types)
+
                 if chart_type == "Bar Chart":
-                    colors=["#cee4e4","#edd268","#b7cbd0","#f6e9b6","#87bdc0","#8499a2"]
                     if len(multi_cols) == 1:
-                        onecolor = random.choice(colors)
+                    # --- One column: plot each individual score as a bar ---
                         col = multi_cols[0]
-                        value_counts = data_series[col].value_counts().sort_index()
-                        st.bar_chart(value_counts, color=onecolor)
+                        data_series = filtered_df[col].dropna()
+
+                        fig, ax = plt.subplots(figsize=(10, 5))
+                        ax.bar(range(len(data_series)), data_series, width=0.4)
+                        ax.set_title(f"{col} Scores", fontsize=14)
+                        ax.set_xlabel("Response Index", fontsize=12)
+                        ax.set_ylabel("Score", fontsize=12)
+                        ax.grid(axis="y", linestyle="--", alpha=0.6)
+                        plt.xticks([])  # Hide x-axis tick labels for simplicity
+
+                        for i, v in enumerate(data_series):
+                            ax.text(i, v + 0.1, f"{v:.1f}", ha='center', fontsize=8)
+
+                        st.pyplot(fig)
+
                     else:
-                        colorlist = random.choices(colors, k=len(multi_cols))
-                        st.bar_chart(filtered_df[multi_cols].mean().to_frame().T, color=colorlist, stack = False)
+                        # --- Multiple columns: show average score for each column ---
+                        col_means = filtered_df[multi_cols].mean()
 
-                elif chart_type == "Line Chart" or chart_type == "Scatter Plot":
-                    colors=["#cee4e4","#edd268","#b7cbd0","#f6e9b6","#87bdc0","#8499a2"]
-                    colorlist = random.choices(colors, k=len(multi_cols))
-                    if len(data_series.index)==1:
-                        st.scatter_chart(data_series, color=colorlist)
-                    else:
-                        st.line_chart(data_series, color=colorlist)
+                        fig, ax = plt.subplots(figsize=(10, 5))
+                        bars = ax.bar(col_means.index, col_means.values, width=0.5)
 
-                # elif chart_type == "Histogram":
-                #     fig, ax = plt.subplots()
-                #     ax.hist(data_series.values, bins=10, label=multi_cols)
-                #     ax.set_title("Histogram")
-                #     ax.set_xlabel("Value")
-                #     ax.set_ylabel("Frequency")
-                #     ax.legend()
-                #     st.pyplot(fig)
+                        ax.set_title("Average Score by Category", fontsize=14)
+                        ax.set_ylabel("Average Score", fontsize=12)
+                        ax.grid(axis="y", linestyle="--", alpha=0.6)
+                        plt.xticks(rotation=45, ha="right")
 
-                elif chart_type == "Area":
-                    colors=["#cee4e4","#edd268","#b7cbd0","#f6e9b6","#87bdc0","#8499a2"]
-                    colorlist = random.choices(colors, k=len(multi_cols))
-                    st.area_chart(data_series, color=colorlist)
+                        for bar in bars:
+                            height = bar.get_height()
+                            ax.annotate(f'{height:.1f}',
+                                        xy=(bar.get_x() + bar.get_width() / 2, height),
+                                        xytext=(0, 3),
+                                        textcoords="offset points",
+                                        ha='center', va='bottom', fontsize=10)
 
-                st.markdown("### Your Scores")
+                        st.pyplot(fig)
+
+
+                elif chart_type == "Line Chart":
+                    fig, ax = plt.subplots()
+                    for col in filtered_df[multi_cols].columns:
+                        ax.plot(filtered_df.index, filtered_df[col], marker='o', label=col)
+
+                    ax.set_title("Line Chart")
+                    ax.set_xlabel("Index")
+                    ax.set_ylabel("Values")
+                    ax.legend()
+                    st.pyplot(fig)
+
+                elif chart_type == "Histogram":
+                    fig, ax = plt.subplots()
+                    ax.hist(data_series.values, bins=10, label=multi_cols)
+                    ax.set_title("Histogram")
+                    ax.set_xlabel("Value")
+                    ax.set_ylabel("Frequency")
+                    ax.legend()
+                    st.pyplot(fig)
+
+                st.markdown("### Your Score(s)")
                 st.write(data_series)
-
-                sum = 0
-                for i in filtered_df["Overall Score"]:
-                    sum = sum + i 
-                av = sum/len(data_series.index)
-
-                st.html(f"""
-                    <div style="border-radius: 20px; background-color: white; color: #084c61; width: 30vw; text-align: center; display: flex; flex-direction: column; justify-content: center">
-                        <h3>Organization Average Overall Score</h3>
-                        <h1 style="font-size: 50px">{av}</h1>
-                        <div style="background-color: #8398a1"></div> <!--add something like averages for each indicator or list overall score per form fill out-->
-                    </div>
-                """)
-
-                
-
 
             else:
                 st.warning("Please select at least one column to display the chart.")
