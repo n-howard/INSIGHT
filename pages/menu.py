@@ -1,10 +1,10 @@
 import streamlit as st
 
 
-def authenticated_menu():
-    # Show a navigation menu for authenticated users
-    st.sidebar.page_link("app.py", label="Switch accounts")
-    st.sidebar.page_link("pages/homePage.py", label="Home")
+# def authenticated_menu():
+#     # Show a navigation menu for authenticated users
+#     st.sidebar.page_link("app.py", label="Switch accounts")
+#     st.sidebar.page_link("pages/homePage.py", label="Home")
 
 def unauthenticated_menu():
     # Show a navigation menu for unauthenticated users
@@ -23,4 +23,4 @@ def menu_with_redirect():
     # render the navigation menu
     if "org_input" not in st.session_state:
         st.switch_page("app.py")
-    menu()
+    # menu()

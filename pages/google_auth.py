@@ -35,7 +35,7 @@ def login():
         # st.markdown(f"[Click here to sign in with Google]({auth_url})")
         st.html(f"""
             <a href="{auth_url}" style="text-decoration: none">
-                <button type="button" style="text-align: center; border-radius: 20px; color: #084c61; background-color: white; outline-color: white; outline-style: hidden; border-style: hidden; border-color: white; padding: 7px; display: block; margin: auto; font-size: 30px; margin-top: 5vh">Log In With Google</button>
+                <button type="button" style="text-align: center; border-radius: 20px; color: white; background-color: #084c61; outline-color: white; outline-style: hidden; border-style: hidden; border-color: white; padding: 15px; display: block; margin: auto; font-size: 30px; margin-top: 5vh">Log In With Google</button>
             </a>
         """)
     except Exception as e:
@@ -56,7 +56,7 @@ def fetch_token(code):
         )
         return token
     except Exception as e:
-        st.error(f"❌ Failed to fetch token: {e}")
+        st.error(f"Failed to fetch token: {e}")
         return None
 
 # --- Get User Info from Google ---

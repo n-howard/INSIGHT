@@ -1,5 +1,5 @@
 import streamlit as st 
-st.set_page_config(page_title="INSIGHT", layout="wide")
+st.set_page_config(page_title="INSIGHT", layout="wide", page_icon="./oask_short_logo.png")
 import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -20,6 +20,7 @@ st.html("""
     </style>"""
     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
 )
+logo = st.logo("./oask_light_mode_tagline.png", size="large", link="https://oregonask.org/")
 
 st.set_option("client.showSidebarNavigation", False)
 
@@ -54,16 +55,18 @@ if "org_input" not in st.session_state:
     st.subheader("Enter Your Organization Information")
     org_input = st.text_input("Please enter your organization name.")
     site_input = st.text_input("If your organization has multiple sites, please enter your site name.")
-    admin_input = st.text_input("If you are an administrator, please enter your admin number.")
+    admin_input = st.text_input("If you are a program administrator, please enter your admin number.")
 
     if st.button("Continue") and org_input:
         st.session_state["org_input"] = org_input.strip()
         st.session_state["site_input"] = site_input.strip()
-        st.success("Organization info saved!")
+        st.session_state["admin_input"] = admin_input.strip()
+        st.success("Organization information saved!")
         st.switch_page("pages/home.py")
 
 # --- Step 3: Already signed in and org saved ---
 else:
     st.markdown(f"Please enter your organization name. **{st.session_state['org_input']}**")
-    st.markdown(f"If your organization has multiple sites, please enter your site name. **{st.session_state['site']}**")
+    st.markdown(f"If your organization has multiple sites, please enter your site name. **{st.session_state['site_input']}**")
+    st.markdown(f"If you are a program administrator, please enter your admin number. **{st.session_state['admin_input']}**")
     st.page_link("pages/home.py", label="Go to Dashboard")
