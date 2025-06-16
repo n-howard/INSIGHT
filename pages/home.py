@@ -1,5 +1,5 @@
 import streamlit as st 
-st.set_page_config(page_title="INSIGHT", layout="wide", page_icon="./oask_short_logo.png")
+st.set_page_config(page_title="INSIGHT", layout="wide", page_icon="./oask_short_logo.png", initial_sidebar_state="collapsed" )
 from streamlit_navigation_bar import st_navbar
 import pandas as pd
 import gspread
@@ -16,7 +16,6 @@ from tkinter.ttk import *
 from pages.menu import menu_with_redirect
 import plotly.express as px
 import os
-
 
 logo = st.logo("./oask_light_mode_tagline.png", size="large", link="https://oregonask.org/")
 
@@ -197,6 +196,8 @@ if st.session_state.selected_assessment == None or st.button("Select a Form", us
 assessment = st.session_state.selected_assessment
 
 if assessment != None:
+    if st.session_state.selected_mode==None:
+        st.session_state.selected_mode = "Self-Assess"
     cols = st.columns(2)
     mode_opts = ["Self-Assess", "View Results"]
     for i in range(2):
@@ -236,6 +237,7 @@ if (mode == "Self-Assess") and assessment != None:
         # "<h3 style='text-align: center; font-size: 40px; font-weight: 500; font-family: Poppins;'>{selfSes}</h3>"
     )
     st.components.v1.iframe(ASSESSMENTS[assessment]["form_url"], height=800, scrolling=True)
+
 
 # -------- VIEW RESULTS MODE --------
 elif (mode == "View Results") and assessment != None:
@@ -286,6 +288,8 @@ elif (mode == "View Results") and assessment != None:
 
         # Filter the DataFrame to just this org
         df = df[df["Program Name_clean"] == org_clean]
+
+        org_df = df.copy()
 
         # Drop the temporary clean column
         df = df.drop(columns=["Program Name_clean"])
@@ -344,13 +348,55 @@ elif (mode == "View Results") and assessment != None:
         ]
 
         filtered_df = converted_df[numeric_cols].dropna(axis=1, how="all")
-    
+        
+        # Step 1: Confirm login and fetch user email
+        if "token" in st.session_state:
+            user_info = get_user_info(st.session_state.token)
+            email = user_info.get("email", None)
+        else:
+            email = None
 
-        colors=["#cee4e4","#edd268","#b7cbd0","#f6e9b6","#87bdc0","#8499a2", "#4f6d7a", "#db504a", "#89a436", "#e3b505", "#ba29a7", "#f76649", "#fec841"]
+        # Step 2: Display latest submission
+        if st.button("View My Most Recent Submission", use_container_width=True) and email:
+            df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+            user_submissions = df[df["Contact Email"] == email]
+
+            if not user_submissions.empty:
+                latest = user_submissions.sort_values("Timestamp", ascending=False).iloc[0]
+                st.markdown("### Your Most Recent Submission")
+                st.markdown(f"**Submitted on:** {latest['Timestamp'].strftime('%B %d, %Y at %I:%M %p')}")
+
+                st.markdown("---")
+                st.markdown("#### Your Scores:")
+                for col in latest.index:
+                    if any(keyword in col for keyword in ["Score", "Standard", "Indicator"]):
+                        score = latest[col]
+                        # Display as percent if it's a percent string
+                        if isinstance(score, str) and "%" in score:
+                            st.markdown(f"- **{col}**: {score}")
+                        else:
+                            try:
+                                num = float(score)
+                                if "percent" in col.lower():
+                                    st.markdown(f"- **{col}**: {num:.0f}%")
+                                else:
+                                    st.markdown(f"- **{col}**: {num:.2f}")
+                            except:
+                                st.markdown(f"- **{col}**: {score}")
+            else:
+                st.info("You haven't submitted a form yet.")
+
+        elif not email:
+            st.warning("Please log in with Google to view your submission.")
+            menu_with_redirect()
+
+        colors=["#cee4e4","#edd268","#b7cbd0","#f6e9b6","#87bdc0","#8499a2", 
+            "#4f6d7a", "#db504a", "#abd1d1", "#ddeced", "#7a919c", "#e88f8c", "#80babd", "#457887", "#ffc757",
+            "#ffd98f", "#f2bab8"]
 
         if not filtered_df.empty:
             # multi column chart with multiple types of charting
-            st.markdown("Score Chart")
+            st.markdown("#### Score Chart")
             multi_cols = st.multiselect("Select at least one score type to chart", filtered_df.columns)
 
             if multi_cols:
@@ -419,49 +465,283 @@ elif (mode == "View Results") and assessment != None:
                         st.area_chart(data_series, color=colorlist)
                     # st.area_chart(data_series, color=colorlist)
 
-                st.markdown("### Your Scores")
-                st.write(data_series)
+                # st.markdown("### Your Scores")
+                # st.write(data_series)
 
                 
                     
 
             else:
                 st.warning("Please select at least one column to display the chart.")
-            sum = 0
-            
-            for col in filtered_df:
-                if "Overall Score" in col:
-                    for i in filtered_df[col]:
-                        sum = sum + i 
-            av = sum/len(filtered_df.index)
 
-            st.html(f"""
-                <div style="border-radius: 20px; background-color: white; color: #084c61; width: 30vw; text-align: center; display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(6px, 6px, 6px, black)">
-                    <h3>Organization Average Overall Score</h3>
-                    <h1 style="font-size: 50px">{av}</h1>
-                    <div style="background-color: #8398a1"></div> <!--add something like averages for each indicator or list overall score per form fill out-->
-                </div>
-            """)
-            text_var =""
-            for column in filtered_df:
+            # Step 1: Get all columns that include "Overall Score"
+            overall_score_cols = [col for col in org_df.columns if "Overall Score" in col]
+
+            # Step 2: Collect all numeric values from these columns
+            all_scores = []
+
+            for col in overall_score_cols:
+                series = pd.to_numeric(org_df[col], errors="coerce")  # convert to numbers, NaN if invalid
+                scores = series.dropna().tolist()  # drop non-numeric
+                all_scores.extend(scores)
+
+            # Step 3: Calculate the average
+            if all_scores:
+                overall_av = sum(all_scores) / len(all_scores)
+            else:
+                overall_av = 0  # fallback value or message
+# 
+   
+            # Build the staff-specific average score (one number)
+            staff_scores = []
+
+            if selected_contacts:
+                for contact in selected_contacts:
+                    contact_df = org_df[org_df["Contact Name"] == contact]
+                    if contact_df.empty:
+                        continue
+
+                    overall_score_cols = [col for col in contact_df.columns if "Overall Score" in col]
+
+                    for col in overall_score_cols:
+                        # Add all numeric values from this staff’s column to the total list
+                        series = pd.to_numeric(contact_df[col], errors="coerce").dropna()
+                        staff_scores.extend(series.tolist())
+
+            if staff_scores:
+                staff_overall_avg = sum(staff_scores) / len(staff_scores)
+                staff_score_html = f"<h1>{staff_overall_avg: .2f}</h1>"
+            else:
+                staff_score_html = f"<h1>{overall_av: .2f}</h1>"
+
+
+
+
+            text_var = ""
+            for column in org_df:
                 if "Overall Score" in column:
                     continue
-                sum = 0
-                for i in filtered_df[column]:
-                    sum = sum + i 
-                av = sum/len(filtered_df.index)
-                if "Standard" in column:
-                    name = "Organization Average " + column + ": " + str(av)
-                    text_var += "\n" + name + "\n"
+
+                # Clean and convert
+                series = org_df[column].replace('%', '', regex=True)
+                series = pd.to_numeric(series, errors="coerce")
+                av = series.mean()
+                name = ""
+                if pd.notna(av):
+                    if "Standard" in column:
+                        if "percent" in column.lower() or "%" in column:
+                            name = f"<div class='p2' style='font-weight: 600;'>Organization Average {column}: {av:.0f}%</div><br><br>"
+                        elif 0 < av < 1:
+                            name = f"<div class='p2' style='font-weight: 600;'>Organization Average {column}: {av * 100:.0f}%</div><br><br>"
+                        else:
+                            name = f"<div class='p2' style='font-weight: 600;'>Organization Average {column}: {av:.2f}</div><br><br>"
+                    elif "Indicator" in column:
+                        name = f"<div class='p3'>Organization Average {column}: {av:.2f}</div><br><br>"
+
+                    text_var += name
+
                 elif "Indicator" in column:
-                    name = "Organization Average " + column + ": " + str(av)
-                    text_var += "\n" + "\t" + name + "\n"
-                    
+                    name = f"<div class='p3'>Organization Average {column}: {av: .2f}</div><br><br>"
+                    text_var += name
+
+            # Step 1: Group by Contact Name
+            staff_summaries = ""
+            if "Contact Name" in org_df.columns:
+                for contact in org_df["Contact Name"].dropna().unique():
+                    contact_df = filtered_df[org_df["Contact Name"] == contact]
+                    if contact_df.empty:
+                        continue
+                    # staff_text = f"<div style='font-size: 24px; font-weight: 800; margin-bottom: 10px;'>{contact}</div>"
+                    staff_text = ""
+                    for column in contact_df.columns:
+                        avg = pd.to_numeric(contact_df[column], errors="coerce").mean()
+                        if "Overall Score" in column:
+                            staff_text += f"<div class='p1' style='font-weight: 700;'>{contact}'s Average {column}: {avg: .2f}</div><br>"
+                        if "Standard" in column:
+                            staff_text += f"<div class='p2' style='font-weight: 600;'>{contact}'s Average {column}: {avg: .2f}</div><br>"
+                        elif "Indicator" in column:
+                            staff_text += f"<div class='p3'>{contact}'s Average {column}: {avg: .2f}</div><br>"
+                    staff_summaries += f"<div>{staff_text}</div>"
+            else:
+                staff_summaries = "<div class='p1' style='margin-bottom: 2vw;'>No contact data available.</div>"
+
+
             st.html(f"""
-                        <div style="border-radius: 20px; background-color: white; color: #084c61; width: 30vw; text-align: left; display: flex; flex-direction: column; justify-content: center; filter: drop-shadow()">
-                            <h3>{text_var}</h3>
-                            <div style="background-color: #8398a1"></div>
+                <style>
+                    @media screen and (min-width: 768px) {{
+                        .responsive-container {{
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: 20px;
+                        }}
+                        .org-group, .staff-group {{
+                            display: flex;
+                            flex-direction: column;
+                            gap: 20px;
+                        }}
+                        .equal-box {{
+                            height: 500px; /* Ensures equal height */
+                        }}
+                        .equal-box h1 {{
+                            font-size: 7rem;
+                            color: black;
+                            font-weight: 900;
+                        }}
+                        .equal-box h3 {{
+                            font-size: 1.5rem;
+                        }}
+                        .p1 {{
+                            font-size: 1.4rem;
+                        }}
+                        .p2 {{
+                            font-size: 1.2rem;
+                        }}
+                        .p3 {{
+                            font-size: 1.1rem;
+                        }}
+
+                    }}
+
+                    @media screen and (max-width: 768px) {{
+                        .responsive-container {{
+                            display: flex;
+                            flex-direction: column;
+                            gap: 20px;
+                        }}
+                        .responsive-box {{
+                            width: 100% !important;
+                            gap: 20px;
+                        }}
+                        .org-group, .staff-group {{
+                            display: flex;
+                            flex-direction: column;
+                            gap: 20px;
+                        }}
+                        .equal-box h1 {{
+                            font-size: 4rem;
+                            color: black;
+                            font-weight: 900;
+                        }}
+                        .equal-box h3 {{
+                            font-size: 1.2rem;
+                        }}
+                        .p1 {{
+                            font-size: 1.1rem;
+                        }}
+                        .p2 {{
+                            font-size: 1rem;
+                        }}
+                        .p3 {{
+                            font-size: 0.9rem;
+                        }}
+                    }}
+                </style>
+
+                <div class="responsive-container">
+
+                    <!-- Organization Section -->
+                    <div class="org-group">
+                        <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
+                                padding: 15px; box-sizing: border-box;">
+                            <h3>Organization Average Overall Score</h3>
+                            <h1>{overall_av:.2f}</h1>
                         </div>
-                    """) 
+
+                        <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
+                            {text_var}
+                        </div>
+                    </div>
+
+                    <!-- Staff Section -->
+                    <div class="staff-group">
+                        <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                            display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
+                            padding: 15px; box-sizing: border-box;">
+                        <h3>Average Scores for Selected Staff</h3>
+                        <div style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%; text-align: center;">
+                            {staff_score_html}
+                        </div>
+                    </div>
+
+
+                        <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
+                            {staff_summaries}
+                        </div>
+                    </div>
+
+                </div>
+            """)
+
+            import streamlit.components.v1 as components
+
+#             st.components.v1.html(f"""
+#                 <style>
+#                     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+#                     body, .responsive-box {{
+#                         font-family: 'Poppins', sans-serif !important;
+#                     }}
+
+#                     .equal-box {{
+#                         height: 250px; 
+#                         cursor: pointer;
+#                     }}
+#                     .hidden-section {{
+#                         display: none; 
+#                         overflow-y: auto;
+#                         max-height: 400px;
+#                     }}
+#                 </style>
+
+#                 <div class="responsive-container">
+
+#                     <div class="responsive-box equal-box" onclick="toggleVisibility('orgDetails')" style="border-radius: 15px; background-color: white; color: #084c61;
+#                             text-align: center; display: flex; flex-direction: column; justify-content: center; 
+#                             filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
+#                         <h3>Organization Average Overall Score</h3>
+#                         <h1>{overall_av:.2f}</h1>
+#                         <p style="font-size: 14px; color: gray;">Click to view details</p>
+#                     </div>
+
+#                     <div id="orgDetails" class="responsive-box hidden-section" style="border-radius: 15px; background-color: white; color: #084c61;
+#                             text-align: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box; display: none;">
+#                         {text_var}
+#                     </div>
+
+#                     <div class="responsive-box equal-box" onclick="toggleVisibility('staffDetails')" style="border-radius: 15px; background-color: white; color: #084c61;
+#                             text-align: center; display: flex; flex-direction: column; justify-content: center; 
+#                             filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
+#                         <h3>Average Scores for Selected Staff</h3>
+#                         <h1>{staff_score_html}</h1>
+#                         <p style="font-size: 14px; color: gray;">Click to view details</p>
+#                     </div>
+
+#                     <div id="staffDetails" class="responsive-box hidden-section" style="border-radius: 15px; background-color: white; color: #084c61;
+#                             text-align: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box; display: none;">
+#                         {staff_summaries}
+#                     </div>
+
+#                 </div>
+
+#                 <script>
+#                     function toggleVisibility(sectionId) {{
+#                         var element = document.getElementById(sectionId);
+#                         element.style.display = (element.style.display === "none" || element.style.display === "") ? "block" : "none";
+#                     }}
+#                 </script>
+# """, height=600)
+
+
+
+
+
+
+
     except Exception as e:
+        import traceback
         st.error(f"Error accessing or visualizing data: {e}")
+        st.write(traceback.format_exc())
+ 

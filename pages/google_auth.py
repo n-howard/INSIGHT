@@ -54,6 +54,7 @@ def fetch_token(code):
             client_secret=CLIENT_SECRET,
             code=code
         )
+        st.session_state.token = token  # Store in session state
         return token
     except Exception as e:
         st.error(f"Failed to fetch token: {e}")
