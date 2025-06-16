@@ -1,13 +1,12 @@
 import os
 import streamlit as st
 from urllib.parse import urlencode
-from insight_secret_client import googleclientid, googleclientsecret
 from requests_oauthlib import OAuth2Session
 from requests import get
 
 # --- OAuth2 Configuration ---
-CLIENT_ID = googleclientid
-CLIENT_SECRET = googleclientsecret
+CLIENT_ID = st.secrets.googleClientID
+CLIENT_SECRET = st.secrets.googleClientSecret
 REDIRECT_URI = "http://localhost:8501"  # Adjust this if you rename or relocate your main app
 SCOPE = [
     "https://www.googleapis.com/auth/userinfo.email",
@@ -35,7 +34,8 @@ def login():
         # st.markdown(f"[Click here to sign in with Google]({auth_url})")
         st.html(f"""
             <a href="{auth_url}" style="text-decoration: none">
-                <button type="button" style="text-align: center; border-radius: 20px; color: white; background-color: #084c61; outline-color: white; outline-style: hidden; border-style: hidden; border-color: white; padding: 15px; display: block; margin: auto; font-size: 30px; margin-top: 5vh">Log In With Google</button>
+                <button type="button" style="text-align: center; border-radius: 20px; color: white; 
+                    background-color: #084c61; outline-color: white; outline-style: hidden; border-style: hidden; border-color: white; padding: 15px; display: block; margin: auto; font-size: 30px; margin-top: 5vh">Log In With Google</button>
             </a>
         """)
     except Exception as e:
