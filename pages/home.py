@@ -103,7 +103,8 @@ st.html("""
 )
 
 
-
+is_admin = cookies.get("admin_input") == "True"
+st.session_state["is_admin"] = is_admin
 
 ASSESSMENTS = {
     "Environment, Health, and Safety": {
@@ -222,60 +223,10 @@ elif (mode == "View Results") and assessment != None:
         client = gspread.authorize(creds)
         sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
 
-        # # Load admin list from separate Google Sheet
-        # admin_sheet = client.open("Admin Directory").worksheet("Sheet1")  # Adjust name if needed
-        # admin_data = admin_sheet.get_all_records()
-
-        # # Convert to DataFrame
-        # admin_df = pd.DataFrame(admin_data)
-
         # Access the value stored in session state
         org_input = st.session_state.get("org_input", "")
         admin_input = st.session_state.get("admin_input", "")
 
-        # email = user_info.get("email", "").strip().lower()
-        # admin_input = st.session_state.get("admin_input", "").strip()
-
-        # --- Load and clean admin/staff directory from Google Sheet --- # use this code once sheet is working
-        # admin_sheet = client.open("Admin Directory").worksheet("Sheet1")
-        # admin_data = admin_sheet.get_all_records()
-        # admin_df = pd.DataFrame(admin_data)
-
-        # # Standardize for case-insensitive matching
-        # admin_df["Email_clean"] = admin_df["Email"].astype(str).str.strip().str.lower()
-        # admin_df["Organization_clean"] = admin_df["Organization"].astype(str).str.strip().str.lower()
-        # admin_df["Admin Number_clean"] = admin_df["Admin Number"].astype(str).str.strip()
-
-        # email_clean = email.lower().strip()
-        # org_clean = org_input.lower().strip()
-        # admin_input_clean = admin_input.strip()
-
-        # # Check if they are admin
-        # is_admin = (
-        #     (admin_df["Admin Number_clean"] == admin_input_clean) &
-        #     (admin_df["Email_clean"] == email_clean)
-        # ).any()
-
-        # # Check if their email is part of the org
-        # is_email_in_org = (
-        #     (admin_df["Email_clean"] == email_clean) &
-        #     (admin_df["Organization_clean"] == org_clean)
-        # ).any()
-
-        # # Cache into session_state
-        # st.session_state["is_admin"] = is_admin
-        # st.session_state["is_email_in_org"] = is_email_in_org
-
-        # # Access control: block anyone not affiliated with the org
-        # if not is_email_in_org:
-        #     st.error("Your email is not recognized as a member of the organization you entered. Please check for typos or contact your administrator.")
-        #     st.stop()
-
-
-        # # Check admin status
-        # is_admin = (
-        #     admin_df["Admin Number"].astype(str).str.strip() == admin_input
-        # ).any()
 
         if not org_input:
             st.warning("Please enter your organization name on the main page.")
@@ -325,22 +276,6 @@ elif (mode == "View Results") and assessment != None:
         # Get site name from session (if any)
         site_input = st.session_state.get("site_input", "").strip()
 
-        # Let user choose to see overall or just their site
-        # site_filter_option = st.radio(
-        #     "View data for:",
-        #     ["Overall", "This Site Only"],
-        #     index=0 if not site_input else 1
-        # )
-
-        # Apply site filter only if selected and site_input is available
-        # if site_filter_option == "This Site Only":
-        #     if site_input:
-        #         df = df[df["Site Name"].str.lower() == site_input.lower()]
-        #     else:
-        #         st.warning("You didn't enter a Site Name at login, so no filter can be applied.")
-
-        # Parse multiple sites from the format: "- Site Name: Site Address"
-        # Detect site column based on question wording
         site_column_name = next((col for col in df.columns if "which site" in col.lower()), None)
 
         if site_column_name is None:
@@ -362,9 +297,8 @@ elif (mode == "View Results") and assessment != None:
         # Build site dropdown options (only if admin has sites)
         all_sites = sorted(set(site for sublist in org_df["Extracted Sites"] for site in sublist if site))
 
-        # if is_admin and all_sites:
-        if all_sites:
-            selected_sites = st.multiselect("Select Site(s) to view (optional):", options=all_sites)
+        if is_admin and all_sites:
+            selected_sites = st.multiselect("Filter by Site Name (optional):", options=all_sites)
         else:
             selected_sites = []  # No site filtering available or needed
 
@@ -372,13 +306,12 @@ elif (mode == "View Results") and assessment != None:
         # Filter to rows that contain at least one of the selected sites
         def matches_selected_sites(site_list):
             return any(site in site_list for site in selected_sites)        
-
-        contact_options = sorted(df["Contact Name"].dropna().unique())
-
-        if contact_options:
-            selected_contacts = st.multiselect("Filter by Contact Name (optional)", contact_options)
-        else:
-            selected_contacts = []
+        selected_contacts = []
+        
+        if is_admin:
+            contact_options = sorted(df["Contact Name"].dropna().unique())
+            if contact_options:
+                selected_contacts = st.multiselect("Filter by Contact Name (optional)", contact_options)
 
         if selected_contacts:
             df = df[df["Contact Name"].isin(selected_contacts)]
@@ -388,16 +321,20 @@ elif (mode == "View Results") and assessment != None:
         # Apply staff and site filters to org_df before generating charts
 
         chart_df = org_df.copy() # the below code is for once the sheet is working
-        # is_admin = st.session_state.get("is_admin", False)
-        # is_email_in_org = st.session_state.get("is_email_in_org", False)
-        # if is_admin:
-        #     chart_df = org_df.copy()
-        # else:
-        #     chart_df = org_df[org_df["Contact Email"].str.lower().str.strip() == email]
 
-            # # Staff-specific view message
-            # if not is_admin:
-            #     st.info("You are viewing your own results only.")
+        # Step 1: Confirm login and fetch user email
+        if "token" in st.session_state:
+            user_info = get_user_info(st.session_state.token)
+            email = user_info.get("email", None)
+        else:
+            email = None
+
+        is_admin = st.session_state.get("is_admin", False)
+        if is_admin:
+            chart_df = org_df.copy()
+        else:
+            chart_df = org_df[org_df["Contact Email"].str.lower().str.strip() == email]
+            st.info("You are viewing your own results only.")
 
         if selected_contacts:
             chart_df = chart_df[chart_df["Contact Name"].isin(selected_contacts)]
@@ -445,12 +382,7 @@ elif (mode == "View Results") and assessment != None:
 
         filtered_df = converted_df[numeric_cols].dropna(axis=1, how="all")
         
-        # Step 1: Confirm login and fetch user email
-        if "token" in st.session_state:
-            user_info = get_user_info(st.session_state.token)
-            email = user_info.get("email", None)
-        else:
-            email = None
+ 
 
 
         colors=["#cee4e4","#edd268","#b7cbd0","#f6e9b6","#87bdc0","#8499a2", 
@@ -497,29 +429,30 @@ elif (mode == "View Results") and assessment != None:
                             "#ffd98f", "#f2bab8"]
                         long_df = filtered_df[multi_cols].reset_index().melt(id_vars="index", var_name="Score Type", value_name="Score")
                         if len(long_df["index"].unique()) == 1:
-                            onecolor = random.sample(colors, k=1)
-                            col = multi_cols[0]
-                            value_counts = data_series[col].value_counts().sort_index()
+                            onecolor = random.sample(colors, k=len(multi_cols))
+                            # col = multi_cols[0]
+                            # value_counts = data_series[col].value_counts().sort_index()
                             # st.bar_chart(value_counts, y=multi_cols, x_label="Score Type", y_label="Average Score", color=onecolor)
                             # Melt the filtered data to long format
-                            long_df = filtered_df[multi_cols].reset_index().melt(id_vars="index", var_name="Score Type", value_name="Score")
-                            long_df["Submission"] = 1
-                            long_df["Submission"] = long_df["Submission"].astype(str)
+                            long_df = filtered_df[multi_cols].reset_index(drop=True).melt(var_name="Score Type", value_name="Score")
+                            long_df["Submission"] = long_df.groupby("Score Type").cumcount() + 1
+                            long_df["Submission"] = long_df["Submission"].astype(str)  # keep consistent label format
+
                             # Create stacked bar chart
                             fig = px.bar(
                                 long_df,
                                 x="Score Type",
                                 y="Score",
-                                color="Submission",
-                                barmode="stack",
+                                color="Score Type",
                                 labels={"Score Type": "Average Score by Category", "Score": "Score"},
-                                title="Scores",
+                                title="Results by Category",
                                 color_discrete_sequence=onecolor
                             )
 
                             fig.update_layout(
                                 xaxis_title="Average Score by Category",
-                                yaxis_title="Score"
+                                yaxis_title="Score",
+                                barmode="group"
                             )
 
                             st.plotly_chart(fig, use_container_width=True)
@@ -529,9 +462,10 @@ elif (mode == "View Results") and assessment != None:
                                 # st.bar_chart(filtered_df[multi_cols].mean().to_frame().T, y=multi_cols, x_label="Score Type", y_label="Average Score", color=colorlist, stack = False)
 
                                 # Melt the filtered data to long format
-                            long_df = filtered_df[multi_cols].reset_index().melt(id_vars="index", var_name="Score Type", value_name="Score")
-                            long_df["Submission"] = long_df["index"] + 1
-                            long_df["Submission"] = long_df["Submission"].astype(str)
+                            long_df = filtered_df[multi_cols].reset_index(drop=True).melt(var_name="Score Type", value_name="Score")
+                            long_df["Submission"] = long_df.groupby("Score Type").cumcount() + 1
+                            long_df["Submission"] = long_df["Submission"].astype(str)  # keep consistent label format
+
                             colorlist = random.sample(colors, k=len(long_df["Submission"].unique()))
 
                             # Create stacked bar chart
@@ -540,15 +474,15 @@ elif (mode == "View Results") and assessment != None:
                                 x="Score Type",
                                 y="Score",
                                 color="Submission",
-                                barmode="stack",
                                 labels={"Score Type": "Average Score by Category", "Score": "Score"},
-                                title="Stacked Scores by Indicator",
+                                title="Results by Submission",
                                 color_discrete_sequence=colorlist
                             )
 
                             fig.update_layout(
                                 xaxis_title="Average Score by Category",
-                                yaxis_title="Score"
+                                yaxis_title="Score",
+                                barmode="group"
                             )
 
                             st.plotly_chart(fig, use_container_width=True)
@@ -556,9 +490,10 @@ elif (mode == "View Results") and assessment != None:
                                 
                                 
                             # Melt the filtered data to long format
-                            long_df = filtered_df[multi_cols].reset_index().melt(id_vars="index", var_name="Score Type", value_name="Score")
-                            long_df["Submission"] = long_df["index"] + 1 
-                            long_df["Submission"] = long_df["Submission"].astype(str)
+                            long_df = filtered_df[multi_cols].reset_index(drop=True).melt(var_name="Score Type", value_name="Score")
+                            long_df["Submission"] = long_df.groupby("Score Type").cumcount() + 1
+                            long_df["Submission"] = long_df["Submission"].astype(str)  # keep consistent label format
+
                             colorlist = random.sample(colors, k=len(long_df["Submission"].unique()))
                             # Create stacked bar chart
                             fig = px.bar(
@@ -566,42 +501,22 @@ elif (mode == "View Results") and assessment != None:
                                 x="Score Type",
                                 y="Score",
                                 color="Submission",
-                                barmode="stack",
                                 labels={"Score Type": "Average Score by Category", "Score": "Score"},
-                                title="Stacked Scores by Indicator",
+                                title="Results by Submission",
                                 color_discrete_sequence=colorlist
                             )
 
                             fig.update_layout(
                                 xaxis_title="Average Score by Category",
-                                yaxis_title="Score"
+                                yaxis_title="Score",
+                                barmode="group"
                             )
 
                             st.plotly_chart(fig, use_container_width=True)
-                                # st.bar_chart(filtered_df[multi_cols].mean().to_frame().T, y=multi_cols, x_label="Score Type", y_label="Average Score", color=colorlist, stack = False)
-                            # colorlist = random.choices(colors, k=len(multi_cols))
-                            # st.bar_chart(filtered_df[multi_cols].mean().to_frame().T, color=colorlist, stack = False)
+   
 
                     elif chart_type == "Line Chart" or chart_type == "Scatter Plot":
-                        # colors=["#cee4e4","#edd268","#b7cbd0","#f6e9b6","#87bdc0","#8499a2", "#4f6d7a", "#db504a", "#ffffff", "#e3b505"]
-                        # colorlist = random.sample(colors, k=len(multi_cols))
-                        # if len(multi_cols) > len(colors):
-                        #     colorlist = random.choices(colors, k=len(multi_cols))
-                        #     if len(data_series.index)==1:
-                        #         st.scatter_chart(data_series, color=colorlist)
-                        #     else:
-                        #         st.line_chart(data_series, color=colorlist)
 
-                        # else:
-                        #     colorlist = random.sample(colors, k=len(multi_cols))
-                        #     if len(data_series.index)==1:
-                        #         st.scatter_chart(data_series, color=colorlist)
-                        #     else:
-                        #         st.line_chart(data_series, color=colorlist)
-                        # if len(data_series.index)==1:
-                        #     st.scatter_chart(data_series, color=colorlist)
-                        # else:
-                        #     st.line_chart(data_series, color=colorlist)
              
 
                         # Randomize color assignment
@@ -645,14 +560,6 @@ elif (mode == "View Results") and assessment != None:
                         st.plotly_chart(fig, use_container_width=True)
 
 
-                    # elif chart_type == "Histogram":
-                    #     fig, ax = plt.subplots()
-                    #     ax.hist(data_series.values, bins=10, label=multi_cols)
-                    #     ax.set_title("Histogram")
-                    #     ax.set_xlabel("Value")
-                    #     ax.set_ylabel("Frequency")
-                    #     ax.legend()
-                    #     st.pyplot(fig)
 
                     elif chart_type == "Area":
                         # # colors=["#cee4e4","#edd268","#b7cbd0","#f6e9b6","#87bdc0","#8499a2", "#4f6d7a", "#db504a", "#ffffff", "#e3b505"]
@@ -845,114 +752,7 @@ elif (mode == "View Results") and assessment != None:
                                 site_text_var += f"<div class='p2' style='font-weight: 600'>{site}'s Average {column}: {av:.2f}</div><br>"
                         elif "Indicator" in column:
                             site_text_var += f"<div class='p3'>{site}'s Average {column}: {av:.2f}</div><br>"
-            # st.html(f"""
-            #     <style>
-            #         @media screen and (min-width: 768px) {{
-            #             .responsive-container {{
-            #                 display: grid;
-            #                 grid-template-columns: 1fr 1fr;
-            #                 gap: 20px;
-            #             }}
-            #             .org-group, .staff-group {{
-            #                 display: flex;
-            #                 flex-direction: column;
-            #                 gap: 20px;
-            #             }}
-            #             .equal-box {{
-            #                 height: 400px; /* Ensures equal height */
-            #             }}
-            #             .equal-box h1 {{
-            #                 font-size: 5rem;
-            #                 color: black;
-            #                 font-weight: 900;
-            #             }}
-            #             .equal-box h3 {{
-            #                 font-size: 1.5rem;
-            #             }}
-            #             .p1 {{
-            #                 font-size: 1.4rem;
-            #             }}
-            #             .p2 {{
-            #                 font-size: 1.2rem;
-            #             }}
-            #             .p3 {{
-            #                 font-size: 1.1rem;
-            #             }}
 
-            #         }}
-
-            #         @media screen and (max-width: 768px) {{
-            #             .responsive-container {{
-            #                 display: flex;
-            #                 flex-direction: column;
-            #                 gap: 20px;
-            #             }}
-            #             .responsive-box {{
-            #                 width: 100% !important;
-            #                 gap: 20px;
-            #             }}
-            #             .org-group, .staff-group {{
-            #                 display: flex;
-            #                 flex-direction: column;
-            #                 gap: 20px;
-            #             }}
-            #             .equal-box h1 {{
-            #                 font-size: 4rem;
-            #                 color: black;
-            #                 font-weight: 900;
-            #             }}
-            #             .equal-box h3 {{
-            #                 font-size: 1.2rem;
-            #             }}
-            #             .p1 {{
-            #                 font-size: 1.1rem;
-            #             }}
-            #             .p2 {{
-            #                 font-size: 1rem;
-            #             }}
-            #             .p3 {{
-            #                 font-size: 0.9rem;
-            #             }}
-            #         }}
-            #     </style>
-
-            #     <div class="responsive-container">
-
-            #         <!-- Organization Section -->
-            #         <div class="org-group">
-            #             <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-            #                     display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
-            #                     padding: 15px; box-sizing: border-box;">
-            #                 <h3>Organization Average Overall Score</h3>
-            #                 <h1>{overall_av:.2f}</h1>
-            #             </div>
-
-            #             <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-            #                     filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
-            #                 {text_var}
-            #             </div>
-            #         </div>
-
-            #         <!-- Staff Section -->
-            #         <div class="staff-group">
-            #             <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-            #                 display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
-            #                 padding: 15px; box-sizing: border-box;">
-            #             <h3>Average Scores for Selected Staff</h3>
-            #             <div style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%; text-align: center;">
-            #                 {staff_score_html}
-            #             </div>
-            #         </div>
-
-
-            #             <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-            #                     filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
-            #                 {staff_summaries}
-            #             </div>
-            #         </div>
-
-            #     </div>
-            # """)
 
             # Determine whether to show the site column
             show_site_column = bool(selected_sites and site_text_var.strip())
@@ -975,115 +775,115 @@ elif (mode == "View Results") and assessment != None:
                 </div>
             """ if show_site_column else ""
 
-            # if is_admin: # add indentation after this line, once Salesforce file is working
+            if is_admin: # add indentation after this line, once Salesforce file is working
             # Render full layout
-            st.html(f"""
-                <style>
-                    @media screen and (min-width: 768px) {{
-                        .responsive-container {{
-                            display: grid;
-                            grid-template-columns: {grid_template};
-                            gap: 20px;
+                st.html(f"""
+                    <style>
+                        @media screen and (min-width: 768px) {{
+                            .responsive-container {{
+                                display: grid;
+                                grid-template-columns: {grid_template};
+                                gap: 20px;
+                            }}
+                            .org-group, .staff-group, .site-group {{
+                                display: flex;
+                                flex-direction: column;
+                                gap: 20px;
+                            }}
+                            .equal-box {{
+                                height: 400px;
+                            }}
+                            .equal-box h1 {{
+                                font-size: 5rem;
+                                color: black;
+                                font-weight: 900;
+                            }}
+                            .equal-box h3 {{
+                                font-size: 1.5rem;
+                            }}
+                            .p1 {{
+                                font-size: 1.4rem;
+                            }}
+                            .p2 {{
+                                font-size: 1.2rem;
+                            }}
+                            .p3 {{
+                                font-size: 1.1rem;
+                            }}
                         }}
-                        .org-group, .staff-group, .site-group {{
-                            display: flex;
-                            flex-direction: column;
-                            gap: 20px;
+                        @media screen and (max-width: 768px) {{
+                            .responsive-container {{
+                                display: flex;
+                                flex-direction: column;
+                                gap: 20px;
+                            }}
+                            .responsive-box {{
+                                width: 100% !important;
+                                gap: 20px;
+                            }}
+                            .org-group, .staff-group, .site-group {{
+                                display: flex;
+                                flex-direction: column;
+                                gap: 20px;
+                            }}
+                            .equal-box h1 {{
+                                font-size: 4rem;
+                                color: black;
+                                font-weight: 900;
+                            }}
+                            .equal-box h3 {{
+                                font-size: 1.2rem;
+                            }}
+                            .p1 {{
+                                font-size: 1.1rem;
+                            }}
+                            .p2 {{
+                                font-size: 1rem;
+                            }}
+                            .p3 {{
+                                font-size: 0.9rem;
+                            }}
                         }}
-                        .equal-box {{
-                            height: 400px;
-                        }}
-                        .equal-box h1 {{
-                            font-size: 5rem;
-                            color: black;
-                            font-weight: 900;
-                        }}
-                        .equal-box h3 {{
-                            font-size: 1.5rem;
-                        }}
-                        .p1 {{
-                            font-size: 1.4rem;
-                        }}
-                        .p2 {{
-                            font-size: 1.2rem;
-                        }}
-                        .p3 {{
-                            font-size: 1.1rem;
-                        }}
-                    }}
-                    @media screen and (max-width: 768px) {{
-                        .responsive-container {{
-                            display: flex;
-                            flex-direction: column;
-                            gap: 20px;
-                        }}
-                        .responsive-box {{
-                            width: 100% !important;
-                            gap: 20px;
-                        }}
-                        .org-group, .staff-group, .site-group {{
-                            display: flex;
-                            flex-direction: column;
-                            gap: 20px;
-                        }}
-                        .equal-box h1 {{
-                            font-size: 4rem;
-                            color: black;
-                            font-weight: 900;
-                        }}
-                        .equal-box h3 {{
-                            font-size: 1.2rem;
-                        }}
-                        .p1 {{
-                            font-size: 1.1rem;
-                        }}
-                        .p2 {{
-                            font-size: 1rem;
-                        }}
-                        .p3 {{
-                            font-size: 0.9rem;
-                        }}
-                    }}
-                </style>
+                    </style>
 
-                <div class="responsive-container">
+                    <div class="responsive-container">
 
-                    <!-- Organization Column -->
-                    <div class="org-group">
-                        <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-                            display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
-                            padding: 15px; box-sizing: border-box;">
-                            <h3>Organization Average Overall Score</h3>
-                            <h1>{overall_av:.2f}</h1>
-                        </div>
+                        <!-- Organization Column -->
+                        <div class="org-group">
+                            <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
+                                padding: 15px; box-sizing: border-box;">
+                                <h3>Organization Average Overall Score</h3>
+                                <h1>{overall_av:.2f}</h1>
+                            </div>
 
-                        <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-                                filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
-                            {text_var}
-                        </div>
-                    </div>
-
-                    <!-- Staff Column -->
-                    <div class="staff-group">
-                        <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-                            display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
-                            padding: 15px; box-sizing: border-box;">
-                            <h3>Average Scores for Selected Staff</h3>
-                            <div style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%; text-align: center;">
-                                {staff_score_html}
+                            <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                    filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
+                                {text_var}
                             </div>
                         </div>
 
-                        <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-                                filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
-                            {staff_summaries}
+                        <!-- Staff Column -->
+                        <div class="staff-group">
+                            <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
+                                padding: 15px; box-sizing: border-box;">
+                                <h3>Average Scores for Selected Staff</h3>
+                                <div style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%; text-align: center;">
+                                    {staff_score_html}
+                                </div>
+                            </div>
+
+                            <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                    filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
+                                {staff_summaries}
+                            </div>
                         </div>
+
+                        {site_column_html}
+
                     </div>
-
-                    {site_column_html}
-
-                </div>
-            """)
+                """)
 
         else:
             st.info("No data available for charting.")

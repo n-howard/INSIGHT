@@ -56,51 +56,137 @@ if "google_token" not in st.session_state:
     login()
     st.stop()
 
-# Try loading from cookies into session state if needed
-if "org_input" not in st.session_state or not st.session_state["org_input"]:
-    st.session_state["org_input"] = cookies.get("org_input", "")
-    st.session_state["site_input"] = cookies.get("site_input", "")
-    st.session_state["admin_input"] = cookies.get("admin_input", "")
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+client = gspread.authorize(creds)
 
-# Ask for info only if still missing after trying cookies
-if not st.session_state["org_input"]:
-    st.subheader("Enter Your Organization Information")
-    org_input = st.text_input("Please enter your organization name.")
-    site_input = st.text_input("If your organization has multiple sites, please enter your site name.")
-    admin_input = st.text_input("If you are a program administrator, please enter your admin number.")
+# After successful Google login
+user_email = st.session_state.get("user_info", {}).get("email", "").strip().lower()
+user_name = st.session_state.get("user_info", {}).get("name", "").strip()
 
+# Load authorized users
+user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
+user_records = user_sheet.get_all_records()
+
+# Match user by email
+user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
+
+
+user_in = bool(user_match)
+# --- If user not found: allow account creation ---
+if not user_in:
+    st.warning("We couldn't find your email in the system. Please enter your information to create an account.")
+    first_name = st.text_input("Your first name")
+    last_name = st.text_input("Your last name")
+    role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, etc.)")
+    curr_org_input = st.text_input("Your organization name")
+    name_input = first_name + " " + last_name
+    if st.button("Create Account") and role_input:
+        st.session_state["name_input"] = name_input.strip()
+        st.session_state["role"] = role_input.strip()
+
+        # Optional: write back to sheet (if writable)
+        user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email])
+
+        st.success("Account created successfully!")
+        user_in = True
+        st.rerun()
+
+if user_in:
+    # --- If user is found ---
+    role = user_match["Title"]
+    st.session_state["role"] = role
+    st.session_state["name"] = user_match.get("Name", user_name)
+    st.info(f"Welcome, **{st.session_state['name']}**! Your title: **{role}**")
+
+    # --- Define admin roles by substrings ---
+    admin_keywords = ["director", "president", "principal", "ceo", "admin", "manager", "coordinator", "leader", "owner", "superintendent", "directora", "chief", "mayor", "chair", "founder", "oregonask intern"]
+
+    # Simple role check
+    def is_admin_role(role):
+        return any(keyword in role.lower() for keyword in admin_keywords)
+
+    # Flag admin access
+    st.session_state["is_admin"] = is_admin_role(st.session_state.get("role", ""))
+
+    # Example: use later for permission control
+    if st.session_state["is_admin"]:
+        st.success("You have admin-level access.")
+    else:
+        st.info("You have standard access.")
+
+    # sheet = client.open("All Programs Statewide_6.17.25").worksheet("All Programs Statewide")
+    @st.cache_data(ttl=3600, show_spinner=False)  # cache for 1 hour (3600 seconds)
+    def get_org_names():
+        sheet = client.open("All Programs Statewide_6.17.25").worksheet("All Programs Statewide")
+        # Get all org names from the column
+        records = sheet.get_all_records(head=9)
+        org_names = (sorted(list({row["Account Name"].strip() for row in records if row.get("Account Name")})))
+        org_names.insert(0, "Search for your organization name...")
+        org_names.append("Other")
+        return org_names
+
+
+    # Load orgs from cache
+    org_names = get_org_names()
+    
+
+    def search_orgs(query: str):
+        return [org for org in org_names if query.lower() in org.lower()]
+
+    org_search = st.selectbox(
+        "Search for your organization",
+        options=org_names,
+        # index=org_names.index("Other") if "Other" in org_names else 0,
+    )
+
+    if org_search == "Other":
+        custom_org = st.text_input("Please enter your organization name:")
+        address = st.text_input("Please enter your site's address:")
+        org_input = custom_org.strip()
+    else:
+        org_input = org_search
+
+        try: 
+            st.session_state["org"] = user_match.get("Organization", org_input)
+        except:
+            st.warning("The organization you selected does not match the organization in our system. Please try again.")
+            org_input = false
+
+    # UI: Site input
+    site_input = st.text_input("If your organization has multiple sites, please enter your site name (optional):")
+
+
+
+    # Continue logic
     if st.button("Continue") and org_input:
         st.session_state["org_input"] = org_input.strip()
         st.session_state["site_input"] = site_input.strip()
-        st.session_state["admin_input"] = admin_input.strip()
 
-        # Save to cookies
         cookies["org_input"] = st.session_state["org_input"]
         cookies["site_input"] = st.session_state["site_input"]
-        cookies["admin_input"] = st.session_state["admin_input"]
+        cookies["admin_input"] = str(st.session_state["is_admin"])
         cookies.save()
+        if org_search == "Other":
+            def append_clean_row(sheet, values):
+                # Get all values in column A
+                col_a = sheet.col_values(1)
+                next_empty_row = len(col_a) + 1  # +1 because rows are 1-indexed
 
+                # Write values starting from column A of next empty row
+                cell_range = f"A{next_empty_row}"
+                sheet.update(cell_range, [values], value_input_option='USER_ENTERED')
+            append_clean_row(
+                sheet,
+                ["Active", "", "INSIGHT", custom_org, site_input, address]
+            )
+            st.cache_data.clear()
         st.success("Organization information saved!")
         st.switch_page("pages/home.py")
 
 
-
-# --- Step 3: Already signed in and org saved ---
-else:
-    st.subheader("Enter Your Organization Information")
-    org_input = st.text_input("Please enter your organization name.")
-    site_input = st.text_input("If your organization has multiple sites, please enter your site name.")
-    admin_input = st.text_input("If you are a program administrator, please enter your admin number.")
-    if st.button("Continue") and org_input:
-        st.session_state["org_input"] = org_input.strip()
-        st.session_state["site_input"] = site_input.strip()
-        st.session_state["admin_input"] = admin_input.strip()
-
-        # Save to cookies
-        cookies["org_input"] = st.session_state["org_input"]
-        cookies["site_input"] = st.session_state["site_input"]
-        cookies["admin_input"] = st.session_state["admin_input"]
-        cookies.save()
-
-        st.success("Organization information saved!")
-        st.switch_page("pages/home.py")
+    # Try loading from cookies into session state if needed
+    if "org_input" not in st.session_state or not st.session_state["org_input"]:
+        st.session_state["org_input"] = cookies.get("org_input", "")
+        st.session_state["site_input"] = cookies.get("site_input", "")
+        st.session_state["admin_input"] = cookies.get("admin_input", "")
