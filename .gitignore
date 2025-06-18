@@ -1,0 +1,4 @@
+*.txt
+*client.py
+*credentials.json
+*secrets.toml
