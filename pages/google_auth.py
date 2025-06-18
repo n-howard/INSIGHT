@@ -32,12 +32,45 @@ def login():
         )
         st.session_state.oauth_state = state
         # st.markdown(f"[Click here to sign in with Google]({auth_url})")
+        # st.html(f"""
+        #     <style>
+        #         .google-login-button {{
+        #             text-align: center;
+        #             border-radius: 40px;
+        #             color: #084c61;
+        #             background-color: white;
+        #             border: 1px solid #cedbdf;
+        #             padding: 15px;
+        #             display: block;
+        #             margin: 5vh auto 0 auto;
+        #             font-size: 2rem;
+        #             cursor: pointer;
+        #             transition: border-color 0.3s color 0.3s background-color 0.3s;
+        #         }}
+
+        #         .google-login-button:hover {{
+        #             border-color: #084c61;
+        #         }}
+        #         .google-login-button:active{{
+        #             color: white;
+        #             background-color: #084c61;
+        #         }}
+        #     </style>
+
+        #     <a href="{auth_url}" style="text-decoration: none">
+        #         <button type="button" class="google-login-button">Log In With Google</button>
+        #     </a>
+        # """)
+
         st.html(f"""
-            <a href="{auth_url}" style="text-decoration: none">
-                <button type="button" style="text-align: center; border-radius: 20px; color: white; 
-                    background-color: #084c61; outline-color: white; outline-style: hidden; border-style: hidden; border-color: white; padding: 15px; display: block; margin: auto; font-size: 30px; margin-top: 5vh">Log In With Google</button>
+            <a href="{auth_url}" style="display: flex; justify-content: center;">
+                <img src="https://developers.google.com/static/identity/images/branding_guideline_sample_lt_rd_lg.svg"
+                    alt="Sign in with Google"
+                    style="cursor: pointer; width: 30vh" />
             </a>
         """)
+
+
     except Exception as e:
         st.error("Google OAuth failed:")
         st.exception(e)

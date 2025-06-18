@@ -9,6 +9,12 @@ import streamlit.components.v1 as components
 from streamlit_option_menu import option_menu
 from pages.google_auth import login, fetch_token, get_user_info
 from pages.menu import menu_with_redirect
+from streamlit_cookies_manager import EncryptedCookieManager
+
+# Initialize cookies
+cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
+if not cookies.ready():
+    st.stop()
 
 
 st.html("""
@@ -50,8 +56,14 @@ if "google_token" not in st.session_state:
     login()
     st.stop()
 
-# --- Step 2: Ask for org info if not present ---
-if "org_input" not in st.session_state:
+# Try loading from cookies into session state if needed
+if "org_input" not in st.session_state or not st.session_state["org_input"]:
+    st.session_state["org_input"] = cookies.get("org_input", "")
+    st.session_state["site_input"] = cookies.get("site_input", "")
+    st.session_state["admin_input"] = cookies.get("admin_input", "")
+
+# Ask for info only if still missing after trying cookies
+if not st.session_state["org_input"]:
     st.subheader("Enter Your Organization Information")
     org_input = st.text_input("Please enter your organization name.")
     site_input = st.text_input("If your organization has multiple sites, please enter your site name.")
@@ -61,12 +73,34 @@ if "org_input" not in st.session_state:
         st.session_state["org_input"] = org_input.strip()
         st.session_state["site_input"] = site_input.strip()
         st.session_state["admin_input"] = admin_input.strip()
+
+        # Save to cookies
+        cookies["org_input"] = st.session_state["org_input"]
+        cookies["site_input"] = st.session_state["site_input"]
+        cookies["admin_input"] = st.session_state["admin_input"]
+        cookies.save()
+
         st.success("Organization information saved!")
         st.switch_page("pages/home.py")
 
+
+
 # --- Step 3: Already signed in and org saved ---
 else:
-    st.markdown(f"Please enter your organization name. **{st.session_state['org_input']}**")
-    st.markdown(f"If your organization has multiple sites, please enter your site name. **{st.session_state['site_input']}**")
-    st.markdown(f"If you are a program administrator, please enter your admin number. **{st.session_state['admin_input']}**")
-    st.page_link("pages/home.py", label="Go to Dashboard")
+    st.subheader("Enter Your Organization Information")
+    org_input = st.text_input("Please enter your organization name.")
+    site_input = st.text_input("If your organization has multiple sites, please enter your site name.")
+    admin_input = st.text_input("If you are a program administrator, please enter your admin number.")
+    if st.button("Continue") and org_input:
+        st.session_state["org_input"] = org_input.strip()
+        st.session_state["site_input"] = site_input.strip()
+        st.session_state["admin_input"] = admin_input.strip()
+
+        # Save to cookies
+        cookies["org_input"] = st.session_state["org_input"]
+        cookies["site_input"] = st.session_state["site_input"]
+        cookies["admin_input"] = st.session_state["admin_input"]
+        cookies.save()
+
+        st.success("Organization information saved!")
+        st.switch_page("pages/home.py")

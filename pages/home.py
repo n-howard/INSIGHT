@@ -17,8 +17,76 @@ from pages.menu import menu_with_redirect
 import plotly.express as px
 import os
 import re
+from streamlit_cookies_manager import EncryptedCookieManager
+
+cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
+if not cookies.ready():
+    st.stop()
+
+# Restore from cookies if needed
+if "org_input" not in st.session_state:
+    cookie_org = cookies.get("org_input")
+    cookie_site = cookies.get("site_input")
+    cookie_admin = cookies.get("admin_input")
+
+    if cookie_org:
+        st.session_state["org_input"] = cookie_org
+        st.session_state["site_input"] = cookie_site or ""
+        st.session_state["admin_input"] = cookie_admin or ""
 
 logo = st.logo("./oask_light_mode_tagline.png", size="large", link="https://oregonask.org/")
+
+# Handle logout trigger from query string
+if st.query_params.get("logout") == "1":
+    for key in ["org_input", "site_input", "admin_input", "google_token", "user_info"]:
+        st.session_state.pop(key, None)
+
+    cookies["org_input"] = ""
+    cookies["site_input"] = ""
+    cookies["admin_input"] = ""
+    cookies.save()
+
+    st.success("You have been logged out.")
+    st.switch_page("app.py")
+
+
+# --- LOGOUT BUTTON ---
+logout_container = st.container()
+with logout_container:
+    st.html("""
+        <style>
+            .logout-button-container {
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-end;
+                align-items: flex-start;
+            }
+            .logout-button {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.9rem;
+                border-radius: 20px;
+                border-style: solid;
+                border-width: 1px;
+                border-color: #cedbdf;
+                background-color: white;
+                color: #084c61;
+                cursor: pointer;
+                text-decoration: none;
+                transition: border-color 0.3s color 0.3s background-color 0.3s;
+            }
+            .logout-button:hover{
+                border-color: #084c61
+            }
+            .logout-button:active{
+                    color: white;
+                    background-color: #084c61;
+            }
+        </style>
+        <div class="logout-button-container">
+            <a href="?logout=1" class="logout-button">Log Out</a>
+        </div>
+    """)
+
 
 
 with open("./styles.css") as f:
@@ -307,8 +375,10 @@ elif (mode == "View Results") and assessment != None:
 
         contact_options = sorted(df["Contact Name"].dropna().unique())
 
-
-        selected_contacts = st.multiselect("Filter by Contact Name (optional)", contact_options)
+        if contact_options:
+            selected_contacts = st.multiselect("Filter by Contact Name (optional)", contact_options)
+        else:
+            selected_contacts = []
 
         if selected_contacts:
             df = df[df["Contact Name"].isin(selected_contacts)]
@@ -341,7 +411,7 @@ elif (mode == "View Results") and assessment != None:
             converted_df[col] = pd.to_numeric(converted_df[col], errors="coerce")
 
         # Keep only mostly-numeric columns
-        EXCLUDED_SUBSTRINGS = ["How many students", "Timestamp"]
+        EXCLUDED_SUBSTRINGS = ["How many students", "Timestamp", "Contact Phone", "Program Zip Code"]
 
         def is_numeric_column(series):
             return (
@@ -359,7 +429,7 @@ elif (mode == "View Results") and assessment != None:
 
         # Keep only mostly-numeric columns (60%+ numeric values)
         # Exclude columns containing any of these substrings (case-insensitive)
-        EXCLUDED_SUBSTRINGS = ["How many students", "Timestamp"]
+        EXCLUDED_SUBSTRINGS = ["How many students", "Timestamp", "Contact Phone", "Program Zip Code"]
 
         def is_numeric_column(series):
             # Must have mostly numeric values and no comma-separated strings
@@ -422,15 +492,47 @@ elif (mode == "View Results") and assessment != None:
 
 
                     if chart_type == "Bar Chart":
-                        # colors=["#cee4e4","#edd268","#b7cbd0","#f6e9b6","#87bdc0","#8499a2", "#4f6d7a", "#db504a", "#89a436", "#e3b505", "#ba29a7", "#f76649", "#fec841"]
-                        if len(multi_cols) == 1:
+                        colors=["#cee4e4","#edd268","#b7cbd0","#f6e9b6","#87bdc0","#8499a2", 
+                            "#4f6d7a", "#db504a", "#abd1d1", "#ddeced", "#7a919c", "#e88f8c", "#80babd", "#457887", "#ffc757",
+                            "#ffd98f", "#f2bab8"]
+                        long_df = filtered_df[multi_cols].reset_index().melt(id_vars="index", var_name="Score Type", value_name="Score")
+                        if len(long_df["index"].unique()) == 1:
                             onecolor = random.sample(colors, k=1)
                             col = multi_cols[0]
                             value_counts = data_series[col].value_counts().sort_index()
                             # st.bar_chart(value_counts, y=multi_cols, x_label="Score Type", y_label="Average Score", color=onecolor)
                             # Melt the filtered data to long format
                             long_df = filtered_df[multi_cols].reset_index().melt(id_vars="index", var_name="Score Type", value_name="Score")
-                            long_df["Submission"] = long_df["index"] + 1  # Optional: add a submission number
+                            long_df["Submission"] = 1
+                            long_df["Submission"] = long_df["Submission"].astype(str)
+                            # Create stacked bar chart
+                            fig = px.bar(
+                                long_df,
+                                x="Score Type",
+                                y="Score",
+                                color="Submission",
+                                barmode="stack",
+                                labels={"Score Type": "Average Score by Category", "Score": "Score"},
+                                title="Scores",
+                                color_discrete_sequence=onecolor
+                            )
+
+                            fig.update_layout(
+                                xaxis_title="Average Score by Category",
+                                yaxis_title="Score"
+                            )
+
+                            st.plotly_chart(fig, use_container_width=True)
+                        # else:
+                        elif len(multi_cols) > len(colors):
+                                # colorlist = random.choices(colors, k=len("Submission"))
+                                # st.bar_chart(filtered_df[multi_cols].mean().to_frame().T, y=multi_cols, x_label="Score Type", y_label="Average Score", color=colorlist, stack = False)
+
+                                # Melt the filtered data to long format
+                            long_df = filtered_df[multi_cols].reset_index().melt(id_vars="index", var_name="Score Type", value_name="Score")
+                            long_df["Submission"] = long_df["index"] + 1
+                            long_df["Submission"] = long_df["Submission"].astype(str)
+                            colorlist = random.sample(colors, k=len(long_df["Submission"].unique()))
 
                             # Create stacked bar chart
                             fig = px.bar(
@@ -439,69 +541,43 @@ elif (mode == "View Results") and assessment != None:
                                 y="Score",
                                 color="Submission",
                                 barmode="stack",
-                                labels={"Score Type": "Average Score by Indicator", "Score": "Score"},
-                                title="Scores",
-                                color_discrete_sequence=onecolor
+                                labels={"Score Type": "Average Score by Category", "Score": "Score"},
+                                title="Stacked Scores by Indicator",
+                                color_discrete_sequence=colorlist
                             )
 
                             fig.update_layout(
-                                xaxis_title="Average Score by Indicator",
+                                xaxis_title="Average Score by Category",
                                 yaxis_title="Score"
                             )
 
                             st.plotly_chart(fig, use_container_width=True)
                         else:
-                            if len(multi_cols) > len(colors):
-                                colorlist = random.choices(colors, k=len(multi_cols))
-                                # st.bar_chart(filtered_df[multi_cols].mean().to_frame().T, y=multi_cols, x_label="Score Type", y_label="Average Score", color=colorlist, stack = False)
-
-                                # Melt the filtered data to long format
-                                long_df = filtered_df[multi_cols].reset_index().melt(id_vars="index", var_name="Score Type", value_name="Score")
-                                long_df["Submission"] = long_df["index"] + 1  # Optional: add a submission number
-
-                                # Create stacked bar chart
-                                fig = px.bar(
-                                    long_df,
-                                    x="Score Type",
-                                    y="Score",
-                                    color="Submission",
-                                    barmode="stack",
-                                    labels={"Score Type": "Average Score by Indicator", "Score": "Score"},
-                                    title="Stacked Scores by Indicator",
-                                    color_discrete_sequence=colorlist
-                                )
-
-                                fig.update_layout(
-                                    xaxis_title="Average Score by Indicator",
-                                    yaxis_title="Score"
-                                )
-
-                                st.plotly_chart(fig, use_container_width=True)
-                            else:
-                                colorlist = random.sample(colors, k=len(multi_cols))
                                 
-                                # Melt the filtered data to long format
-                                long_df = filtered_df[multi_cols].reset_index().melt(id_vars="index", var_name="Score Type", value_name="Score")
-                                long_df["Submission"] = long_df["index"] + 1  # Optional: add a submission number
+                                
+                            # Melt the filtered data to long format
+                            long_df = filtered_df[multi_cols].reset_index().melt(id_vars="index", var_name="Score Type", value_name="Score")
+                            long_df["Submission"] = long_df["index"] + 1 
+                            long_df["Submission"] = long_df["Submission"].astype(str)
+                            colorlist = random.sample(colors, k=len(long_df["Submission"].unique()))
+                            # Create stacked bar chart
+                            fig = px.bar(
+                                long_df,
+                                x="Score Type",
+                                y="Score",
+                                color="Submission",
+                                barmode="stack",
+                                labels={"Score Type": "Average Score by Category", "Score": "Score"},
+                                title="Stacked Scores by Indicator",
+                                color_discrete_sequence=colorlist
+                            )
 
-                                # Create stacked bar chart
-                                fig = px.bar(
-                                    long_df,
-                                    x="Score Type",
-                                    y="Score",
-                                    color="Submission",
-                                    barmode="stack",
-                                    labels={"Score Type": "Average Score by Indicator", "Score": "Score"},
-                                    title="Stacked Scores by Indicator",
-                                    color_discrete_sequence=colorlist
-                                )
+                            fig.update_layout(
+                                xaxis_title="Average Score by Category",
+                                yaxis_title="Score"
+                            )
 
-                                fig.update_layout(
-                                    xaxis_title="Average Score by Indicator",
-                                    yaxis_title="Score"
-                                )
-
-                                st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, use_container_width=True)
                                 # st.bar_chart(filtered_df[multi_cols].mean().to_frame().T, y=multi_cols, x_label="Score Type", y_label="Average Score", color=colorlist, stack = False)
                             # colorlist = random.choices(colors, k=len(multi_cols))
                             # st.bar_chart(filtered_df[multi_cols].mean().to_frame().T, color=colorlist, stack = False)
@@ -509,23 +585,65 @@ elif (mode == "View Results") and assessment != None:
                     elif chart_type == "Line Chart" or chart_type == "Scatter Plot":
                         # colors=["#cee4e4","#edd268","#b7cbd0","#f6e9b6","#87bdc0","#8499a2", "#4f6d7a", "#db504a", "#ffffff", "#e3b505"]
                         # colorlist = random.sample(colors, k=len(multi_cols))
-                        if len(multi_cols) > len(colors):
-                            colorlist = random.choices(colors, k=len(multi_cols))
-                            if len(data_series.index)==1:
-                                st.scatter_chart(data_series, color=colorlist)
-                            else:
-                                st.line_chart(data_series, color=colorlist)
+                        # if len(multi_cols) > len(colors):
+                        #     colorlist = random.choices(colors, k=len(multi_cols))
+                        #     if len(data_series.index)==1:
+                        #         st.scatter_chart(data_series, color=colorlist)
+                        #     else:
+                        #         st.line_chart(data_series, color=colorlist)
 
-                        else:
-                            colorlist = random.sample(colors, k=len(multi_cols))
-                            if len(data_series.index)==1:
-                                st.scatter_chart(data_series, color=colorlist)
-                            else:
-                                st.line_chart(data_series, color=colorlist)
+                        # else:
+                        #     colorlist = random.sample(colors, k=len(multi_cols))
+                        #     if len(data_series.index)==1:
+                        #         st.scatter_chart(data_series, color=colorlist)
+                        #     else:
+                        #         st.line_chart(data_series, color=colorlist)
                         # if len(data_series.index)==1:
                         #     st.scatter_chart(data_series, color=colorlist)
                         # else:
                         #     st.line_chart(data_series, color=colorlist)
+             
+
+                        # Randomize color assignment
+                        if len(multi_cols) > len(colors):
+                            colorlist = random.choices(colors, k=len(multi_cols))
+                        else:
+                            colorlist = random.sample(colors, k=len(multi_cols))
+                            
+
+                        # Melt the DataFrame into long format for Plotly Express
+                        
+                        long_df = data_series.reset_index().melt(id_vars="index", value_vars=multi_cols, 
+                                                                var_name="Metric", value_name="Score")
+
+                        long_df["Submission"] = long_df["index"] + 1
+
+                        # Create Plotly figure based on chart_type
+                        if chart_type == "Line Chart":
+                            fig = px.line(
+                                long_df,
+                                x="Submission",
+                                y="Score",
+                                color="Metric",
+                                color_discrete_sequence=colorlist,
+                                markers=True  # optional: dots on lines
+                            )
+                            fig.update_layout(title="Line Chart", xaxis_title="Submission", yaxis_title="Score")
+
+                        elif chart_type == "Scatter Plot":
+                            fig = px.scatter(
+                                long_df,
+                                x="Submission",
+                                y="Score",
+                                color="Metric",
+                                size="Score",
+                                color_discrete_sequence=colorlist
+                            )
+                            fig.update_layout(title="Scatter Plot", xaxis_title="Submission", yaxis_title="Score")
+
+                        # Render in Streamlit
+                        st.plotly_chart(fig, use_container_width=True)
+
 
                     # elif chart_type == "Histogram":
                     #     fig, ax = plt.subplots()
@@ -537,15 +655,46 @@ elif (mode == "View Results") and assessment != None:
                     #     st.pyplot(fig)
 
                     elif chart_type == "Area":
-                        # colors=["#cee4e4","#edd268","#b7cbd0","#f6e9b6","#87bdc0","#8499a2", "#4f6d7a", "#db504a", "#ffffff", "#e3b505"]
-                        # colorlist = random.sample(colors, k=len(multi_cols))
+                        # # colors=["#cee4e4","#edd268","#b7cbd0","#f6e9b6","#87bdc0","#8499a2", "#4f6d7a", "#db504a", "#ffffff", "#e3b505"]
+                        # # colorlist = random.sample(colors, k=len(multi_cols))
+                        # if len(multi_cols) > len(colors):
+                        #     colorlist = random.choices(colors, k=len(multi_cols))
+                        #     st.area_chart(data_series, color=colorlist)
+                        # else:
+                        #     colorlist = random.sample(colors, k=len(multi_cols))
+                        #     st.area_chart(data_series, color=colorlist)
+                        # st.area_chart(data_series, color=colorlist)
+
+                        # Step 1: Prepare colors
                         if len(multi_cols) > len(colors):
                             colorlist = random.choices(colors, k=len(multi_cols))
-                            st.area_chart(data_series, color=colorlist)
                         else:
                             colorlist = random.sample(colors, k=len(multi_cols))
-                            st.area_chart(data_series, color=colorlist)
-                        # st.area_chart(data_series, color=colorlist)
+
+                        # Step 2: Prepare data
+                        data_reset = data_series.copy()
+                        data_reset["Submission"] = range(1, len(data_reset) + 1)
+
+
+                        # Step 3: Melt data into long format for Plotly
+                        long_df = data_reset.melt(id_vars="Submission", value_vars=multi_cols,
+                                                var_name="Metric", value_name="Score")
+
+                        # Step 4: Create area chart
+                        fig = px.area(
+                            long_df,
+                            x="Submission",
+                            y="Score",
+                            color="Metric",
+                            color_discrete_sequence=colorlist,
+                            labels={"Submission": "Submission", "Score": "Score"},
+                            title="Area Chart"
+                        )
+
+                        fig.update_layout(xaxis_title="Submission", yaxis_title="Score")
+
+                        # Step 5: Display chart
+                        st.plotly_chart(fig, use_container_width=True)
 
                     # st.markdown("### Your Scores")
                     # st.write(data_series)
@@ -554,7 +703,7 @@ elif (mode == "View Results") and assessment != None:
                     
 
                 else:
-                    st.warning("Please select at least one column to display the chart.")
+                    st.info("Please select at least one column to display the chart.")
             else:
                 st.info("No score-type columns available for charting based on your filters.")
             # Step 1: Get all columns that include "Overall Score"
@@ -937,7 +1086,7 @@ elif (mode == "View Results") and assessment != None:
             """)
 
         else:
-            st.info("No data available for charting based on your filters.")
+            st.info("No data available for charting.")
 #            
 
 
