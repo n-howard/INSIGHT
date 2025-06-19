@@ -46,22 +46,33 @@ if st.query_params.get("logout") == "1":
     cookies["admin_input"] = ""
     cookies.save()
 
+
     st.success("You have been logged out.")
     st.switch_page("app.py")
 
-
+if st.session_state["is_admin"]:
+    ad = "Admin"
+else:
+    ad = "Staff"
 # --- LOGOUT BUTTON ---
 logout_container = st.container()
 with logout_container:
-    st.html("""
+    st.html(f"""
         <style>
-            .logout-button-container {
+            .logout-button-container {{
                 display: flex;
                 flex-direction: row;
                 justify-content: flex-end;
-                align-items: flex-start;
-            }
-            .logout-button {
+                align-items: center;
+            }}
+            .org-name-display {{
+                font-size: 0.9rem;
+                font-weight: 600;
+                color: #084c61;
+                margin-right: .4rem;
+
+            }}
+            .logout-button {{
                 padding: 0.4rem 0.8rem;
                 font-size: 0.9rem;
                 border-radius: 20px;
@@ -73,16 +84,17 @@ with logout_container:
                 cursor: pointer;
                 text-decoration: none;
                 transition: border-color 0.3s color 0.3s background-color 0.3s;
-            }
-            .logout-button:hover{
+            }}
+            .logout-button:hover{{
                 border-color: #084c61
-            }
-            .logout-button:active{
+            }}
+            .logout-button:active{{
                     color: white;
                     background-color: #084c61;
-            }
+            }}
         </style>
         <div class="logout-button-container">
+            <div class="org-name-display"> {st.session_state.get("org_input", "Organization")} {ad}  </div>
             <a href="?logout=1" class="logout-button">Log Out</a>
         </div>
     """)
