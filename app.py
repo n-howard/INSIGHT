@@ -1,4 +1,8 @@
 import streamlit as st 
+if st.session_state.get("go_to_home"):
+    st.session_state.pop("go_to_home")
+    st.switch_page("pages/home.py")
+
 st.set_page_config(page_title="INSIGHT", layout="wide", page_icon="./oask_short_logo.png", initial_sidebar_state="collapsed")
 import pandas as pd
 import gspread
@@ -11,10 +15,13 @@ from pages.google_auth import login, fetch_token, get_user_info
 from pages.menu import menu_with_redirect
 from streamlit_cookies_manager import EncryptedCookieManager
 
+
+
 # Initialize cookies
 cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
 if not cookies.ready():
     st.stop()
+
 
 
 
@@ -106,6 +113,7 @@ if not user_in:
         # Force initialize once
 
 if user_in:
+    org_input = None
         # Auto-fill org info
 
     # --- If user is found ---
@@ -198,50 +206,48 @@ if user_in:
         user_org = user_match.get("Organization", "").strip().lower()
         selected_org = org_search.strip().lower()
         normalized_orgs = [org.strip().lower() for org in org_names]
-        if user_org == selected_org:
-            org_input = org_search
-        elif not user_org in normalized_orgs:
-            org_input = org_search
-        else:
-            st.warning("The organization you selected does not match the organization in our system. Please try again.")
-            org_input = False
+
+        org_input = org_search
+        # else:
+        #     st.warning("The organization you selected does not match the organization in our system. Please try again.")
+        #     org_input = False
     else:
         st.info("Please select the name of the organization you work for.")
 
-    # UI: Site input
+  # --- Site input (optional) ---
     site_input = st.text_input("If your organization has multiple sites, please enter your site name (optional):")
 
+    # --- Continue button ---
+    if st.button("Continue"):
+        if not org_input:
+            st.warning("Please select a valid organization before continuing.")
+        else:
+            # Save inputs
+            st.session_state["org_input"] = org_input.strip()
+            st.session_state["site_input"] = site_input.strip() if site_input else ""
+            st.session_state["admin_input"] = str(st.session_state["is_admin"])
 
+            # Save cookies
+            cookies["org_input"] = st.session_state["org_input"]
+            cookies["site_input"] = st.session_state["site_input"]
+            cookies["admin_input"] = st.session_state["admin_input"]
+            cookies.save()
 
-    # Continue logic
-    if st.button("Continue") and org_input:
-        st.session_state["org_input"] = org_input.strip()
-        st.session_state["site_input"] = site_input.strip()
+            # Write to sheet only if 'Other'
+            if org_search == "Other":
+                def append_clean_row(sheet, values):
+                    col_a = sheet.col_values(1)
+                    next_empty_row = len(col_a) + 1
+                    sheet.update(f"A{next_empty_row}", [values], value_input_option='USER_ENTERED')
 
-        cookies["org_input"] = st.session_state["org_input"]
-        cookies["site_input"] = st.session_state["site_input"]
-        cookies["admin_input"] = str(st.session_state["is_admin"])
-        cookies.save()
-        if org_search == "Other":
-            def append_clean_row(sheet, values):
-                # Get all values in column A
-                col_a = sheet.col_values(1)
-                next_empty_row = len(col_a) + 1  # +1 because rows are 1-indexed
+                append_clean_row(
+                    sheet,
+                    ["Active", "", "INSIGHT", custom_org, st.session_state["site_input"], address]
+                )
+                st.cache_data.clear()
 
-                # Write values starting from column A of next empty row
-                cell_range = f"A{next_empty_row}"
-                sheet.update(cell_range, [values], value_input_option='USER_ENTERED')
-            append_clean_row(
-                sheet,
-                ["Active", "", "INSIGHT", custom_org, site_input, address]
-            )
-            st.cache_data.clear()
-        st.success("Organization information saved!")
-        st.switch_page("pages/home.py")
+            # Trigger redirect
+            st.session_state["go_to_home"] = True
+            st.rerun()
+            st.session_state["go_to_home"] = True
 
-
-    # Try loading from cookies into session state if needed
-    if "org_input" not in st.session_state or not st.session_state["org_input"]:
-        st.session_state["org_input"] = cookies.get("org_input", "")
-        st.session_state["site_input"] = cookies.get("site_input", "")
-        st.session_state["admin_input"] = cookies.get("admin_input", "")

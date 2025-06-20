@@ -34,6 +34,10 @@ if "org_input" not in st.session_state:
         st.session_state["site_input"] = cookie_site or ""
         st.session_state["admin_input"] = cookie_admin or ""
 
+
+is_admin = cookies.get("admin_input") == "True"
+st.session_state["is_admin"] = is_admin
+
 logo = st.logo("./oask_light_mode_tagline.png", size="large", link="https://oregonask.org/")
 
 # Handle logout trigger from query string
@@ -114,9 +118,6 @@ st.html("""
     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
 )
 
-
-is_admin = cookies.get("admin_input") == "True"
-st.session_state["is_admin"] = is_admin
 
 ASSESSMENTS = {
     "Environment, Health, and Safety": {
