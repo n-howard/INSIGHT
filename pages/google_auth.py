@@ -60,16 +60,202 @@ def login():
         #     <a href="{auth_url}" style="text-decoration: none">
         #         <button type="button" class="google-login-button">Log In With Google</button>
         #     </a>
+        # # """)
+
+        # st.html(f"""
+        #     <a href="{auth_url}" style="display: flex; justify-content: center;">
+        #         <img src="https://developers.google.com/static/identity/images/branding_guideline_sample_lt_rd_lg.svg"
+        #             alt="Sign in with Google"
+        #             style="cursor: pointer; width: 30vh" />
+        #     </a>
         # """)
+        # st.html(f"""
+        # <style>
+        # @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
 
+        # html, body, [class*="css"] {{
+        #     font-family: 'Poppins', sans-serif;
+        #     margin: 0;
+        #     padding: 0;
+        # }}
+
+        # .container {{
+        #     display: flex;
+        #     height: 100vh;
+        #     width: 100vw;
+        #     overflow: hidden;
+        # }}
+
+        # .left-panel {{
+        #     width: 50%;
+        #     background: linear-gradient(120deg, #084c61, #4f6d7a, #56a3a6);
+        #     color: white;
+        #     padding: 5vh 5vw;
+        #     display: flex;
+        #     flex-direction: column;
+        #     justify-content: center;
+        #     border-top-left-radius: 20px;
+        #     border-bottom-left-radius: 20px;
+        #     position: relative;
+        #     filter: drop-shadow(2px 2px 2px grey);
+        # }}
+
+        # .left-panel h1 {{
+        #     font-size: 3.5em;
+        #     font-weight: 900;
+        #     margin-bottom: 0.3em;
+        # }}
+
+        # .left-panel p {{
+        #     font-size: 1.2em;
+        # }}
+
+        # .right-panel {{
+        #     width: 50%;
+        #     background: white;
+        #     padding: 5vh 5vw;
+        #     display: flex;
+        #     justify-content: center;
+        #     align-items: center;
+        #     border-top-right-radius: 20px;
+        #     border-bottom-right-radius: 20px;
+        #     position: relative;
+        #     filter: drop-shadow(2px 2px 2px grey);
+        # }}
+
+        # .google-button img {{
+        #     cursor: pointer;
+        #     width: 250px;
+        # }}
+        # </style>
+
+        # <div class="container">
+        #     <div class="left-panel">
+        #         <h1>Welcome to INSIGHT!</h1>
+        #         <p>You can sign in using your Google account.</p>
+        #     </div>
+        #     <div class="right-panel">
+        #         <div class="google-button">
+        #             <a href="{auth_url}">
+        #                 <img src="https://developers.google.com/static/identity/images/branding_guideline_sample_lt_rd_lg.svg"
+        #                     alt="Sign in with Google"/>
+        #             </a>
+        #         </div>
+        #     </div>
+        # </div>
+        # """)
         st.html(f"""
-            <a href="{auth_url}" style="display: flex; justify-content: center;">
-                <img src="https://developers.google.com/static/identity/images/branding_guideline_sample_lt_rd_lg.svg"
-                    alt="Sign in with Google"
-                    style="cursor: pointer; width: 30vh" />
-            </a>
-        """)
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
 
+        html, body, [class*="css"] {{
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+        }}
+
+        .container {{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            padding: 2vh 2vw;
+        }}
+
+        .card {{
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }}
+
+        .left-panel {{
+            width: 50%;
+            background: linear-gradient(120deg, #084c61, #4f6d7a, #56a3a6);
+            color: white;
+            padding: 5vh 5vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }}
+
+        .left-panel h1 {{
+            font-size: 2.5em;
+            font-weight: 900;
+            margin-bottom: 0.3em;
+        }}
+
+        .left-panel p {{
+            font-size: 1.1em;
+        }}
+
+        .right-panel {{
+            width: 50%;
+            background: white;
+            padding: 5vh 5vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }}
+
+        .google-button img {{
+            cursor: pointer;
+            width: 250px;
+            max-width: 80vw;
+        }}
+
+        @media (max-width: 768px) {{
+            .card {{
+                flex-direction: column;
+                border-radius: 20px;
+            }}
+
+            .left-panel, .right-panel {{
+                width: 100%;
+                padding: 6vh 6vw;
+            }}
+
+            .left-panel {{
+                border-top-left-radius: 20px;
+                border-top-right-radius: 20px;
+            }}
+
+            .right-panel {{
+                border-bottom-left-radius: 20px;
+                border-bottom-right-radius: 20px;
+            }}
+
+            .left-panel h1 {{
+                font-size: 2em;
+            }}
+
+            .google-button img {{
+                width: 220px;
+            }}
+        }}
+        </style>
+
+        <div class="container">
+            <div class="card">
+                <div class="left-panel">
+                    <h1>Welcome to INSIGHT!</h1>
+                    <p>You can sign in using your Google account.</p>
+                </div>
+                <div class="right-panel">
+                    <div class="google-button">
+                        <a href="{auth_url}">
+                            <img src="https://developers.google.com/static/identity/images/branding_guideline_sample_lt_rd_lg.svg"
+                                alt="Sign in with Google"/>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """)
 
     except Exception as e:
         st.error("Google OAuth failed:")

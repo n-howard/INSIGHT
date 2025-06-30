@@ -23,15 +23,15 @@ if not cookies.ready():
 
 
 
-st.html("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
-    html, body, [class*="css"]  {
-        font-family: 'Poppins', sans-serif;
-    }
-    </style>"""
-    "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
-)
+# st.html("""
+#     <style>
+#     @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+#     html, body, [class*="css"]  {
+#         font-family: 'Poppins', sans-serif;
+#     }
+#     </style>"""
+#     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
+# )
 logo = st.logo("./oask_light_mode_tagline.png", size="large", link="https://oregonask.org/")
 
 st.set_option("client.showSidebarNavigation", False)
@@ -61,6 +61,16 @@ if "code" in query_params and "google_token" not in st.session_state:
 if "google_token" not in st.session_state:
     login()
     st.stop()
+else:
+    st.html("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+    html, body, [class*="css"]  {
+        font-family: 'Poppins', sans-serif;
+    }
+    </style>"""
+    "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
+    )
 
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
@@ -85,7 +95,7 @@ if not user_in:
     st.warning("We couldn't find your email in the system. Please enter your information to create an account.")
     first_name = st.text_input("Your first name")
     last_name = st.text_input("Your last name")
-    role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, etc.)")
+    role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, Staff, etc.)")
     curr_org_input = st.text_input("Your organization name")
     name_input = first_name + " " + last_name
     if st.button("Create Account") and role_input:
@@ -212,37 +222,37 @@ if user_in:
   # --- Site input (optional) ---
     site_input = st.text_input("If your organization has multiple sites, please enter your site name (optional):")
 
-# --- Continue button ---
-if st.button("Continue"):
-    if not org_input:
-        st.warning("Please select a valid organization before continuing.")
-    else:
-        # Save inputs
-        st.session_state["org_input"] = org_input.strip()
-        st.session_state["site_input"] = site_input.strip() if site_input else ""
-        st.session_state["admin_input"] = str(st.session_state["is_admin"])
+    # --- Continue button ---
+    if st.button("Continue"):
+        if not org_input:
+            st.warning("Please select a valid organization before continuing.")
+        else:
+            # Save inputs
+            st.session_state["org_input"] = org_input.strip()
+            st.session_state["site_input"] = site_input.strip() if site_input else ""
+            st.session_state["admin_input"] = str(st.session_state["is_admin"])
 
-        # Save cookies
-        cookies["org_input"] = st.session_state["org_input"]
-        cookies["site_input"] = st.session_state["site_input"]
-        cookies["admin_input"] = st.session_state["admin_input"]
-        cookies.save()
+            # Save cookies
+            cookies["org_input"] = st.session_state["org_input"]
+            cookies["site_input"] = st.session_state["site_input"]
+            cookies["admin_input"] = st.session_state["admin_input"]
+            cookies.save()
 
-        # Write to sheet only if 'Other'
-        if org_search == "Other":
-            def append_clean_row(sheet, values):
-                col_a = sheet.col_values(1)
-                next_empty_row = len(col_a) + 1
-                sheet.update(f"A{next_empty_row}", [values], value_input_option='USER_ENTERED')
+            # Write to sheet only if 'Other'
+            if org_search == "Other":
+                def append_clean_row(sheet, values):
+                    col_a = sheet.col_values(1)
+                    next_empty_row = len(col_a) + 1
+                    sheet.update(f"A{next_empty_row}", [values], value_input_option='USER_ENTERED')
 
-            append_clean_row(
-                sheet,
-                ["Active", "", "INSIGHT", custom_org, st.session_state["site_input"], address]
-            )
-            st.cache_data.clear()
+                append_clean_row(
+                    sheet,
+                    ["Active", "", "INSIGHT", custom_org, st.session_state["site_input"], address]
+                )
+                st.cache_data.clear()
 
-        # Immediately redirect to home.py
-        st.switch_page("pages/home.py")
-        st.experimental_rerun()
+            # Immediately redirect to home.py
+            st.switch_page("pages/home.py")
+            st.experimental_rerun()
 
 
