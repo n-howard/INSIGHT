@@ -1,7 +1,4 @@
 import streamlit as st 
-if st.session_state.get("go_to_home"):
-    st.session_state.pop("go_to_home")
-    st.switch_page("pages/home.py")
 
 st.set_page_config(page_title="INSIGHT", layout="wide", page_icon="./oask_short_logo.png", initial_sidebar_state="collapsed")
 import pandas as pd
@@ -145,25 +142,24 @@ if user_in:
         st.success("You have admin-level access.")
     else:
         st.info("You have standard access.")
+    user_org = user_match.get("Organization", "").strip().lower()
+    if user_match and user_org!="" and not st.session_state.get("org_input"):
 
-    # if st.button("Log In Automatically", use_container_width=True):
-    #     if user_match and not st.session_state.get("org_input"):
+            # Automatically log in
+            user_org = user_match.get("Organization", "").strip()
+            site_input = ""
 
-    #         # Automatically log in
-    #         user_org = user_match.get("Organization", "").strip()
-    #         site_input = ""
+            st.session_state["org_input"] = user_org
+            st.session_state["site_input"] = site_input
 
-    #         st.session_state["org_input"] = user_org
-    #         st.session_state["site_input"] = site_input
+            cookies["org_input"] = user_org
+            cookies["site_input"] = site_input
 
-    #         cookies["org_input"] = user_org
-    #         cookies["site_input"] = site_input
+            cookies.save()
 
-    #         cookies.save()
+            st.success(f"Signed in automatically to: {user_org}")
 
-    #         st.success(f"Signed in automatically to: {user_org}")
-
-    #         st.switch_page("pages/home.py")
+            st.switch_page("pages/home.py")
 
     @st.cache_data(ttl=3600, show_spinner=False)
     def get_org_names():
@@ -206,7 +202,6 @@ if user_in:
         user_org = user_match.get("Organization", "").strip().lower()
         selected_org = org_search.strip().lower()
         normalized_orgs = [org.strip().lower() for org in org_names]
-
         org_input = org_search
         # else:
         #     st.warning("The organization you selected does not match the organization in our system. Please try again.")
@@ -217,37 +212,37 @@ if user_in:
   # --- Site input (optional) ---
     site_input = st.text_input("If your organization has multiple sites, please enter your site name (optional):")
 
-    # --- Continue button ---
-    if st.button("Continue"):
-        if not org_input:
-            st.warning("Please select a valid organization before continuing.")
-        else:
-            # Save inputs
-            st.session_state["org_input"] = org_input.strip()
-            st.session_state["site_input"] = site_input.strip() if site_input else ""
-            st.session_state["admin_input"] = str(st.session_state["is_admin"])
+# --- Continue button ---
+if st.button("Continue"):
+    if not org_input:
+        st.warning("Please select a valid organization before continuing.")
+    else:
+        # Save inputs
+        st.session_state["org_input"] = org_input.strip()
+        st.session_state["site_input"] = site_input.strip() if site_input else ""
+        st.session_state["admin_input"] = str(st.session_state["is_admin"])
 
-            # Save cookies
-            cookies["org_input"] = st.session_state["org_input"]
-            cookies["site_input"] = st.session_state["site_input"]
-            cookies["admin_input"] = st.session_state["admin_input"]
-            cookies.save()
+        # Save cookies
+        cookies["org_input"] = st.session_state["org_input"]
+        cookies["site_input"] = st.session_state["site_input"]
+        cookies["admin_input"] = st.session_state["admin_input"]
+        cookies.save()
 
-            # Write to sheet only if 'Other'
-            if org_search == "Other":
-                def append_clean_row(sheet, values):
-                    col_a = sheet.col_values(1)
-                    next_empty_row = len(col_a) + 1
-                    sheet.update(f"A{next_empty_row}", [values], value_input_option='USER_ENTERED')
+        # Write to sheet only if 'Other'
+        if org_search == "Other":
+            def append_clean_row(sheet, values):
+                col_a = sheet.col_values(1)
+                next_empty_row = len(col_a) + 1
+                sheet.update(f"A{next_empty_row}", [values], value_input_option='USER_ENTERED')
 
-                append_clean_row(
-                    sheet,
-                    ["Active", "", "INSIGHT", custom_org, st.session_state["site_input"], address]
-                )
-                st.cache_data.clear()
+            append_clean_row(
+                sheet,
+                ["Active", "", "INSIGHT", custom_org, st.session_state["site_input"], address]
+            )
+            st.cache_data.clear()
 
-            # Trigger redirect
-            st.session_state["go_to_home"] = True
-            st.rerun()
-            st.session_state["go_to_home"] = True
+        # Immediately redirect to home.py
+        st.switch_page("pages/home.py")
+        st.experimental_rerun()
+
 
