@@ -28,26 +28,34 @@ if "org_input" not in st.session_state:
     cookie_org = cookies.get("org_input")
     cookie_site = cookies.get("site_input")
     cookie_admin = cookies.get("admin_input")
+    cookie_access = cookies.get("access_level")
 
     if cookie_org:
         st.session_state["org_input"] = cookie_org
         st.session_state["site_input"] = cookie_site or ""
         st.session_state["admin_input"] = cookie_admin or ""
+        st.session_state["access_level"] = cookie_access or ""
 
 
-is_admin = cookies.get("admin_input") == "True"
-st.session_state["is_admin"] = is_admin
+if "is_admin" not in st.session_state:
+    st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
+
+if "access" not in st.session_state:
+    st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
+
+
 
 logo = st.logo("./oask_light_mode_tagline.png", size="large", link="https://oregonask.org/")
 
 # Handle logout trigger from query string
 if st.query_params.get("logout") == "1":
-    for key in ["org_input", "site_input", "admin_input", "google_token", "user_info"]:
+    for key in ["org_input", "site_input", "admin_input", "google_token", "user_info", "access_level"]:
         st.session_state.pop(key, None)
 
     cookies["org_input"] = ""
     cookies["site_input"] = ""
     cookies["admin_input"] = ""
+    cookies["access_level"] = ""
     cookies.save()
 
 
@@ -263,21 +271,60 @@ elif (mode == "View Results") and assessment != None:
         # Create DataFrame
         df = pd.DataFrame(raw_data[1:], columns=unique_headers)
 
-        if "Program Name" not in df.columns:
-            st.error("Column 'Program Name' not found in the data.")
-            st.stop()
+        if access_level:
+            org_df = df.copy()
 
-        # Clean both Program Name column and org_input for flexible comparison
-        df["Program Name_clean"] = df["Program Name"].str.strip().str.lower()
-        org_clean = org_input.strip().lower()
+            if "Program Name" in org_df.columns:
+                # Try structured extraction first
+                def extract_orgs(text):
+                    if not text:
+                        return []
+                    lines = text.split('\n')
+                    org_names = []
+                    for line in lines:
+                        match = re.match(r"\s*-\s*(.*?):", line)
+                        if match:
+                            org_names.append(match.group(1).strip())
+                    return org_names
 
-        # Filter the DataFrame to just this org
-        df = df[df["Program Name_clean"] == org_clean]
+                org_df["Extracted Orgs"] = org_df["Program Name"].fillna("").apply(extract_orgs)
 
-        org_df = df.copy()
+                # Fallback: if all lists are empty, just use raw org names
+                if org_df["Extracted Orgs"].apply(len).sum() == 0:
+                    if org_df["Extracted Orgs"].apply(len).sum() == 0:
+                        org_df["Extracted Orgs"] = org_df["Program Name"].apply(lambda x: [x.strip()] if x else [])
 
-        # Drop the temporary clean column
-        df = df.drop(columns=["Program Name_clean"])
+
+                all_orgs = sorted(set(org for sublist in org_df["Extracted Orgs"] for org in sublist if org))
+
+                if all_orgs:
+                    selected_orgs = st.multiselect("Filter by Program Name (optional):", options=all_orgs)
+                else:
+                    selected_orgs = []
+            else:
+                st.warning("No 'Program Name' column found for filtering.")
+                selected_orgs = []
+
+            def matches_selected_orgs(org_list):
+                return any(org in org_list for org in selected_orgs)
+        
+        else:
+
+            if "Program Name" not in df.columns:
+                st.error("Column 'Program Name' not found in the data.")
+                st.stop()
+
+            # Clean both Program Name column and org_input for flexible comparison
+            df["Program Name_clean"] = df["Program Name"].str.strip().str.lower()
+            org_clean = org_input.strip().lower()
+
+            # Filter the DataFrame to just this org
+            df = df[df["Program Name_clean"] == org_clean]
+
+            org_df = df.copy()
+
+            # Drop the temporary clean column
+            df = df.drop(columns=["Program Name_clean"])
 
        # --- MULTI-FILTER CONTROLS ---
         # Normalize Site Name
@@ -354,6 +401,9 @@ elif (mode == "View Results") and assessment != None:
 
         if selected_sites:
             chart_df = chart_df[chart_df["Extracted Sites"].apply(matches_selected_sites)]
+        if access_level:
+            if selected_orgs:
+                chart_df = chart_df[chart_df["Extracted Orgs"].apply(matches_selected_orgs)]
 
         # Convert to numeric
         converted_df = chart_df.copy()
@@ -698,6 +748,49 @@ elif (mode == "View Results") and assessment != None:
 
             # Step 1: Group by Contact Name
             staff_summaries = ""
+
+            program_summaries = ""
+            program_avgs = [] 
+
+            if access_level and "Extracted Orgs" in org_df.columns:
+                programs_to_show = selected_orgs if selected_orgs else list(
+                    sorted(set(org for sublist in org_df["Extracted Orgs"] for org in sublist if org))
+                )
+
+                for program in programs_to_show:
+                    program_df = org_df[org_df["Extracted Orgs"].apply(lambda lst: program in lst)]
+                    if program_df.empty:
+                        continue
+
+                    prog_text = ""
+                    for column in program_df.columns:
+                        if "Overall Score" in column or "Standard" in column or "Indicator" in column:
+                            series = program_df[column].replace('%', '', regex=True)
+                            series = pd.to_numeric(series, errors="coerce")
+                            avg = series.mean()
+                            if pd.notna(avg):
+                                if "Overall Score" in column:
+                                    program_avgs.append(avg)  # ← ADD THIS
+                                    prog_text += f"<div class='p1' style='font-weight: 700;'>{program}'s Average {column}: {avg:.2f}</div><br>"
+                                elif "Standard" in column:
+                                    if "percent" in column.lower() or "%" in column:
+                                        prog_text += f"<div class='p2' style='font-weight: 600'>{program}'s Average {column}: {avg:.0f}%</div><br>"
+                                    elif 0 < avg < 1:
+                                        prog_text += f"<div class='p2' style='font-weight: 600'>{program}'s Average {column}: {avg * 100:.0f}%</div><br>"
+                                    else:
+                                        prog_text += f"<div class='p2' style='font-weight: 600'>{program}'s Average {column}: {avg:.2f}</div><br>"
+                                elif "Indicator" in column:
+                                    prog_text += f"<div class='p3'>{program}'s Average {column}: {avg:.2f}</div><br>"
+
+                    program_summaries += f"<div>{prog_text}</div>"
+
+
+                if program_avgs:
+                    org_overall_avg = sum(program_avgs) / len(program_avgs)
+                    org_score = f"<h1>{org_overall_avg: .2f}</h1>"
+                else:
+                    org_score = f"<h1>{overall_av:.2f}</h1>"
+
             if "Contact Name" in org_df.columns:
                 # Use selected staff if any; otherwise, use all unique contacts
                 contacts_to_show = selected_contacts if selected_contacts else org_df["Contact Name"].dropna().unique()
@@ -787,8 +880,47 @@ elif (mode == "View Results") and assessment != None:
                     </div>
                 </div>
             """ if show_site_column else ""
+            # Only show this if access_level is True
+            if access_level:
+                # Replace organization column with per-program summary
+                org_column_html = f"""
+                    <!-- Program Column -->
+                    <div class="org-group">
+                        <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                            display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
+                            padding: 15px; box-sizing: border-box;">
+                            <h3>Average Scores for Program(s)</h3>
+                            <div style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%; text-align: center;">
+                                    {org_score}
+                            </div>
+                        </div>
 
-            if is_admin: # add indentation after this line, once Salesforce file is working
+                        <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
+                            {program_summaries}
+                        </div>
+                    </div>
+                """
+            else:
+                # Show standard org-wide summary if no access level
+                org_column_html = f"""
+                    <!-- Organization Column -->
+                    <div class="org-group">
+                        <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                            display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
+                            padding: 15px; box-sizing: border-box;">
+                            <h3>Organization Average Overall Score</h3>
+                            <h1>{overall_av:.2f}</h1>
+                        </div>
+
+                        <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
+                            {text_var}
+                        </div>
+                    </div>
+                """
+
+            if is_admin: 
             # Render full layout
                 st.html(f"""
                     <style>
@@ -860,9 +992,9 @@ elif (mode == "View Results") and assessment != None:
                     </style>
 
                     <div class="responsive-container">
-
+                        {org_column_html}
                         <!-- Organization Column -->
-                        <div class="org-group">
+                        <!--<div class="org-group">
                             <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
                                 display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
                                 padding: 15px; box-sizing: border-box;">
@@ -874,7 +1006,9 @@ elif (mode == "View Results") and assessment != None:
                                     filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
                                 {text_var}
                             </div>
-                        </div>
+                        </div> -->
+
+                        
 
                         <!-- Staff Column -->
                         <div class="staff-group">
@@ -891,6 +1025,7 @@ elif (mode == "View Results") and assessment != None:
                                     filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
                                 {staff_summaries}
                             </div>
+                            
                         </div>
 
                         {site_column_html}

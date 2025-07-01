@@ -19,6 +19,10 @@ cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SEC
 if not cookies.ready():
     st.stop()
 
+if "page_redirect" in st.session_state:
+    target = st.session_state["page_redirect"]
+    del st.session_state["page_redirect"]
+    st.switch_page(target)
 
 
 
@@ -106,7 +110,9 @@ if not user_in:
 
         admin_approved = "True" if creating_new_org else "False"
 
-        user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email, "", "", admin_approved])
+        oregonask_access = "False"
+
+        user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email, "", "", admin_approved, "FALSE"])
 
         st.session_state["is_admin"] = admin_approved == "True"
         cookies["admin_input"] = admin_approved
@@ -145,6 +151,9 @@ if user_in:
     admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
     st.session_state["is_admin"] = admin_approved
     cookies["admin_input"] = str(admin_approved)
+    oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
+    st.session_state["access"] = oregonask_access
+    cookies["access_level"] = str(oregonask_access)
 
 
 
@@ -222,7 +231,42 @@ if user_in:
   # --- Site input (optional) ---
     site_input = st.text_input("If your organization has multiple sites, please enter your site name (optional):")
 
-    # --- Continue button ---
+    # # --- Continue button ---
+    # if st.button("Continue"):
+    #     if not org_input:
+    #         st.warning("Please select a valid organization before continuing.")
+    #     else:
+    #         # Save inputs
+    #         st.session_state["org_input"] = org_input.strip()
+    #         st.session_state["site_input"] = site_input.strip() if site_input else ""
+    #         st.session_state["admin_input"] = "false"
+    #         st.session_state["access_level"] = str(st.session_state["access"])
+
+    #         # Save cookies
+    #         cookies["org_input"] = st.session_state["org_input"]
+    #         cookies["site_input"] = st.session_state["site_input"]
+    #         cookies["admin_input"] = st.session_state["admin_input"]
+    #         cookies["access_level"] = st.session_state["access_level"]
+    #         cookies.save()
+
+
+    #         # Write to sheet only if 'Other'
+    #         if org_search == "Other":
+    #             def append_clean_row(sheet, values):
+    #                 col_a = sheet.col_values(1)
+    #                 next_empty_row = len(col_a) + 1
+    #                 sheet.update(f"A{next_empty_row}", [values], value_input_option='USER_ENTERED')
+
+    #             append_clean_row(
+    #                 sheet,
+    #                 ["Active", "", "INSIGHT", custom_org, st.session_state["site_input"], address]
+    #             )
+    #             st.cache_data.clear()
+
+    #         # Immediately redirect to home.py
+    #         st.switch_page("pages/home.py")
+    #         st.experimental_rerun()
+    
     if st.button("Continue"):
         if not org_input:
             st.warning("Please select a valid organization before continuing.")
@@ -230,15 +274,17 @@ if user_in:
             # Save inputs
             st.session_state["org_input"] = org_input.strip()
             st.session_state["site_input"] = site_input.strip() if site_input else ""
-            st.session_state["admin_input"] = str(st.session_state["is_admin"])
+            st.session_state["admin_input"] = "false"
+            st.session_state["access_level"] = str(st.session_state["access"])
 
             # Save cookies
             cookies["org_input"] = st.session_state["org_input"]
             cookies["site_input"] = st.session_state["site_input"]
             cookies["admin_input"] = st.session_state["admin_input"]
+            cookies["access_level"] = st.session_state["access_level"]
             cookies.save()
 
-            # Write to sheet only if 'Other'
+            # Only write to sheet if 'Other'
             if org_search == "Other":
                 def append_clean_row(sheet, values):
                     col_a = sheet.col_values(1)
@@ -251,8 +297,8 @@ if user_in:
                 )
                 st.cache_data.clear()
 
-            # Immediately redirect to home.py
-            st.switch_page("pages/home.py")
-            st.experimental_rerun()
+            st.session_state["page_redirect"] = "pages/home.py"
+            st.rerun() # Trigger rerun so the top of script handles the redirect
+
 
 
