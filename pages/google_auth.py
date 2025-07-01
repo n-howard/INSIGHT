@@ -34,7 +34,7 @@ def login():
         )
 
         st.session_state.oauth_state = state
-
+        st.write(auth_url)
 
         
         st.html(f"""
