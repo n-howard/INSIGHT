@@ -1,0 +1,16 @@
+gspread
+oauth2client
+random
+tkinter
+matplotlib
+streamlit
+gspread
+oauth2client
+pandas
+numpy
+plotly
+streamlit_option_menu
+streamlit_navigation_bar
+streamlit_cookies_manager
+os
+re
