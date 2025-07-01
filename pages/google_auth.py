@@ -32,7 +32,6 @@ def login():
         )
         st.session_state.oauth_state = state
 
-        print("🔗 Login URL:", auth_url)
 
         
         st.html(f"""
