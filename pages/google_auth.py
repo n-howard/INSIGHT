@@ -28,9 +28,9 @@ def login():
             redirect_uri=REDIRECT_URI
         )
         auth_url, state = oauth.authorization_url(
-            AUTHORIZATION_BASE_URL, 
-            access_type="offline", 
-            prompt="consent" 
+            AUTHORIZATION_BASE_URL#, 
+            # access_type="offline", 
+            # prompt="consent" 
         )
 
         st.session_state.oauth_state = state
