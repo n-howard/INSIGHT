@@ -33,8 +33,6 @@ def login():
             prompt="consent" 
         )
 
-        st.code(auth_url, language="text")
-
         st.session_state.oauth_state = state
 
 
