@@ -8,10 +8,16 @@ import matplotlib.pyplot as plt
 from urllib.parse import urlparse, parse_qs, urlencode
 import streamlit.components.v1 as components
 from streamlit_option_menu import option_menu
-from pages.google_auth import login, fetch_token, get_user_info
+# from pages.google_auth import login, fetch_token, get_user_info
 from pages.menu import menu_with_redirect
 from streamlit_cookies_manager import EncryptedCookieManager
 
+try:
+    from pages.google_auth import login, fetch_token, get_user_info
+    st.success("google_auth.py imported successfully")
+except Exception as e:
+    st.error("Failed to import google_auth")
+    st.exception(e)
 
 
 # Initialize cookies
