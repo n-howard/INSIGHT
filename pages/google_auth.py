@@ -19,6 +19,7 @@ USER_INFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
 
 
 def login():
+    st.write("Login")
     try:
         oauth = OAuth2Session(
             CLIENT_ID,
