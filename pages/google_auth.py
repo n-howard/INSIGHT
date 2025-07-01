@@ -5,8 +5,8 @@ from requests_oauthlib import OAuth2Session
 from requests import get
 
 # --- OAuth2 Configuration ---
-CLIENT_ID = st.secrets.googleClientID
-CLIENT_SECRET = st.secrets.googleClientSecret
+CLIENT_ID = st.secrets["googleClientID"]
+CLIENT_SECRET = st.secrets["googleClientSecret"]
 REDIRECT_URI = "https://getinsights.streamlit.app/auth/callback" 
 SCOPE = [
     "https://www.googleapis.com/auth/userinfo.email",

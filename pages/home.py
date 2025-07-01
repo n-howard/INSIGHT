@@ -23,6 +23,14 @@ cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SEC
 if not cookies.ready():
     st.stop()
 
+st.write("Trying to access st.secrets...")
+try:
+    st.write("Client ID: ", st.secrets.googleClientID)
+    st.write("Client Secret: ", st.secrets.googleClientSecret)
+except Exception as e:
+    st.error(f"Could not access secrets: {e}")
+    st.stop()
+
 # Restore from cookies if needed
 if "org_input" not in st.session_state:
     cookie_org = cookies.get("org_input")
