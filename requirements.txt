@@ -9,4 +9,3 @@ streamlit_navigation_bar
 streamlit_cookies_manager
 matplotlib
 requests_oauthlib
-urllib
