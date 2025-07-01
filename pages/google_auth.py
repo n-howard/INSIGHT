@@ -145,7 +145,8 @@ def login():
         # </div>
         # """)
 
-        st.write(auth_url)
+        st.write("Login URL:", auth_url)
+
         
         st.html(f"""
         <style>
