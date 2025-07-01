@@ -7,7 +7,7 @@ from requests import get
 # --- OAuth2 Configuration ---
 CLIENT_ID = st.secrets.googleClientID
 CLIENT_SECRET = st.secrets.googleClientSecret
-REDIRECT_URI = "http://localhost:8501"  # Adjust this if you rename or relocate your main app
+REDIRECT_URI = "https://getinsights.streamlit.app/" 
 SCOPE = [
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
