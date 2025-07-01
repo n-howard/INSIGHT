@@ -30,6 +30,9 @@ def login():
             access_type="offline", 
             prompt="consent" 
         )
+
+        st.code(auth_url, language="text")
+
         st.session_state.oauth_state = state
 
 
