@@ -7,7 +7,7 @@ from requests import get
 # --- OAuth2 Configuration ---
 CLIENT_ID = st.secrets.googleClientID
 CLIENT_SECRET = st.secrets.googleClientSecret
-REDIRECT_URI = "https://getinsights.streamlit.app/" 
+REDIRECT_URI = "https://getinsights.streamlit.app/auth/callback/" 
 SCOPE = [
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
@@ -144,6 +144,8 @@ def login():
         #     </div>
         # </div>
         # """)
+
+
         st.html(f"""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');

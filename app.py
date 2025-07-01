@@ -51,7 +51,8 @@ ASSESSMENTS = {
 }
 
 query_params = st.query_params
-if "code" in query_params and "google_token" not in st.session_state:
+query_params = st.query_params
+if st.query_params.get("code") and "google_token" not in st.session_state:
     code = query_params["code"]
     token = fetch_token(code)
     if token:
