@@ -19,6 +19,10 @@ USER_INFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
 
 
 def login():
+
+    st.warning("✅login() was called")  # <-- add this
+
+
     try:
         oauth = OAuth2Session(
             CLIENT_ID,
