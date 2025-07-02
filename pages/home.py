@@ -23,13 +23,6 @@ cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SEC
 if not cookies.ready():
     st.stop()
 
-st.write("Trying to access st.secrets...")
-try:
-    st.write("Client ID: ", st.secrets.googleClientID)
-    st.write("Client Secret: ", st.secrets.googleClientSecret)
-except Exception as e:
-    st.error(f"Could not access secrets: {e}")
-    st.stop()
 
 # Restore from cookies if needed
 if "org_input" not in st.session_state:
@@ -248,7 +241,8 @@ elif (mode == "View Results") and assessment != None:
     try:
         # Authorize and load the sheet
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+        service_account_info = json.loads(json.dumps(st.secrets["gcp_service_account"]))
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
         client = gspread.authorize(creds)
         sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
 
