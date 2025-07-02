@@ -78,7 +78,9 @@ else:
     )
 
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+# Convert secrets section to JSON string and parse it
+service_account_info = json.loads(json.dumps(st.secrets["gcp_service_account"]))
+creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
 client = gspread.authorize(creds)
 
 # After successful Google login
