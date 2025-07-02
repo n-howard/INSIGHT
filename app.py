@@ -65,7 +65,6 @@ if st.query_params.get("code") and "google_token" not in st.session_state:
 # --- Step 1: Ask to sign in ---
 if "google_token" not in st.session_state:
     login()
-    st.write(logged in)
     st.stop()
 else:
     st.html("""
