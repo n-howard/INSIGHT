@@ -34,7 +34,7 @@ def login():
         )
 
         st.session_state.oauth_state = state
-
+        st.html(f"[Click here to log in with Google]({auth_url})")
         
         st.html(f"""
         <style>
