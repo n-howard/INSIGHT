@@ -43,7 +43,7 @@ def login():
         prompt="login"
     )
 
-    # Save to cookies instead of session_state
+
     cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
     if not cookies.ready():
         st.stop()
