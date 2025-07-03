@@ -42,98 +42,98 @@ def login():
     st.session_state["oauth_state"] = state
 
     # Render login button with HTML + CSS
-    st.html(f"""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
+    st.markdown(f"""
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
 
-    html, body, [class*="css"] {{
-        font-family: 'Poppins', sans-serif;
-    }}
-
-    .container {{
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 80vh;
-    }}
-
-    .card {{
-        display: flex;
-        flex-direction: row;
-        width: 100%;
-        max-width: 900px;
-        background: white;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }}
-
-    .left-panel {{
-        width: 50%;
-        background: linear-gradient(120deg, #084c61, #4f6d7a, #56a3a6);
-        color: white;
-        padding: 5vh 5vw;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }}
-
-    .left-panel h1 {{
-        font-size: 2.5em;
-        font-weight: 900;
-        margin-bottom: 0.3em;
-    }}
-
-    .left-panel p {{
-        font-size: 1.1em;
-    }}
-
-    .right-panel {{
-        width: 50%;
-        background: white;
-        padding: 5vh 5vw;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }}
-
-    .auth0-button img {{
-        cursor: pointer;
-        width: 250px;
-        max-width: 80vw;
-    }}
-
-    @media (max-width: 768px) {{
-        .card {{
-            flex-direction: column;
+        html, body, [class*="css"] {{
+            font-family: 'Poppins', sans-serif;
         }}
 
-        .left-panel, .right-panel {{
+        .container {{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+        }}
+
+        .card {{
+            display: flex;
+            flex-direction: row;
             width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }}
+
+        .left-panel {{
+            width: 50%;
+            background: linear-gradient(120deg, #084c61, #4f6d7a, #56a3a6);
+            color: white;
+            padding: 5vh 5vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }}
+
+        .left-panel h1 {{
+            font-size: 2.5em;
+            font-weight: 900;
+            margin-bottom: 0.3em;
+        }}
+
+        .left-panel p {{
+            font-size: 1.1em;
+        }}
+
+        .right-panel {{
+            width: 50%;
+            background: white;
+            padding: 5vh 5vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }}
 
         .auth0-button img {{
-            width: 220px;
+            cursor: pointer;
+            width: 250px;
+            max-width: 80vw;
         }}
-    }}
-    </style>
 
-    <div class="container">
-        <div class="card">
-            <div class="left-panel">
-                <h1>Welcome to INSIGHT!</h1>
-                <p>Sign in with your Auth0 account to access your dashboard.</p>
-            </div>
-            <div class="right-panel">
-                <div class="auth0-button">
-                    <a href="{authorization_url}">
-                        <img src="auth0_login_button.png" alt="Login with Auth0">
-                    </a>
+        @media (max-width: 768px) {{
+            .card {{
+                flex-direction: column;
+            }}
+
+            .left-panel, .right-panel {{
+                width: 100%;
+            }}
+
+            .auth0-button img {{
+                width: 220px;
+            }}
+        }}
+        </style>
+
+        <div class="container">
+            <div class="card">
+                <div class="left-panel">
+                    <h1>Welcome to INSIGHT!</h1>
+                    <p>Sign in with your Auth0 account to access your dashboard.</p>
+                </div>
+                <div class="right-panel">
+                    <div class="auth0-button">
+                        <a href="{authorization_url}">
+                            <img src="auth0_login_button.png" alt="Login with Auth0">
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    """)
+    """, unsafe_allow_html=True)
 
 
 
