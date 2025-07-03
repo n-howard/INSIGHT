@@ -5,6 +5,7 @@ from requests_oauthlib import OAuth2Session
 from requests import get
 import json
 import base64
+from streamlit_cookies_manager import EncryptedCookieManager
 
 # # --- OAuth2 Configuration ---
 # CLIENT_ID = st.secrets["googleClientID"]
