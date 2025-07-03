@@ -141,9 +141,9 @@ def login():
                 </div>
                 <div class="right-panel">
                     <a href="{authorization_url}">
-#                         <img src="https://i.imgur.com/HpRK4Jv.png"
-#                           alt="Sign in with Auth0"/>
-#                    </a>
+                         <img src="https://i.imgur.com/HpRK4Jv.png"
+                           alt="Sign in with Auth0"/>
+                    </a>
                 </div>
             </div>
         </div>
