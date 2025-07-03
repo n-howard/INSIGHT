@@ -25,7 +25,12 @@ client_secret = st.secrets["auth"]["auth0"]["client_secret"]
 auth0_domain = st.secrets["auth"]["auth0"]["domain"]
 server_metadata_url = st.secrets["auth"]["auth0"]["server_metadata_url"]
 redirect_uri = st.secrets["redirect_uri"]
+# Derived Auth0 endpoints
+token_url = f"https://{auth0_domain}/oauth/token"
+userinfo_url = f"https://{auth0_domain}/userinfo"
+
 scope = ["openid", "profile", "email"]
+
 
 def login():
     # Create Auth0 session
@@ -127,7 +132,7 @@ def login():
                 <div class="right-panel">
                     <div class="auth0-button">
                         <a href="{authorization_url}">
-                            <img src="auth0_login_button.png" alt="Login with Auth0">
+                            <img src="/.static/auth0_login_button.png" alt="Login with Auth0">
                         </a>
                     </div>
                 </div>
