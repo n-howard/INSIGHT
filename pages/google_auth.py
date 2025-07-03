@@ -33,11 +33,15 @@ userinfo_url = f"https://{auth0_domain}/userinfo"
 
 scope = ["openid", "profile", "email"]
 
-cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
-if not cookies.ready():
-    st.stop()
 
 def login():
+    cookies = st.session_state.get("cookies")
+    if cookies is None:
+        st.error("Cookies not initialized.")
+        st.stop()
+
+    # Proceed to use `cookies` safely
+
     auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, scope=scope)
 
     authorization_url, state = auth0.authorization_url(
