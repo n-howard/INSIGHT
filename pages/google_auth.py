@@ -33,6 +33,9 @@ userinfo_url = f"https://{auth0_domain}/userinfo"
 
 scope = ["openid", "profile", "email"]
 
+cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
+if not cookies.ready():
+    st.stop()
 
 def login():
     auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, scope=scope)
@@ -44,9 +47,6 @@ def login():
     )
 
 
-    cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
-    if not cookies.ready():
-        st.stop()
 
     cookies["oauth_state"] = state
     cookies.save()
@@ -150,9 +150,6 @@ def login():
 
 def fetch_token(code):
     try:
-        cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
-        if not cookies.ready():
-            st.stop()
 
         oauth_state = cookies.get("oauth_state")
         if not oauth_state:
