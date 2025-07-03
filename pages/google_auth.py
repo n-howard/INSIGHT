@@ -4,18 +4,18 @@ from urllib.parse import urlencode
 from requests_oauthlib import OAuth2Session
 from requests import get
 
-# --- OAuth2 Configuration ---
-CLIENT_ID = st.secrets["googleClientID"]
-CLIENT_SECRET = st.secrets["googleClientSecret"]
-REDIRECT_URI = "https://getinsights.streamlit.app/auth/callback" 
-SCOPE = [
-    "https://www.googleapis.com/auth/userinfo.email",
-    "https://www.googleapis.com/auth/userinfo.profile",
-    "openid"
-]
-AUTHORIZATION_BASE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-TOKEN_URL = "https://oauth2.googleapis.com/token"
-USER_INFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
+# # --- OAuth2 Configuration ---
+# CLIENT_ID = st.secrets["googleClientID"]
+# CLIENT_SECRET = st.secrets["googleClientSecret"]
+# REDIRECT_URI = "https://getinsights.streamlit.app/auth/callback" 
+# SCOPE = [
+#     "https://www.googleapis.com/auth/userinfo.email",
+#     "https://www.googleapis.com/auth/userinfo.profile",
+#     "openid"
+# ]
+# AUTHORIZATION_BASE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+# TOKEN_URL = "https://oauth2.googleapis.com/token"
+# USER_INFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
 
 
 
