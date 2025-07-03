@@ -33,7 +33,6 @@ scope = ["openid", "profile", "email"]
 
 
 def login():
-    # Create Auth0 session
     auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, scope=scope)
 
     authorization_url, state = auth0.authorization_url(
@@ -42,11 +41,13 @@ def login():
         prompt="login"
     )
 
-    # ✅ Append state to redirect_uri to preserve across redirect
-    authorization_url += f"&custom_state={state}"
+    # Save to cookies instead of session_state
+    cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
+    if not cookies.ready():
+        st.stop()
 
-    # Store state in session for later token validation
-    st.session_state["oauth_state"] = state
+    cookies["oauth_state"] = state
+    cookies.save()
 
     with open("auth0_login_button.png", "rb") as f:
         img_b64 = base64.b64encode(f.read()).decode()
@@ -148,19 +149,16 @@ def login():
 
 def fetch_token(code):
     try:
-        oauth_state = st.session_state.get("oauth_state")
+        cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
+        if not cookies.ready():
+            st.stop()
+
+        oauth_state = cookies.get("oauth_state")
         if not oauth_state:
-            st.warning("Missing state. Please try logging in again.")
+            st.warning("OAuth state is missing. Please try logging in again.")
             return None
 
         auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, state=oauth_state)
-
-
-        auth0 = OAuth2Session(
-            client_id,
-            redirect_uri=redirect_uri,
-            state=oauth_state
-        )
         token = auth0.fetch_token(
             token_url,
             client_secret=client_secret,
@@ -171,6 +169,7 @@ def fetch_token(code):
         st.error("Failed to fetch token from Auth0.")
         st.exception(e)
         return None
+
 
 
 def get_user_info(token):
