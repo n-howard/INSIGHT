@@ -81,12 +81,18 @@ code = query_params.get("code")
 if "auth0_token" not in st.session_state:
     if code:
         token = fetch_token(code)
-        st.session_state["auth0_token"] = token
-        st.session_state["user_info"] = get_user_info(token)
-        st.experimental_rerun()
+        if token:
+            st.session_state["auth0_token"] = token
+            st.session_state["user_info"] = get_user_info(token)
+            st.experimental_rerun()
+        else:
+            st.error("Login failed. Please try again.")
+            login()
+            st.stop()
     else:
         login()
         st.stop()
+
 
 # else:
 #     st.html("""
