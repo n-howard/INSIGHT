@@ -16,9 +16,13 @@ import json
 
 
 # Initialize cookies
-cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
-if not cookies.ready():
-    st.stop()
+if "cookies" not in st.session_state:
+    cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
+    if not cookies.ready():
+        st.stop()
+    st.session_state["cookies"] = cookies
+else:
+    cookies = st.session_state["cookies"]
 
 if "page_redirect" in st.session_state:
     target = st.session_state["page_redirect"]
