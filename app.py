@@ -11,6 +11,7 @@ from streamlit_option_menu import option_menu
 from pages.google_auth import login, fetch_token, get_user_info
 from pages.menu import menu_with_redirect
 from streamlit_cookies_manager import EncryptedCookieManager
+import json
 
 
 
@@ -74,9 +75,19 @@ query_params = st.query_params
 # if "google_token" not in st.session_state:
 #     login()
 #     st.stop()
-if not st.experimental_user.is_logged_in:
-    if st.button("Log In"):
-        st.login("auth0")
+query_params = st.query_params
+code = query_params.get("code")
+
+if "auth0_token" not in st.session_state:
+    if code:
+        token = fetch_token(code)
+        st.session_state["auth0_token"] = token
+        st.session_state["user_info"] = get_user_info(token)
+        st.experimental_rerun()
+    else:
+        login()
+        st.stop()
+
 # else:
 #     st.html("""
 #     <style>
@@ -88,7 +99,10 @@ if not st.experimental_user.is_logged_in:
 #     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
 #     )
 
-st.session_state.user_info = st.json(st.experimental_user)
+user_info = st.session_state.get("user_info", {})
+user_email = user_info.get("email", "").strip().lower()
+user_name = user_info.get("name", "").strip()
+
 
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 # Convert secrets section to JSON string and parse it
@@ -96,9 +110,10 @@ service_account_info = json.loads(json.dumps(st.secrets["gcp_service_account"]))
 creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
 client = gspread.authorize(creds)
 
-# # After successful Google login
-user_email = st.session_state.get("user_info", {}).get("email", "").strip().lower()
-user_name = st.session_state.get("user_info", {}).get("name", "").strip()
+# After successful Google login
+user_info = st.session_state.get("user_info", {})
+user_email = user_info.get("email", "").strip().lower()
+user_name = user_info.get("name", "").strip()
 
 # Load authorized users
 user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
