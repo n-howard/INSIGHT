@@ -77,22 +77,18 @@ query_params = st.query_params
 if not st.experimental_user.is_logged_in:
     if st.button("Log In"):
         st.login("auth0")
-else:
-    st.html("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
-    html, body, [class*="css"]  {
-        font-family: 'Poppins', sans-serif;
-    }
-    </style>"""
-    "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
-    )
+# else:
+#     st.html("""
+#     <style>
+#     @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+#     html, body, [class*="css"]  {
+#         font-family: 'Poppins', sans-serif;
+#     }
+#     </style>"""
+#     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
+#     )
 
 st.session_state.user_info = st.json(st.experimental_user)
-
-user_email = st.experimental_user.email
-user_name = st.experimental_user.name
-
 
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 # Convert secrets section to JSON string and parse it
@@ -101,8 +97,8 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, s
 client = gspread.authorize(creds)
 
 # # After successful Google login
-# user_email = st.session_state.get("user_info", {}).get("email", "").strip().lower()
-# user_name = st.session_state.get("user_info", {}).get("name", "").strip()
+user_email = st.session_state.get("user_info", {}).get("email", "").strip().lower()
+user_name = st.session_state.get("user_info", {}).get("name", "").strip()
 
 # Load authorized users
 user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
