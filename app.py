@@ -116,7 +116,7 @@ user_name = user_info.get("name", "").strip()
 
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 # Convert secrets section to JSON string and parse it
-service_account_info = json.loads(json.dumps(st.secrets["gcp_service_account"]))
+service_account_info = dict(st.secrets["gcp_service_account"])
 creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
 client = gspread.authorize(creds)
 
