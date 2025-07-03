@@ -5,7 +5,6 @@ from requests_oauthlib import OAuth2Session
 from requests import get
 from streamlit_cookies_manager import EncryptedCookieManager
 import json
-import base64
 
 
 # # --- OAuth2 Configuration ---
