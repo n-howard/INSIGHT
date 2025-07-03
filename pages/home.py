@@ -11,8 +11,6 @@ import streamlit.components.v1 as components
 from streamlit_option_menu import option_menu
 import numpy as np
 import random
-from tkinter import * 
-from tkinter.ttk import *
 from pages.menu import menu_with_redirect
 import plotly.express as px
 import os
