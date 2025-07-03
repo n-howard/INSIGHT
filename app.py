@@ -77,9 +77,12 @@ query_params = st.query_params
 #     st.stop()
 query_params = st.query_params
 code = query_params.get("code")
+custom_state = query_params.get("custom_state")
 
 if "auth0_token" not in st.session_state:
     if code:
+        if custom_state:
+            st.session_state["oauth_state"] = custom_state
         token = fetch_token(code)
         if token:
             st.session_state["auth0_token"] = token

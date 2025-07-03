@@ -36,15 +36,21 @@ def login():
     # Create Auth0 session
     auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, scope=scope)
 
-    # Create authorization URL
     authorization_url, state = auth0.authorization_url(
         f"https://{auth0_domain}/authorize",
         audience=f"https://{auth0_domain}/userinfo",
         prompt="login"
     )
 
+    # ✅ Append state to redirect_uri to preserve across redirect
+    authorization_url += f"&custom_state={state}"
+
     # Store state in session for later token validation
     st.session_state["oauth_state"] = state
+
+    with open("auth0_login_button.png", "rb") as f:
+        img_b64 = base64.b64encode(f.read()).decode()
+        login_img = f'<img src="data:image/png;base64,{img_b64}" alt="Login with Auth0" width="250">'
 
     # Render login button with HTML + CSS
     st.markdown(f"""
@@ -131,9 +137,7 @@ def login():
                 </div>
                 <div class="right-panel">
                     <div class="auth0-button">
-                        <a href="{authorization_url}">
-                            <img src="https://i.imgur.com/LXTj1WC.png" alt="Login with Auth0">
-                        </a>
+                        <a href="{authorization_url}">{login_img}</a>
                     </div>
                 </div>
             </div>
@@ -145,9 +149,12 @@ def login():
 def fetch_token(code):
     try:
         oauth_state = st.session_state.get("oauth_state")
-        if oauth_state is None:
-            st.warning("OAuth state is missing. Please try logging in again.")
+        if not oauth_state:
+            st.warning("Missing state. Please try logging in again.")
             return None
+
+        auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, state=oauth_state)
+
 
         auth0 = OAuth2Session(
             client_id,
