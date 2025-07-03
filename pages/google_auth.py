@@ -3,6 +3,7 @@ import streamlit as st
 from urllib.parse import urlencode
 from requests_oauthlib import OAuth2Session
 from requests import get
+import json
 
 # # --- OAuth2 Configuration ---
 # CLIENT_ID = st.secrets["googleClientID"]
@@ -137,17 +138,29 @@ def login():
 
 
 def fetch_token(code):
-    auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, state=st.session_state["oauth_state"])
-    token = auth0.fetch_token(
-        f"https://{auth0_domain}/oauth/token",
-        client_secret=client_secret,
-        code=code
-    )
-    return token
+    try:
+        auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, state=st.session_state["oauth_state"])
+        token = auth0.fetch_token(
+            token_url,
+            client_secret=client_secret,
+            code=code
+        )
+        return token
+    except Exception as e:
+        st.error("Failed to fetch token from Auth0.")
+        st.exception(e)
+        return None
 
 def get_user_info(token):
-    resp = OAuth2Session(client_id, token=token).get(f"https://{auth0_domain}/userinfo")
-    return resp.json()
+    try:
+        auth0 = OAuth2Session(client_id, token=token)
+        response = auth0.get(userinfo_url)
+        return response.json()
+    except Exception as e:
+        st.error("Failed to fetch user info.")
+        st.exception(e)
+        return {}
+
 
 
 # def login():
