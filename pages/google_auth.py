@@ -132,7 +132,7 @@ def login():
                 <div class="right-panel">
                     <div class="auth0-button">
                         <a href="{authorization_url}">
-                            <img src="/.static/auth0_login_button.png" alt="Login with Auth0">
+                            <img src="https://imgur.com/LXTj1WC" alt="Login with Auth0">
                         </a>
                     </div>
                 </div>
@@ -144,7 +144,16 @@ def login():
 
 def fetch_token(code):
     try:
-        auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, state=st.session_state["oauth_state"])
+        oauth_state = st.session_state.get("oauth_state")
+        if oauth_state is None:
+            st.warning("OAuth state is missing. Please try logging in again.")
+            return None
+
+        auth0 = OAuth2Session(
+            client_id,
+            redirect_uri=redirect_uri,
+            state=oauth_state
+        )
         token = auth0.fetch_token(
             token_url,
             client_secret=client_secret,
@@ -155,6 +164,7 @@ def fetch_token(code):
         st.error("Failed to fetch token from Auth0.")
         st.exception(e)
         return None
+
 
 def get_user_info(token):
     try:
