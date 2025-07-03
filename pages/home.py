@@ -255,8 +255,7 @@ elif (mode == "View Results") and assessment != None:
     try:
         # Authorize and load the sheet
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        service_account_info = json.loads(json.dumps(st.secrets["gcp_service_account"]))
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
         client = gspread.authorize(creds)
         sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
 
