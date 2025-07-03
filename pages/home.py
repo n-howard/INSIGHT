@@ -16,6 +16,7 @@ import plotly.express as px
 import os
 import re
 from streamlit_cookies_manager import EncryptedCookieManager
+import json
 
 cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
 if not cookies.ready():
