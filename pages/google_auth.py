@@ -3,9 +3,10 @@ import streamlit as st
 from urllib.parse import urlencode
 from requests_oauthlib import OAuth2Session
 from requests import get
+from streamlit_cookies_manager import EncryptedCookieManager
 import json
 import base64
-from streamlit_cookies_manager import EncryptedCookieManager
+
 
 # # --- OAuth2 Configuration ---
 # CLIENT_ID = st.secrets["googleClientID"]
