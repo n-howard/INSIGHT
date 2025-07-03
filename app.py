@@ -55,6 +55,22 @@ ASSESSMENTS = {
     "Families, Schools, and Communities": {"form_url": "...", "sheet_name": "Families, Schools, and Communities (Responses)"},
 }
 
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Poppins', sans-serif;
+    }
+
+    /* Apply Poppins font to Streamlit buttons */
+    button[kind="primary"], button[kind="secondary"] {
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 600 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 query_params = st.query_params
 query_params = st.query_params
 # if st.query_params.get("code") and "google_token" not in st.session_state:
