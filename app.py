@@ -87,7 +87,7 @@ if "auth0_token" not in st.session_state:
         if token:
             st.session_state["auth0_token"] = token
             st.session_state["user_info"] = get_user_info(token)
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Login failed. Please try again.")
             login()
