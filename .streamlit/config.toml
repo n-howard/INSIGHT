@@ -3,19 +3,19 @@ showSidebarNavigation = false
 
 [[theme.fontFaces]]
 family = "Poppins"
-url = "./static/Poppins-Medium.ttf"
+url = "./Poppins/Poppins-Medium.ttf"
 weight=500
 style="normal"
 
 [[theme.fontFaces]]
 family = "Poppins"
-url = "./static/Poppins-Black.ttf"
+url = "./Poppins/Poppins-Black.ttf"
 weight=900
 style="normal"
 
 [[theme.fontFaces]]
 family = "Poppins"
-url = "./static/Poppins-Italic.ttf"
+url = "./Poppins/Poppins-Italic.ttf"
 weight=500
 style="italic"
 
