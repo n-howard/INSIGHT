@@ -27,29 +27,33 @@ redirect_uri = st.secrets["redirect_uri"]
 scope = ["openid", "profile", "email"]
 
 def login():
+    # Create Auth0 session
     auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, scope=scope)
+
+    # Create authorization URL
     authorization_url, state = auth0.authorization_url(
-        f"https://{auth0_domain}/authorize"
+        f"https://{auth0_domain}/authorize",
+        audience=f"https://{auth0_domain}/userinfo",
+        prompt="login"
     )
+
+    # Store state in session for later token validation
     st.session_state["oauth_state"] = state
-    
-    # st.markdown(f"[Login with Auth0]({authorization_url})")
+
+    # Render login button with HTML + CSS
     st.html(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
 
     html, body, [class*="css"] {{
         font-family: 'Poppins', sans-serif;
-        margin: 0;
-        padding: 0;
     }}
 
     .container {{
         display: flex;
         justify-content: center;
         align-items: center;
-        box-sizing: border-box;
-        padding: 2vh 2vw;
+        height: 80vh;
     }}
 
     .card {{
@@ -92,7 +96,7 @@ def login():
         align-items: center;
     }}
 
-    .google-button img {{
+    .auth0-button img {{
         cursor: pointer;
         width: 250px;
         max-width: 80vw;
@@ -101,29 +105,13 @@ def login():
     @media (max-width: 768px) {{
         .card {{
             flex-direction: column;
-            border-radius: 20px;
         }}
 
         .left-panel, .right-panel {{
             width: 100%;
-            padding: 6vh 6vw;
         }}
 
-        .left-panel {{
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-        }}
-
-        .right-panel {{
-            border-bottom-left-radius: 20px;
-            border-bottom-right-radius: 20px;
-        }}
-
-        .left-panel h1 {{
-            font-size: 2em;
-        }}
-
-        .google-button img {{
+        .auth0-button img {{
             width: 220px;
         }}
     }}
@@ -133,19 +121,20 @@ def login():
         <div class="card">
             <div class="left-panel">
                 <h1>Welcome to INSIGHT!</h1>
-                <p>You can sign in using your Google account.</p>
+                <p>Sign in with your Auth0 account to access your dashboard.</p>
             </div>
             <div class="right-panel">
-                <div class="google-button">
+                <div class="auth0-button">
                     <a href="{authorization_url}">
-                        <img src="pages/auth0_login_button.png"
-                            alt="Login with Auth0"/>
+                        <img src="https://cdn.auth0.com/styleguide/latest/lib/logos/img/logos/auth0-logo-black.png"
+                             alt="Login with Auth0" />
                     </a>
                 </div>
             </div>
         </div>
     </div>
     """)
+
 
 
 def fetch_token(code):
