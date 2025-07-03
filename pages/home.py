@@ -43,6 +43,7 @@ if "is_admin" not in st.session_state:
 if "access" not in st.session_state:
     st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
 
+access_level = st.session_state["access"]
 
 st.markdown("""
     <style>
