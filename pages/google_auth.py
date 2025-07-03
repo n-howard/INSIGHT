@@ -58,7 +58,7 @@ def login():
     image_url = "/static/auth0_login_button.png"
 
     # Render login button with HTML + CSS
-    st.markdown(f"""
+    st.html(f"""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
 
@@ -148,7 +148,7 @@ def login():
                 </div>
             </div>
         </div>
-    """, unsafe_allow_html=True)
+    """)
 
 
 
