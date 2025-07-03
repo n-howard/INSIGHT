@@ -19,10 +19,11 @@ from requests import get
 
 
 
-client_id = st.secrets["auth0_client_id"]
-client_secret = st.secrets["auth0_client_secret"]
-auth0_domain = st.secrets["auth0_domain"]
-redirect_uri = st.secrets["auth0_redirect_uri"]
+client_id = st.secrets["auth"]["auth0"]["client_id"]
+client_secret = st.secrets["auth"]["auth0"]["client_secret"]
+auth0_domain = st.secrets["auth"]["auth0"]["domain"]
+server_metadata_url = st.secrets["auth"]["auth0"]["server_metadata_url"]
+redirect_uri = st.secrets["redirect_uri"]
 scope = ["openid", "profile", "email"]
 
 def login():
