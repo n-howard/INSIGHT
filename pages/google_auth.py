@@ -50,7 +50,7 @@ def login():
     cookies["oauth_state"] = state
     cookies.save()
 
-
+    image_url = "/static/auth0_login_button.png"
 
     # Render login button with HTML + CSS
     st.markdown(f"""
@@ -137,7 +137,7 @@ def login():
                 </div>
                 <div class="right-panel">
                     <a href="{authorization_url}">
-#                         <img src="https://i.imgur.com/HpRK4Jv.png"
+#                         <img src="{image_url}"
 #                           alt="Sign in with Auth0"/>
 #                    </a>
                 </div>
