@@ -45,6 +45,8 @@ if "access" not in st.session_state:
 
 access_level = st.session_state["access"]
 
+is_admin = st.session_state["is_admin"]
+
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
