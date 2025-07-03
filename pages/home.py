@@ -43,6 +43,21 @@ if "access" not in st.session_state:
     st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
 
 
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Poppins', sans-serif;
+    }
+
+    /* Apply Poppins font to Streamlit buttons */
+    button[kind="primary"], button[kind="secondary"] {
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 600 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 logo = st.logo("./oask_light_mode_tagline.png", size="large", link="https://oregonask.org/")
 
@@ -122,7 +137,7 @@ st.html("""
         font-family: 'Poppins', sans-serif;
     }
     </style>"""
-    "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
+    "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: 'Poppins'; margin-bottom: 0px'>INSIGHT</h1>"
 )
 
 
