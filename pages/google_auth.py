@@ -33,7 +33,7 @@ def login():
     )
     st.session_state["oauth_state"] = state
     
-    st.markdown(f"[Login with Auth0]({authorization_url})")
+    # st.markdown(f"[Login with Auth0]({authorization_url})")
     st.html(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
