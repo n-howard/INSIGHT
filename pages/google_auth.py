@@ -152,6 +152,9 @@ def login():
 
 def fetch_token(code):
     cookies = st.session_state.get("cookies")
+    if cookies is None:
+        st.error("Cookies not initialized.")
+        st.stop()
     try:
 
         oauth_state = cookies.get("oauth_state")
