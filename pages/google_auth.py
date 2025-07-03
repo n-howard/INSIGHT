@@ -132,7 +132,7 @@ def login():
                 <div class="right-panel">
                     <div class="auth0-button">
                         <a href="{authorization_url}">
-                            <img src="https://imgur.com/LXTj1WC" alt="Login with Auth0">
+                            <img src="https://i.imgur.com/LXTj1WC.png" alt="Login with Auth0">
                         </a>
                     </div>
                 </div>
