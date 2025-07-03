@@ -77,17 +77,18 @@ query_params = st.query_params
 #     st.stop()
 query_params = st.query_params
 code = query_params.get("code")
-custom_state = query_params.get("custom_state")
+state = query_params.get("state")
+
+
 
 if "auth0_token" not in st.session_state:
     if code:
-        if custom_state:
-            st.session_state["oauth_state"] = custom_state
+        if state:
+            st.session_state["oauth_state"] = state
         token = fetch_token(code)
         if token:
             st.session_state["auth0_token"] = token
             st.session_state["user_info"] = get_user_info(token)
-            st.rerun()
         else:
             st.error("Login failed. Please try again.")
             login()

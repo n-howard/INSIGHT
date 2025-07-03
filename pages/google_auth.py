@@ -4,6 +4,7 @@ from urllib.parse import urlencode
 from requests_oauthlib import OAuth2Session
 from requests import get
 import json
+import base64
 
 # # --- OAuth2 Configuration ---
 # CLIENT_ID = st.secrets["googleClientID"]
@@ -49,9 +50,14 @@ def login():
     cookies["oauth_state"] = state
     cookies.save()
 
-    with open("auth0_login_button.png", "rb") as f:
-        img_b64 = base64.b64encode(f.read()).decode()
+    try:
+        with open("auth0_login_button.png", "rb") as f:
+            img_b64 = base64.b64encode(f.read()).decode()
         login_img = f'<img src="data:image/png;base64,{img_b64}" alt="Login with Auth0" width="250">'
+    except Exception as e:
+        st.error("⚠️ Could not load `auth0_login_button.png`. Make sure it's in your project root.")
+        st.stop()
+
 
     # Render login button with HTML + CSS
     st.markdown(f"""
