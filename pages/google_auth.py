@@ -150,8 +150,8 @@ def login():
     """)
 
 
-
 def fetch_token(code):
+    cookies = st.session_state.get("cookies")
     try:
 
         oauth_state = cookies.get("oauth_state")
