@@ -126,8 +126,7 @@ def login():
             <div class="right-panel">
                 <div class="auth0-button">
                     <a href="{authorization_url}">
-                        <img src="https://cdn.auth0.com/styleguide/latest/lib/logos/img/logos/auth0-logo-black.png"
-                             alt="Login with Auth0" />
+                        <img src="auth0_login_button.png" alt="Login with Auth0">
                     </a>
                 </div>
             </div>
