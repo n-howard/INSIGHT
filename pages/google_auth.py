@@ -50,13 +50,6 @@ def login():
     cookies["oauth_state"] = state
     cookies.save()
 
-    try:
-        with open("auth0_login_button.png", "rb") as f:
-            img_b64 = base64.b64encode(f.read()).decode()
-        login_img = f'<img src="data:image/png;base64,{img_b64}" alt="Login with Auth0" width="250">'
-    except Exception as e:
-        st.error("⚠️ Could not load `auth0_login_button.png`. Make sure it's in your project root.")
-        st.stop()
 
 
     # Render login button with HTML + CSS
@@ -143,9 +136,10 @@ def login():
                     <p>Sign in with your Auth0 account to access your dashboard.</p>
                 </div>
                 <div class="right-panel">
-                    <div class="auth0-button">
-                        <a href="{authorization_url}">{login_img}</a>
-                    </div>
+                    <a href="{authorization_url}">
+#                         <img src="https://i.imgur.com/HpRK4Jv.png"
+#                           alt="Sign in with Auth0"/>
+#                    </a>
                 </div>
             </div>
         </div>
