@@ -209,45 +209,37 @@ if user_in:
     # Pull the user's row by email
     user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
 
-    user_org = user_match.get("Organization", "").strip().lower()
-    if user_org != "":
-        admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
-        st.session_state["is_admin"] = admin_approved
-        cookies["admin_input"] = str(admin_approved)
-
-
-
-        if st.session_state["is_admin"]:
-            st.success("You have admin-level access.")
-        else:
-            st.info("You have standard access.")
-    else:
-        admin_approved = "False"
-        st.session_state["is_admin"] = admin_approved
-        cookies["admin_input"] = str(admin_approved)
-
+    admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
+    st.session_state["is_admin"] = admin_approved
+    cookies["admin_input"] = str(admin_approved)
     oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
     st.session_state["access"] = oregonask_access
     cookies["access_level"] = str(oregonask_access)
+
+
+
+    if st.session_state["is_admin"]:
+        st.success("You have admin-level access.")
+    else:
+        st.info("You have standard access.")
+    user_org = user_match.get("Organization", "").strip().lower()
     if user_match and user_org!="" and not st.session_state.get("org_input"):
 
             # Automatically log in
-        user_org = user_match.get("Organization", "").strip()
-        site_input = ""
+            user_org = user_match.get("Organization", "").strip()
+            site_input = ""
 
-        st.session_state["org_input"] = user_org
-        st.session_state["site_input"] = site_input
+            st.session_state["org_input"] = user_org
+            st.session_state["site_input"] = site_input
 
-        cookies["org_input"] = user_org
-        cookies["site_input"] = site_input
+            cookies["org_input"] = user_org
+            cookies["site_input"] = site_input
 
-        cookies.save()
+            cookies.save()
 
-        st.success(f"Signed in automatically to: {user_org}")
+            st.success(f"Signed in automatically to: {user_org}")
 
-        st.switch_page("pages/home.py")
-
-
+            st.switch_page("pages/home.py")
 
     @st.cache_data(ttl=3600, show_spinner=False)
     def get_org_names():
@@ -343,7 +335,7 @@ if user_in:
             # Save inputs
             st.session_state["org_input"] = org_input.strip()
             st.session_state["site_input"] = site_input.strip() if site_input else ""
-            st.session_state["admin_input"] = str(st.session_state["is_admin"])
+            st.session_state["admin_input"] = "false"
             st.session_state["access_level"] = str(st.session_state["access"])
 
             # Save cookies
