@@ -210,10 +210,7 @@ if user_in:
     user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
 
     user_org = user_match.get("Organization", "").strip().lower()
-    oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
-    st.session_state["access"] = oregonask_access
-    cookies["access_level"] = str(oregonask_access)
-    if user_match and user_org!="" and not st.session_state.get("org_input"):
+    if user_org != "":
         admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
         st.session_state["is_admin"] = admin_approved
         cookies["admin_input"] = str(admin_approved)
@@ -224,6 +221,16 @@ if user_in:
             st.success("You have admin-level access.")
         else:
             st.info("You have standard access.")
+    else:
+        admin_approved = "False"
+        st.session_state["is_admin"] = admin_approved
+        cookies["admin_input"] = str(admin_approved)
+
+    oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
+    st.session_state["access"] = oregonask_access
+    cookies["access_level"] = str(oregonask_access)
+    if user_match and user_org!="" and not st.session_state.get("org_input"):
+
             # Automatically log in
         user_org = user_match.get("Organization", "").strip()
         site_input = ""
@@ -239,10 +246,7 @@ if user_in:
         st.success(f"Signed in automatically to: {user_org}")
 
         st.switch_page("pages/home.py")
-    else:
-        admin_approved = "False"
-        st.session_state["is_admin"] = admin_approved
-        cookies["admin_input"] = str(admin_approved)
+
 
 
     @st.cache_data(ttl=3600, show_spinner=False)
