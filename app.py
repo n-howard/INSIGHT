@@ -101,11 +101,13 @@ state = query_params.get("state")
 
 
 
+# Extract code and state from URL
+code = st.query_params.get("code")
+state = st.query_params.get("state")
+
 if "auth0_token" not in st.session_state:
-    if code:
-        if state:
-            st.session_state["oauth_state"] = state
-        token = fetch_token(code)
+    if code and state:
+        token = fetch_token(code, state)
         if token:
             st.session_state["auth0_token"] = token
             st.session_state["user_info"] = get_user_info(token)
@@ -116,6 +118,7 @@ if "auth0_token" not in st.session_state:
     else:
         login()
         st.stop()
+
 
 
 # else:

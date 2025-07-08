@@ -150,19 +150,9 @@ def login():
     """)
 
 
-def fetch_token(code):
-    cookies = st.session_state.get("cookies")
-    if cookies is None:
-        st.error("Cookies not initialized.")
-        st.stop()
+def fetch_token(code, state):
     try:
-
-        oauth_state = cookies.get("oauth_state")
-        if not oauth_state:
-            st.warning("OAuth state is missing. Please try logging in again.")
-            return None
-
-        auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, state=oauth_state)
+        auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, state=state)
         token = auth0.fetch_token(
             token_url,
             client_secret=client_secret,
@@ -173,6 +163,7 @@ def fetch_token(code):
         st.error("Failed to fetch token from Auth0.")
         st.exception(e)
         return None
+
 
 
 
