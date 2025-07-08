@@ -103,7 +103,8 @@ state = query_params.get("state")
 
 # Extract code and state from URL
 code = st.query_params.get("code")
-state = st.query_params.get("state")
+state = st.query_params.get("state") or st.session_state.get("oauth_state") or cookies.get("oauth_state")
+
 
 if "auth0_token" not in st.session_state:
     if code and state:

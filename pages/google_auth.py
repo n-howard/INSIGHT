@@ -50,8 +50,11 @@ def login():
         prompt="login"
     )
 
-    # Save to session state instead of cookies
+    # Save state in both session_state and cookies
     st.session_state["oauth_state"] = state
+    cookies["oauth_state"] = state
+    cookies.save()
+
 
 
 
