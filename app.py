@@ -107,7 +107,7 @@ state = st.query_params.get("state")
 
 if "auth0_token" not in st.session_state:
     if code and state:
-        token = fetch_token(code, state)
+        token = fetch_token(code)
         if token:
             st.session_state["auth0_token"] = token
             st.session_state["user_info"] = get_user_info(token)
