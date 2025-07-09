@@ -6,6 +6,11 @@ from requests import get
 from streamlit_cookies_manager import EncryptedCookieManager
 import json
 
+import firebase_admin
+from firebase_admin import auth, exceptions, credentials, initialize_app
+import asyncio
+from httpx_oauth.clients.google import GoogleOAuth2
+
 
 # # --- OAuth2 Configuration ---
 # CLIENT_ID = st.secrets["googleClientID"]
@@ -32,6 +37,52 @@ token_url = f"https://{auth0_domain}/oauth/token"
 userinfo_url = f"https://{auth0_domain}/userinfo"
 
 scope = ["openid", "profile", "email"]
+
+
+# firebase_credentials = st.secrets["gcp_firebase"]
+
+# # Initialize Firebase app
+# cred = credentials.Certificate(firebase_credentials)
+# try:
+#     firebase_admin.get_app()
+# except ValueError as e:
+#     initialize_app(cred)
+
+# # Initialize Google OAuth2 client
+# client_id = st.secrets["googleClientID"]
+# client_secret = st.secrets["googleClientSecret"]
+# redirect_url = st.secrets["redirect_uri"]  
+# client = GoogleOAuth2(client_id=client_id, client_secret=client_secret)
+
+# st.session_state.email = ''
+
+# async def get_access_token(client: GoogleOAuth2, redirect_url: str, code: str):
+#     return await client.get_access_token(code, redirect_url)
+
+# async def get_email(client: GoogleOAuth2, token: str):
+#     user_id, user_email = await client.get_id_email(token)
+#     return user_id, user_email
+
+# def get_logged_in_user_email():
+#     try:
+#         query_params = st.query_params
+#         code = query_params.get('code')
+#         if code:
+#             token = asyncio.run(get_access_token(client, redirect_url, code))
+#             st.query_params
+
+#             if token:
+#                 user_id, user_email = asyncio.run(get_email(client, token['access_token']))
+#                 if user_email:
+#                     try:
+#                         user = auth.get_user_by_email(user_email)
+#                     except exceptions.FirebaseError:
+#                         user = auth.create_user(email=user_email)
+#                     st.session_state.email = user.email
+#                     return user.email
+#         return None
+#     except:
+#         pass
 
 
 # def login():
