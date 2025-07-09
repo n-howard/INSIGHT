@@ -1,6 +1,15 @@
 import streamlit as st 
 
 st.set_page_config(page_title="INSIGHT", layout="wide", page_icon="./oask_short_logo.png", initial_sidebar_state="collapsed")
+if not hasattr(st, "user") or not st.user.is_logged_in:
+    st.session_state["__waiting_for_auth"] = True
+    st.login("auth0")
+    st.stop()
+elif st.session_state.get("__waiting_for_auth"):
+    # Prevent infinite loop during transition from login to page rerun
+    del st.session_state["__waiting_for_auth"]
+    st.stop()
+
 import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
