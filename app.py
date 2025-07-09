@@ -13,9 +13,12 @@ from pages.menu import menu_with_redirect
 from streamlit_cookies_manager import EncryptedCookieManager
 import json
 
+from streamlit_cookies_manager import EncryptedCookieManager
+from pages.google_auth import login, fetch_token, get_user_info
 
+st.set_page_config(page_title="INSIGHT", layout="wide", page_icon="./oask_short_logo.png", initial_sidebar_state="collapsed")
 
-# Initialize cookies
+# --- Init cookies ---
 if "cookies" not in st.session_state:
     cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
     if not cookies.ready():
@@ -24,111 +27,33 @@ if "cookies" not in st.session_state:
 else:
     cookies = st.session_state["cookies"]
 
+# --- Optional page redirect after login ---
 if "page_redirect" in st.session_state:
     target = st.session_state["page_redirect"]
     del st.session_state["page_redirect"]
     st.switch_page(target)
 
-
-
-
-# st.html("""
-#     <style>
-#     @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
-#     html, body, [class*="css"]  {
-#         font-family: 'Poppins', sans-serif;
-#     }
-#     </style>"""
-#     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
-# )
-logo = st.logo("./oask_light_mode_tagline.png", size="large", link="https://oregonask.org/")
-
-st.set_option("client.showSidebarNavigation", False)
-
-# -------- ASSESSMENTS DICTIONARY --------
-ASSESSMENTS = {
-    "Environment, Health, and Safety": {"form_url": "...", "sheet_name": "Environment, Health, and Safety (Responses)"},
-    "Highly Skilled Personnel": {"form_url": "...", "sheet_name": "Highly Skilled Personnel (Responses)"},
-    "Program Management": {"form_url": "...", "sheet_name": "Program Management (Responses)"},
-    "Youth Development and Engagement": {"form_url": "...", "sheet_name": "Youth Development and Engagement (Responses)"},
-    "Programming and Activities": {"form_url": "...", "sheet_name": "Programming and Activities (Responses)"},
-    "Families, Schools, and Communities": {"form_url": "...", "sheet_name": "Families, Schools, and Communities (Responses)"},
-}
-
-st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
-
-    html, body, [class*="css"] {
-        font-family: 'Poppins', sans-serif;
-    }
-
-    /* Apply Poppins font to Streamlit buttons */
-    button[kind="primary"], button[kind="secondary"] {
-        font-family: 'Poppins', sans-serif !important;
-        font-weight: 600 !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-query_params = st.query_params
-query_params = st.query_params
-# if st.query_params.get("code") and "google_token" not in st.session_state:
-#     code = query_params["code"]
-#     token = fetch_token(code)
-#     if token:
-#         st.session_state.google_token = token
-#         st.session_state.user_info = get_user_info(token)
-#     else:
-#         st.error("Login failed.")
-#         st.stop()
-
-# --- Step 1: Ask to sign in ---
-
-# if not st.experimental_user.is_logged_in:
-#     if st.button("Log In"):
-#         st.login("auth0")
-
-# st.json(st.experimental_user)
-
-
-# if "google_token" not in st.session_state:
-#     login()
-#     st.stop()
-query_params = st.query_params
-code = query_params.get("code")
-state = query_params.get("state")
-
-
-
-
-# Extract params
+# --- OAuth redirect flow handling ---
 code = st.query_params.get("code")
 query_state = st.query_params.get("state")
 
-# Restore cookies if needed
-if "cookies" not in st.session_state:
-    cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
-    if not cookies.ready():
-        st.stop()
-    st.session_state["cookies"] = cookies
-else:
-    cookies = st.session_state["cookies"]
+# Restore stored state (from cookies) into session_state
+if "oauth_state" not in st.session_state:
+    stored_state = cookies.get("oauth_state")
+    if stored_state:
+        st.session_state["oauth_state"] = stored_state
 
-# Retrieve stored state
-stored_state = st.session_state.get("oauth_state") or cookies.get("oauth_state")
-
-# Restore to session_state if missing
-if "oauth_state" not in st.session_state and stored_state:
-    st.session_state["oauth_state"] = stored_state
-
-# Ensure states match
+# Validate state BEFORE fetching token
+stored_state = st.session_state.get("oauth_state")
 if code and query_state:
     if query_state != stored_state:
         st.error("OAuth state mismatch. Please try logging in again.")
+        login()
         st.stop()
+
+# --- Token exchange ---
 if "auth0_token" not in st.session_state:
-    if code and state:
+    if code and stored_state:
         token = fetch_token(code)
         if token:
             st.session_state["auth0_token"] = token
@@ -140,6 +65,132 @@ if "auth0_token" not in st.session_state:
     else:
         login()
         st.stop()
+
+# # Initialize cookies
+# if "cookies" not in st.session_state:
+#     cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
+#     if not cookies.ready():
+#         st.stop()
+#     st.session_state["cookies"] = cookies
+# else:
+#     cookies = st.session_state["cookies"]
+
+# if "page_redirect" in st.session_state:
+#     target = st.session_state["page_redirect"]
+#     del st.session_state["page_redirect"]
+#     st.switch_page(target)
+
+
+
+
+# # st.html("""
+# #     <style>
+# #     @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+# #     html, body, [class*="css"]  {
+# #         font-family: 'Poppins', sans-serif;
+# #     }
+# #     </style>"""
+# #     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
+# # )
+# logo = st.logo("./oask_light_mode_tagline.png", size="large", link="https://oregonask.org/")
+
+# st.set_option("client.showSidebarNavigation", False)
+
+# # -------- ASSESSMENTS DICTIONARY --------
+# ASSESSMENTS = {
+#     "Environment, Health, and Safety": {"form_url": "...", "sheet_name": "Environment, Health, and Safety (Responses)"},
+#     "Highly Skilled Personnel": {"form_url": "...", "sheet_name": "Highly Skilled Personnel (Responses)"},
+#     "Program Management": {"form_url": "...", "sheet_name": "Program Management (Responses)"},
+#     "Youth Development and Engagement": {"form_url": "...", "sheet_name": "Youth Development and Engagement (Responses)"},
+#     "Programming and Activities": {"form_url": "...", "sheet_name": "Programming and Activities (Responses)"},
+#     "Families, Schools, and Communities": {"form_url": "...", "sheet_name": "Families, Schools, and Communities (Responses)"},
+# }
+
+# st.markdown("""
+#     <style>
+#     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
+
+#     html, body, [class*="css"] {
+#         font-family: 'Poppins', sans-serif;
+#     }
+
+#     /* Apply Poppins font to Streamlit buttons */
+#     button[kind="primary"], button[kind="secondary"] {
+#         font-family: 'Poppins', sans-serif !important;
+#         font-weight: 600 !important;
+#     }
+#     </style>
+# """, unsafe_allow_html=True)
+
+# query_params = st.query_params
+# query_params = st.query_params
+# # if st.query_params.get("code") and "google_token" not in st.session_state:
+# #     code = query_params["code"]
+# #     token = fetch_token(code)
+# #     if token:
+# #         st.session_state.google_token = token
+# #         st.session_state.user_info = get_user_info(token)
+# #     else:
+# #         st.error("Login failed.")
+# #         st.stop()
+
+# # --- Step 1: Ask to sign in ---
+
+# # if not st.experimental_user.is_logged_in:
+# #     if st.button("Log In"):
+# #         st.login("auth0")
+
+# # st.json(st.experimental_user)
+
+
+# # if "google_token" not in st.session_state:
+# #     login()
+# #     st.stop()
+# query_params = st.query_params
+# code = query_params.get("code")
+# state = query_params.get("state")
+
+
+
+
+# # Extract params
+# code = st.query_params.get("code")
+# query_state = st.query_params.get("state")
+
+# # Restore cookies if needed
+# if "cookies" not in st.session_state:
+#     cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
+#     if not cookies.ready():
+#         st.stop()
+#     st.session_state["cookies"] = cookies
+# else:
+#     cookies = st.session_state["cookies"]
+
+# # Retrieve stored state
+# stored_state = st.session_state.get("oauth_state") or cookies.get("oauth_state")
+
+# # Restore to session_state if missing
+# if "oauth_state" not in st.session_state and stored_state:
+#     st.session_state["oauth_state"] = stored_state
+
+# # Ensure states match
+# if code and query_state:
+#     if query_state != stored_state:
+#         st.error("OAuth state mismatch. Please try logging in again.")
+#         st.stop()
+# if "auth0_token" not in st.session_state:
+#     if code and state:
+#         token = fetch_token(code)
+#         if token:
+#             st.session_state["auth0_token"] = token
+#             st.session_state["user_info"] = get_user_info(token)
+#         else:
+#             st.error("Login failed. Please try again.")
+#             login()
+#             st.stop()
+#     else:
+#         login()
+#         st.stop()
 
 
 
