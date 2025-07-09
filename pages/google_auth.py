@@ -58,10 +58,7 @@ def login():
     cookies.save()
 
 
-    log_display = """<a href="{authorization_url}">
-                         <img src="https://i.imgur.com/HpRK4Jv.png"
-                           alt="Sign in with Auth0"/>
-                    </a>"""
+
 
     # Render login button with HTML + CSS
     st.html(f"""
