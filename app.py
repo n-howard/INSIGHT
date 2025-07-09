@@ -13,10 +13,6 @@ from pages.menu import menu_with_redirect
 from streamlit_cookies_manager import EncryptedCookieManager
 import json
 
-if "page_redirect" in st.session_state:
-    target = st.session_state["page_redirect"]
-    del st.session_state["page_redirect"]
-    st.switch_page(target)
 
 
 # Initialize cookies
@@ -242,23 +238,21 @@ if user_in:
     else:
         st.info("You have standard access.")
     user_org = user_match.get("Organization", "").strip().lower()
-    if user_match and user_org!="" and not st.session_state.get("org_input"):
+   if user_match and user_org and not st.session_state.get("org_input") and not st.session_state.get("redirected_once"):
+        user_org = user_match.get("Organization", "").strip()
+        site_input = ""
 
-            # Automatically log in
-            user_org = user_match.get("Organization", "").strip()
-            site_input = ""
+        st.session_state["org_input"] = user_org
+        st.session_state["site_input"] = site_input
+        st.session_state["redirected_once"] = True  # Prevent looping
 
-            st.session_state["org_input"] = user_org
-            st.session_state["site_input"] = site_input
+        cookies["org_input"] = user_org
+        cookies["site_input"] = site_input
+        cookies.save()
 
-            cookies["org_input"] = user_org
-            cookies["site_input"] = site_input
+        st.success(f"Signed in automatically to: {user_org}")
+        st.switch_page("pages/home.py")
 
-            cookies.save()
-
-            st.success(f"Signed in automatically to: {user_org}")
-
-            st.switch_page("pages/home.py")
 
     @st.cache_data(ttl=3600, show_spinner=False)
     def get_org_names():
