@@ -108,6 +108,16 @@ state = st.query_params.get("state") or st.session_state.get("oauth_state") or c
 
 if "auth0_token" not in st.session_state:
     if code and state:
+        
+        query_state = st.query_params.get("state")
+
+        # Store the fetched state from cookies/session if needed
+        stored_state = st.session_state.get("oauth_state") or cookies.get("oauth_state")
+
+        if query_state != stored_state:
+            st.error("OAuth state mismatch. Please try logging in again.")
+            login()
+            st.stop()
         token = fetch_token(code)
         if token:
             st.session_state["auth0_token"] = token
