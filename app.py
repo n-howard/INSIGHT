@@ -105,7 +105,7 @@ state = query_params.get("state")
 code = st.query_params.get("code")
 state = st.query_params.get("state") or st.session_state.get("oauth_state") or cookies.get("oauth_state")
 
-if not st.experimental_user.is_logged_in:
+if not st.user.is_logged_in:
     login()
 # if "auth0_token" not in st.session_state:
 #     if code and state:
@@ -138,9 +138,9 @@ if not st.experimental_user.is_logged_in:
 # user_info = st.session_state.get("user_info", {})
 # user_email = user_info.get("email", "").strip().lower()
 # user_name = user_info.get("name", "").strip()
-user_info = st.experimental_user
-user_email = st.experimental_user.email.strip().lower()
-user_name = st.experimental_user.name.strip()
+user_info = st.user
+user_email = st.user.email.strip().lower()
+user_name = st.user.name.strip()
 
 
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -153,9 +153,9 @@ client = gspread.authorize(creds)
 # user_info = st.session_state.get("user_info", {})
 # user_email = user_info.get("email", "").strip().lower()
 # user_name = user_info.get("name", "").strip()
-user_info = st.experimental_user
-user_email = st.experimental_user.email.strip().lower()
-user_name = st.experimental_user.name.strip()
+user_info = st.user
+user_email = st.user.email.strip().lower()
+user_name = st.user.name.strip()
 # Load authorized users
 user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
 user_records = user_sheet.get_all_records()
