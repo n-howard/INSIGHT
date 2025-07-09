@@ -1,7 +1,10 @@
 import streamlit as st 
 
 st.set_page_config(page_title="INSIGHT", layout="wide", page_icon="./oask_short_logo.png", initial_sidebar_state="collapsed")
-if not st.session_state.get("authenticated", False):
+
+
+# ✅ LOGIN FLOW (only ask for login if not already logged in)
+if not st.user.is_logged_in:
     st.title("Welcome to INSIGHT")
     st.write("Please log in to continue.")
 
@@ -9,12 +12,15 @@ if not st.session_state.get("authenticated", False):
         st.login("auth0")
         st.stop()
 
+    # Block everything else on this page until they're logged in
     st.stop()
 
-# Now you're logged in
-user_email = st.user.email.lower().strip()
-user_name = st.user.name
-st.session_state["authenticated"] = True  # Set auth flag
+# ✅ USER IS LOGGED IN, continue to rest of app
+user_email = st.user.email.strip().lower()
+user_name = st.user.name.strip()
+
+st.success(f"Welcome, {user_name} ({user_email})")
+
 
 
 import pandas as pd
