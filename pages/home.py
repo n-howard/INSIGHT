@@ -1,5 +1,8 @@
 import streamlit as st 
 st.set_page_config(page_title="INSIGHT", layout="wide", page_icon="./oask_short_logo.png", initial_sidebar_state="collapsed" )
+if "redirected_to_home" in st.session_state:
+    del st.session_state["redirected_to_home"]
+
 from streamlit_navigation_bar import st_navbar
 import pandas as pd
 import gspread
