@@ -13,6 +13,10 @@ from pages.menu import menu_with_redirect
 from streamlit_cookies_manager import EncryptedCookieManager
 import json
 
+if "page_redirect" in st.session_state:
+    target = st.session_state["page_redirect"]
+    del st.session_state["page_redirect"]
+    st.switch_page(target)
 
 
 # Initialize cookies
@@ -122,25 +126,10 @@ state = st.query_params.get("state") or st.session_state.get("oauth_state") or c
 #         login()
 #         st.stop()
 
-if not hasattr(st, "user") or not st.user.is_logged_in:
-    st.markdown("""
-    <style>
-        .centered {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 3rem;
-        }
-        .centered img {
-            width: 220px;
-        }
-    </style>
-    <div class="centered">
-        <img src="https://i.imgur.com/HpRK4Jv.png" alt="Sign in with Auth0"/>
-    </div>
-    """, unsafe_allow_html=True)
+if not st.user.is_logged_in:
     st.login("auth0")
     st.stop()
+
 
 
 # else:
@@ -388,8 +377,8 @@ if user_in:
                 )
                 st.cache_data.clear()
 
-            st.session_state["page_redirect"] = "pages/home.py"
-            st.rerun() # Trigger rerun so the top of script handles the redirect
+            st.switch_page("pages/home.py")
+            # st.rerun() # Trigger rerun so the top of script handles the redirect
 
 
 
