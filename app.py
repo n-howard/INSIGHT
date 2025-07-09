@@ -101,11 +101,32 @@ state = query_params.get("state")
 
 
 
-# Extract code and state from URL
+
+# Extract params
 code = st.query_params.get("code")
-state = st.query_params.get("state") or st.session_state.get("oauth_state") or cookies.get("oauth_state")
+query_state = st.query_params.get("state")
 
+# Restore cookies if needed
+if "cookies" not in st.session_state:
+    cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
+    if not cookies.ready():
+        st.stop()
+    st.session_state["cookies"] = cookies
+else:
+    cookies = st.session_state["cookies"]
 
+# Retrieve stored state
+stored_state = st.session_state.get("oauth_state") or cookies.get("oauth_state")
+
+# Restore to session_state if missing
+if "oauth_state" not in st.session_state and stored_state:
+    st.session_state["oauth_state"] = stored_state
+
+# Ensure states match
+if code and query_state:
+    if query_state != stored_state:
+        st.error("OAuth state mismatch. Please try logging in again.")
+        st.stop()
 if "auth0_token" not in st.session_state:
     if code and state:
         token = fetch_token(code)
