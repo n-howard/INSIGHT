@@ -38,38 +38,38 @@ if "page_redirect" in st.session_state:
     del st.session_state["page_redirect"]
     st.switch_page(target)
 
-# --- OAuth redirect flow handling ---
-code = st.query_params.get("code")
-query_state = st.query_params.get("state")
+# # --- OAuth redirect flow handling ---
+# code = st.query_params.get("code")
+# query_state = st.query_params.get("state")
 
 # Restore stored state (from cookies) into session_state
-if "oauth_state" not in st.session_state:
-    stored_state = cookies.get("oauth_state")
-    if stored_state:
-        st.session_state["oauth_state"] = stored_state
+# if "oauth_state" not in st.session_state:
+#     stored_state = cookies.get("oauth_state")
+#     if stored_state:
+#         st.session_state["oauth_state"] = stored_state
 
-# Validate state BEFORE fetching token
-stored_state = st.session_state.get("oauth_state")
-if code and query_state:
-    if query_state != stored_state:
-        st.error("OAuth state mismatch. Please try logging in again.")
-        login()
-        st.stop()
+# # Validate state BEFORE fetching token
+# stored_state = st.session_state.get("oauth_state")
+# if code and query_state:
+#     if query_state != stored_state:
+#         st.error("OAuth state mismatch. Please try logging in again.")
+#         login()
+#         st.stop()
 
 # --- Token exchange ---
-if "auth0_token" not in st.session_state:
-    if code and stored_state:
-        token = fetch_token(code)
-        if token:
-            st.session_state["auth0_token"] = token
-            st.session_state["user_info"] = get_user_info(token)
-        else:
-            st.error("Login failed. Please try again.")
-            login()
-            st.stop()
-    else:
-        login()
-        st.stop()
+# if "auth0_token" not in st.session_state:
+#     if code and stored_state:
+#         token = fetch_token(code)
+#         if token:
+#             st.session_state["auth0_token"] = token
+#             st.session_state["user_info"] = get_user_info(token)
+#         else:
+#             st.error("Login failed. Please try again.")
+#             login()
+#             st.stop()
+#     else:
+#         login()
+#         st.stop()
 
 # # Initialize cookies
 # if "cookies" not in st.session_state:
