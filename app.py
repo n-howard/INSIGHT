@@ -105,20 +105,22 @@ state = query_params.get("state")
 code = st.query_params.get("code")
 state = st.query_params.get("state") or st.session_state.get("oauth_state") or cookies.get("oauth_state")
 
-
-if "auth0_token" not in st.session_state:
-    if code and state:
-        token = fetch_token(code)
-        if token:
-            st.session_state["auth0_token"] = token
-            st.session_state["user_info"] = get_user_info(token)
-        else:
-            st.error("Login failed. Please try again.")
-            login()
-            st.stop()
-    else:
-        login()
-        st.stop()
+if not st.experimental_user.is_logged_in:
+    login()
+# if "auth0_token" not in st.session_state:
+#     if code and state:
+#         token = fetch_token(code)
+#         if token:
+#             st.session_state["auth0_token"] = token
+#             # st.session_state["user_info"] = get_user_info(token)
+#             st.session_state["user_info"] = st.experimental_user
+#         else:
+#             st.error("Login failed. Please try again.")
+#             login()
+#             st.stop()
+#     else:
+#         login()
+#         st.stop()
 
 
 
@@ -133,9 +135,12 @@ if "auth0_token" not in st.session_state:
 #     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
 #     )
 
-user_info = st.session_state.get("user_info", {})
-user_email = user_info.get("email", "").strip().lower()
-user_name = user_info.get("name", "").strip()
+# user_info = st.session_state.get("user_info", {})
+# user_email = user_info.get("email", "").strip().lower()
+# user_name = user_info.get("name", "").strip()
+user_info = st.experimental_user
+user_email = st.experimental_user.email.strip().lower()
+user_name = st.experimental_user.name.strip()
 
 
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -145,10 +150,12 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, s
 client = gspread.authorize(creds)
 
 # After successful Google login
-user_info = st.session_state.get("user_info", {})
-user_email = user_info.get("email", "").strip().lower()
-user_name = user_info.get("name", "").strip()
-
+# user_info = st.session_state.get("user_info", {})
+# user_email = user_info.get("email", "").strip().lower()
+# user_name = user_info.get("name", "").strip()
+user_info = st.experimental_user
+user_email = st.experimental_user.email.strip().lower()
+user_name = st.experimental_user.name.strip()
 # Load authorized users
 user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
 user_records = user_sheet.get_all_records()
