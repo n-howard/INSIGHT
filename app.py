@@ -85,10 +85,9 @@ if "page_redirect" in st.session_state:
 #     del st.session_state["page_redirect"]
 #     st.switch_page(target)
 
-firebase_credentials = st.secrets["gcp_firebase"]
-
-# Initialize Firebase app
+firebase_credentials = dict(st.secrets["gcp_firebase"])
 cred = credentials.Certificate(firebase_credentials)
+
 try:
     firebase_admin.get_app()
 except ValueError as e:
