@@ -47,8 +47,10 @@ def login():
     authorization_url, state = auth0.authorization_url(
         f"https://{auth0_domain}/authorize",
         audience=f"https://{auth0_domain}/userinfo",
-        prompt="login"
+        prompt="select_account",
+        state=state  
     )
+
 
     # Save state in both session_state and cookies
     st.session_state["oauth_state"] = state
@@ -142,7 +144,7 @@ def login():
                     <p>Sign in with your Auth0 account to access your dashboard.</p>
                 </div>
                 <div class="right-panel">
-                    <a href="{authorization_url}" target="_blank">
+                    <a href="{authorization_url}">
                          <img src="https://i.imgur.com/HpRK4Jv.png"
                            alt="Sign in with Auth0"/>
                     </a>
@@ -154,7 +156,7 @@ def login():
 
 def fetch_token(code):
     try:
-        oauth_state = st.session_state.get("oauth_state")
+        oauth_state = st.query_params.get("state") or st.session_state.get("oauth_state")
         if not oauth_state:
             st.warning("OAuth state is missing. Please try logging in again.")
             return None
