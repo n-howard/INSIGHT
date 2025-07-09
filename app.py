@@ -132,8 +132,9 @@ state = st.query_params.get("state") or st.session_state.get("oauth_state") or c
 #         st.stop()
 
 if not st.user.is_logged_in:
-    st.login("auth0")
-    st.stop()
+    if st.button("Sign In"):
+        st.login("auth0")
+        st.stop()
 
 
 
