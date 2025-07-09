@@ -11,5 +11,4 @@ matplotlib
 requests_oauthlib
 Authlib>=1.3.2
 firebase_admin
-asyncio
-httpx_oauth.clients.google
+httpx-oauth
