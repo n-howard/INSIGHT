@@ -105,15 +105,15 @@ state = query_params.get("state")
 code = st.query_params.get("code")
 state = st.query_params.get("state") or st.session_state.get("oauth_state") or cookies.get("oauth_state")
 
-if not st.user.is_logged_in:
-    login()
+# if not st.user.is_logged_in:
+#     login()
 # if "auth0_token" not in st.session_state:
 #     if code and state:
 #         token = fetch_token(code)
 #         if token:
 #             st.session_state["auth0_token"] = token
 #             # st.session_state["user_info"] = get_user_info(token)
-#             st.session_state["user_info"] = st.experimental_user
+#             st.session_state["user_info"] = st.user
 #         else:
 #             st.error("Login failed. Please try again.")
 #             login()
@@ -122,6 +122,25 @@ if not st.user.is_logged_in:
 #         login()
 #         st.stop()
 
+if not hasattr(st, "user") or not st.user.is_logged_in:
+    st.markdown("""
+    <style>
+        .centered {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 3rem;
+        }
+        .centered img {
+            width: 220px;
+        }
+    </style>
+    <div class="centered">
+        <img src="https://i.imgur.com/HpRK4Jv.png" alt="Sign in with Auth0"/>
+    </div>
+    """, unsafe_allow_html=True)
+    st.login("auth0")
+    st.stop()
 
 
 # else:
