@@ -13,17 +13,9 @@ from pages.menu import menu_with_redirect
 from streamlit_cookies_manager import EncryptedCookieManager
 import json
 
-from streamlit_cookies_manager import EncryptedCookieManager
-from pages.google_auth import login, fetch_token, get_user_info
-import firebase_admin
-from firebase_admin import auth, exceptions, credentials, initialize_app
-import asyncio
-from httpx_oauth.clients.google import GoogleOAuth2
 
 
-st.set_page_config(page_title="INSIGHT", layout="wide", page_icon="./oask_short_logo.png", initial_sidebar_state="collapsed")
-
-# --- Init cookies ---
+# Initialize cookies
 if "cookies" not in st.session_state:
     cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
     if not cookies.ready():
@@ -32,555 +24,346 @@ if "cookies" not in st.session_state:
 else:
     cookies = st.session_state["cookies"]
 
-# --- Optional page redirect after login ---
 if "page_redirect" in st.session_state:
     target = st.session_state["page_redirect"]
     del st.session_state["page_redirect"]
     st.switch_page(target)
 
-# # --- OAuth redirect flow handling ---
-# code = st.query_params.get("code")
-# query_state = st.query_params.get("state")
-
-# Restore stored state (from cookies) into session_state
-# if "oauth_state" not in st.session_state:
-#     stored_state = cookies.get("oauth_state")
-#     if stored_state:
-#         st.session_state["oauth_state"] = stored_state
-
-# # Validate state BEFORE fetching token
-# stored_state = st.session_state.get("oauth_state")
-# if code and query_state:
-#     if query_state != stored_state:
-#         st.error("OAuth state mismatch. Please try logging in again.")
-#         login()
-#         st.stop()
-
-# --- Token exchange ---
-# if "auth0_token" not in st.session_state:
-#     if code and stored_state:
-#         token = fetch_token(code)
-#         if token:
-#             st.session_state["auth0_token"] = token
-#             st.session_state["user_info"] = get_user_info(token)
-#         else:
-#             st.error("Login failed. Please try again.")
-#             login()
-#             st.stop()
-#     else:
-#         login()
-#         st.stop()
-
-# # Initialize cookies
-# if "cookies" not in st.session_state:
-#     cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
-#     if not cookies.ready():
-#         st.stop()
-#     st.session_state["cookies"] = cookies
-# else:
-#     cookies = st.session_state["cookies"]
-
-# if "page_redirect" in st.session_state:
-#     target = st.session_state["page_redirect"]
-#     del st.session_state["page_redirect"]
-#     st.switch_page(target)
-
-firebase_credentials = dict(st.secrets["gcp_firebase"])
-cred = credentials.Certificate(firebase_credentials)
-
-try:
-    firebase_admin.get_app()
-except ValueError as e:
-    initialize_app(cred)
-
-# Initialize Google OAuth2 client
-client_id = st.secrets["googleClientID"]
-client_secret = st.secrets["googleClientSecret"]
-redirect_url = st.secrets["redirect_uri"]  
-client = GoogleOAuth2(client_id=client_id, client_secret=client_secret)
-
-st.session_state.email = ''
-
-async def get_access_token(client: GoogleOAuth2, redirect_url: str, code: str):
-    return await client.get_access_token(code, redirect_url)
-
-async def get_email(client: GoogleOAuth2, token: str):
-    user_id, user_email = await client.get_id_email(token)
-    return user_id, user_email
-
-def get_logged_in_user_email():
-    try:
-        query_params = st.query_params
-        code = query_params.get('code')
-        if code:
-            token = asyncio.run(get_access_token(client, redirect_url, code))
-            st.query_params
-
-            if token:
-                user_id, user_email = asyncio.run(get_email(client, token['access_token']))
-                if user_email:
-                    try:
-                        user = auth.get_user_by_email(user_email)
-                    except exceptions.FirebaseError:
-                        user = auth.create_user(email=user_email)
-                    st.session_state.email = user.email
-                    return user.email
-        return None
-    except:
-        pass
-def show_login_button():
-    authorization_url = asyncio.run(client.get_authorization_url(
-        redirect_url,
-        scope=["email", "profile"],
-        extras_params={"access_type": "offline"},
-    ))
-
-    st.html(f"""
-            <style>
-            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
-
-            html, body, [class*="css"] {{
-                font-family: 'Poppins', sans-serif;
-            }}
-
-            .container {{
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 80vh;
-            }}
-
-            .card {{
-                display: flex;
-                flex-direction: row;
-                width: 100%;
-                max-width: 900px;
-                background: white;
-                border-radius: 20px;
-                overflow: hidden;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            }}
-            
-            .left-panel {{
-                width: 50%;
-                background: linear-gradient(120deg, #084c61, #4f6d7a, #56a3a6);
-                color: white;
-                padding: 5vh 5vw;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-            }}
-
-            .left-panel h1 {{
-                font-size: 2.5em;
-                font-weight: 900;
-                margin-bottom: 0.3em;
-            }}
-
-            .left-panel p {{
-                font-size: 1.1em;
-            }}
-
-            .right-panel {{
-                width: 50%;
-                background: white;
-                padding: 5vh 5vw;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }}
-
-            .auth0-button img {{
-                cursor: pointer;
-                width: 250px;
-                max-width: 80vw;
-            }}
-
-            @media (max-width: 768px) {{
-                .card {{
-                    flex-direction: column;
-                }}
-
-                .left-panel, .right-panel {{
-                    width: 100%;
-                }}
-
-                .auth0-button img {{
-                    width: 220px;
-                }}
-            }}
-            </style>
-
-            <div class="container">
-                <div class="card">
-                    <div class="left-panel">
-                        <h1>Welcome to INSIGHT!</h1>
-                        <p>Sign in with your Auth0 account to access your dashboard.</p>
-                    </div>
-                    <div class="right-panel">
-                        <a href="{authorization_url}">
-                            <img src="https://developers.google.com/static/identity/images/branding_guideline_sample_lt_rd_lg.svg"
-                                     alt="Sign in with Google"/>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        """)
-    get_logged_in_user_email()
 
 
-# # st.html("""
-# #     <style>
-# #     @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
-# #     html, body, [class*="css"]  {
-# #         font-family: 'Poppins', sans-serif;
-# #     }
-# #     </style>"""
-# #     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
-# # )
-# logo = st.logo("./oask_light_mode_tagline.png", size="large", link="https://oregonask.org/")
 
-# st.set_option("client.showSidebarNavigation", False)
-
-# # -------- ASSESSMENTS DICTIONARY --------
-# ASSESSMENTS = {
-#     "Environment, Health, and Safety": {"form_url": "...", "sheet_name": "Environment, Health, and Safety (Responses)"},
-#     "Highly Skilled Personnel": {"form_url": "...", "sheet_name": "Highly Skilled Personnel (Responses)"},
-#     "Program Management": {"form_url": "...", "sheet_name": "Program Management (Responses)"},
-#     "Youth Development and Engagement": {"form_url": "...", "sheet_name": "Youth Development and Engagement (Responses)"},
-#     "Programming and Activities": {"form_url": "...", "sheet_name": "Programming and Activities (Responses)"},
-#     "Families, Schools, and Communities": {"form_url": "...", "sheet_name": "Families, Schools, and Communities (Responses)"},
-# }
-
-# st.markdown("""
+# st.html("""
 #     <style>
-#     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
-
-#     html, body, [class*="css"] {
+#     @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+#     html, body, [class*="css"]  {
 #         font-family: 'Poppins', sans-serif;
 #     }
+#     </style>"""
+#     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
+# )
+logo = st.logo("./oask_light_mode_tagline.png", size="large", link="https://oregonask.org/")
 
-#     /* Apply Poppins font to Streamlit buttons */
-#     button[kind="primary"], button[kind="secondary"] {
-#         font-family: 'Poppins', sans-serif !important;
-#         font-weight: 600 !important;
-#     }
-#     </style>
-# """, unsafe_allow_html=True)
+st.set_option("client.showSidebarNavigation", False)
 
-# query_params = st.query_params
-# query_params = st.query_params
-# # if st.query_params.get("code") and "google_token" not in st.session_state:
-# #     code = query_params["code"]
-# #     token = fetch_token(code)
-# #     if token:
-# #         st.session_state.google_token = token
-# #         st.session_state.user_info = get_user_info(token)
-# #     else:
-# #         st.error("Login failed.")
-# #         st.stop()
+# -------- ASSESSMENTS DICTIONARY --------
+ASSESSMENTS = {
+    "Environment, Health, and Safety": {"form_url": "...", "sheet_name": "Environment, Health, and Safety (Responses)"},
+    "Highly Skilled Personnel": {"form_url": "...", "sheet_name": "Highly Skilled Personnel (Responses)"},
+    "Program Management": {"form_url": "...", "sheet_name": "Program Management (Responses)"},
+    "Youth Development and Engagement": {"form_url": "...", "sheet_name": "Youth Development and Engagement (Responses)"},
+    "Programming and Activities": {"form_url": "...", "sheet_name": "Programming and Activities (Responses)"},
+    "Families, Schools, and Communities": {"form_url": "...", "sheet_name": "Families, Schools, and Communities (Responses)"},
+}
 
-# # --- Step 1: Ask to sign in ---
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
 
-# # if not st.experimental_user.is_logged_in:
-# #     if st.button("Log In"):
-# #         st.login("auth0")
+    html, body, [class*="css"] {
+        font-family: 'Poppins', sans-serif;
+    }
 
-# # st.json(st.experimental_user)
+    /* Apply Poppins font to Streamlit buttons */
+    button[kind="primary"], button[kind="secondary"] {
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 600 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-
-# # if "google_token" not in st.session_state:
-# #     login()
-# #     st.stop()
-# query_params = st.query_params
-# code = query_params.get("code")
-# state = query_params.get("state")
-
-
-
-
-# # Extract params
-# code = st.query_params.get("code")
-# query_state = st.query_params.get("state")
-
-# # Restore cookies if needed
-# if "cookies" not in st.session_state:
-#     cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
-#     if not cookies.ready():
-#         st.stop()
-#     st.session_state["cookies"] = cookies
-# else:
-#     cookies = st.session_state["cookies"]
-
-# # Retrieve stored state
-# stored_state = st.session_state.get("oauth_state") or cookies.get("oauth_state")
-
-# # Restore to session_state if missing
-# if "oauth_state" not in st.session_state and stored_state:
-#     st.session_state["oauth_state"] = stored_state
-
-# # Ensure states match
-# if code and query_state:
-#     if query_state != stored_state:
-#         st.error("OAuth state mismatch. Please try logging in again.")
-#         st.stop()
-# if "auth0_token" not in st.session_state:
-#     if code and state:
-#         token = fetch_token(code)
-#         if token:
-#             st.session_state["auth0_token"] = token
-#             st.session_state["user_info"] = get_user_info(token)
-#         else:
-#             st.error("Login failed. Please try again.")
-#             login()
-#             st.stop()
+query_params = st.query_params
+query_params = st.query_params
+# if st.query_params.get("code") and "google_token" not in st.session_state:
+#     code = query_params["code"]
+#     token = fetch_token(code)
+#     if token:
+#         st.session_state.google_token = token
+#         st.session_state.user_info = get_user_info(token)
 #     else:
-#         login()
+#         st.error("Login failed.")
 #         st.stop()
 
+# --- Step 1: Ask to sign in ---
 
-def confirming():
-    user_info = st.session_state.get("user_info", {})
-    user_email = user_info.get("email", "").strip().lower()
-    user_name = user_info.get("name", "").strip()
+# if not st.experimental_user.is_logged_in:
+#     if st.button("Log In"):
+#         st.login("auth0")
+
+# st.json(st.experimental_user)
 
 
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    # Convert secrets section to JSON string and parse it
-    service_account_info = dict(st.secrets["gcp_service_account"])
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
-    client = gspread.authorize(creds)
+# if "google_token" not in st.session_state:
+#     login()
+#     st.stop()
+query_params = st.query_params
+code = query_params.get("code")
+state = query_params.get("state")
 
-    # After successful Google login
-    user_info = st.session_state.get("user_info", {})
-    user_email = user_info.get("email", "").strip().lower()
-    user_name = user_info.get("name", "").strip()
 
-    # Load authorized users
-    user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
-    user_records = user_sheet.get_all_records()
 
-    # Match user by email
+# Extract code and state from URL
+code = st.query_params.get("code")
+state = st.query_params.get("state") or st.session_state.get("oauth_state") or cookies.get("oauth_state")
+
+
+if "auth0_token" not in st.session_state:
+    if code and state:
+        token = fetch_token(code)
+        if token:
+            st.session_state["auth0_token"] = token
+            st.session_state["user_info"] = get_user_info(token)
+        else:
+            st.error("Login failed. Please try again.")
+            login()
+            st.stop()
+    else:
+        login()
+        st.stop()
+
+
+
+# else:
+#     st.html("""
+#     <style>
+#     @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+#     html, body, [class*="css"]  {
+#         font-family: 'Poppins', sans-serif;
+#     }
+#     </style>"""
+#     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
+#     )
+
+user_info = st.session_state.get("user_info", {})
+user_email = user_info.get("email", "").strip().lower()
+user_name = user_info.get("name", "").strip()
+
+
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+# Convert secrets section to JSON string and parse it
+service_account_info = dict(st.secrets["gcp_service_account"])
+creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
+client = gspread.authorize(creds)
+
+# After successful Google login
+user_info = st.session_state.get("user_info", {})
+user_email = user_info.get("email", "").strip().lower()
+user_name = user_info.get("name", "").strip()
+
+# Load authorized users
+user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
+user_records = user_sheet.get_all_records()
+
+# Match user by email
+user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
+
+
+
+user_in = bool(user_match)
+# --- If user not found: allow account creation ---
+if not user_in:
+    st.warning("We couldn't find your email in the system. Please enter your information to create an account.")
+    first_name = st.text_input("Your first name")
+    last_name = st.text_input("Your last name")
+    role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, Staff, etc.)")
+    curr_org_input = st.text_input("Your organization name")
+    name_input = first_name + " " + last_name
+    if st.button("Create Account") and role_input:
+        st.session_state["name_input"] = name_input.strip()
+        st.session_state["role"] = role_input.strip()
+
+        creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
+
+        admin_approved = "True" if creating_new_org else "False"
+
+        oregonask_access = "False"
+
+        user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email, "", "", admin_approved, "FALSE"])
+
+        st.session_state["is_admin"] = admin_approved == "True"
+        cookies["admin_input"] = admin_approved
+        cookies.save()
+
+
+
+        st.success("Account created successfully!")
+        user_in = True
+        st.rerun()
+        # Force initialize once
+
+if user_in:
+    org_input = None
+        # Auto-fill org info
+
+    # --- If user is found ---
+    role = user_match["Title"]
+    st.session_state["role"] = role
+    st.session_state["name"] = user_match.get("Name", user_name)
+    st.info(f"Welcome, **{st.session_state['name']}**! Your title: **{role}**")
+
+    # --- Define admin roles by substrings ---
+    # admin_keywords = ["director", "president", "principal", "ceo", "admin", "manager", "coordinator", "leader", "owner", "superintendent", "directora", "chief", "mayor", "chair", "founder", "oregonask intern"]
+
+    # Simple role check
+    def is_admin_role(role):
+        return any(keyword in role.lower() for keyword in admin_keywords)
+
+    # Flag admin access
+    # st.session_state["is_admin"] = is_admin_role(st.session_state.get("role", ""))
+
+    # Pull the user's row by email
     user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
 
+    admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
+    st.session_state["is_admin"] = admin_approved
+    cookies["admin_input"] = str(admin_approved)
+    oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
+    st.session_state["access"] = oregonask_access
+    cookies["access_level"] = str(oregonask_access)
 
 
-    user_in = bool(user_match)
-    # --- If user not found: allow account creation ---
-    if not user_in:
-        st.warning("We couldn't find your email in the system. Please enter your information to create an account.")
-        first_name = st.text_input("Your first name")
-        last_name = st.text_input("Your last name")
-        role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, Staff, etc.)")
-        curr_org_input = st.text_input("Your organization name")
-        name_input = first_name + " " + last_name
-        if st.button("Create Account") and role_input:
-            st.session_state["name_input"] = name_input.strip()
-            st.session_state["role"] = role_input.strip()
 
-            creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
+    if st.session_state["is_admin"]:
+        st.success("You have admin-level access.")
+    else:
+        st.info("You have standard access.")
+    user_org = user_match.get("Organization", "").strip().lower()
+    if user_match and user_org!="" and not st.session_state.get("org_input"):
 
-            admin_approved = "True" if creating_new_org else "False"
+            # Automatically log in
+            user_org = user_match.get("Organization", "").strip()
+            site_input = ""
 
-            oregonask_access = "False"
+            st.session_state["org_input"] = user_org
+            st.session_state["site_input"] = site_input
 
-            user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email, "", "", admin_approved, "FALSE"])
+            cookies["org_input"] = user_org
+            cookies["site_input"] = site_input
 
-            st.session_state["is_admin"] = admin_approved == "True"
-            cookies["admin_input"] = admin_approved
             cookies.save()
 
+            st.success(f"Signed in automatically to: {user_org}")
 
+            st.switch_page("pages/home.py")
 
-            st.success("Account created successfully!")
-            user_in = True
-            st.rerun()
-            # Force initialize once
+    @st.cache_data(ttl=3600, show_spinner=False)
+    def get_org_names():
+        sheet = client.open("All Programs Statewide_6.17.25").worksheet("All Programs Statewide")
+        records = sheet.get_all_records(head=9)
+        org_names = list({row["Account Name"].strip() for row in records if row.get("Account Name")})
+        return org_names
 
-    if user_in:
-        org_input = None
-            # Auto-fill org info
+    # Now outside the function: enrich with current user's org if missing
+    org_names = get_org_names()
+    if user_match:
+        user_org = user_match.get("Organization", "").strip()
+        if user_org and user_org.lower() not in [org.strip().lower() for org in org_names]:
+            org_names.append(user_org)
 
-        # --- If user is found ---
-        role = user_match["Title"]
-        st.session_state["role"] = role
-        st.session_state["name"] = user_match.get("Name", user_name)
-        st.info(f"Welcome, **{st.session_state['name']}**! Your title: **{role}**")
-
-        # --- Define admin roles by substrings ---
-        # admin_keywords = ["director", "president", "principal", "ceo", "admin", "manager", "coordinator", "leader", "owner", "superintendent", "directora", "chief", "mayor", "chair", "founder", "oregonask intern"]
-
-        # Simple role check
-        def is_admin_role(role):
-            return any(keyword in role.lower() for keyword in admin_keywords)
-
-        # Flag admin access
-        # st.session_state["is_admin"] = is_admin_role(st.session_state.get("role", ""))
-
-        # Pull the user's row by email
-        user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
-
-        admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
-        st.session_state["is_admin"] = admin_approved
-        cookies["admin_input"] = str(admin_approved)
-        oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
-        st.session_state["access"] = oregonask_access
-        cookies["access_level"] = str(oregonask_access)
+    org_names = sorted(org_names)
+    org_names.insert(0, "Search for your organization name...")
+    org_names.append("Other")
 
 
 
-        if st.session_state["is_admin"]:
-            st.success("You have admin-level access.")
-        else:
-            st.info("You have standard access.")
+    # # Load orgs from cache
+    # org_names = get_org_names()
+    
+
+    def search_orgs(query: str):
+        return [org for org in org_names if query.lower() in org.lower()]
+
+    org_search = st.selectbox(
+        "Search for your organization",
+        options=org_names,
+    )
+
+    
+    if org_search == "Other":
+        custom_org = st.text_input("Please enter your organization name:")
+        address = st.text_input("Please enter your site's address:")
+        org_input = custom_org.strip()
+    elif org_search != "Search for your organization name...":
         user_org = user_match.get("Organization", "").strip().lower()
-        if user_match and user_org!="" and not st.session_state.get("org_input"):
+        selected_org = org_search.strip().lower()
+        normalized_orgs = [org.strip().lower() for org in org_names]
+        org_input = org_search
+        # else:
+        #     st.warning("The organization you selected does not match the organization in our system. Please try again.")
+        #     org_input = False
+    else:
+        st.info("Please select the name of the organization you work for.")
 
-                # Automatically log in
-                user_org = user_match.get("Organization", "").strip()
-                site_input = ""
+  # --- Site input (optional) ---
+    site_input = st.text_input("If your organization has multiple sites, please enter your site name (optional):")
 
-                st.session_state["org_input"] = user_org
-                st.session_state["site_input"] = site_input
+    # # --- Continue button ---
+    # if st.button("Continue"):
+    #     if not org_input:
+    #         st.warning("Please select a valid organization before continuing.")
+    #     else:
+    #         # Save inputs
+    #         st.session_state["org_input"] = org_input.strip()
+    #         st.session_state["site_input"] = site_input.strip() if site_input else ""
+    #         st.session_state["admin_input"] = "false"
+    #         st.session_state["access_level"] = str(st.session_state["access"])
 
-                cookies["org_input"] = user_org
-                cookies["site_input"] = site_input
-
-                cookies.save()
-
-                st.success(f"Signed in automatically to: {user_org}")
-
-                st.switch_page("pages/home.py")
-
-        @st.cache_data(ttl=3600, show_spinner=False)
-        def get_org_names():
-            sheet = client.open("All Programs Statewide_6.17.25").worksheet("All Programs Statewide")
-            records = sheet.get_all_records(head=9)
-            org_names = list({row["Account Name"].strip() for row in records if row.get("Account Name")})
-            return org_names
-
-        # Now outside the function: enrich with current user's org if missing
-        org_names = get_org_names()
-        if user_match:
-            user_org = user_match.get("Organization", "").strip()
-            if user_org and user_org.lower() not in [org.strip().lower() for org in org_names]:
-                org_names.append(user_org)
-
-        org_names = sorted(org_names)
-        org_names.insert(0, "Search for your organization name...")
-        org_names.append("Other")
+    #         # Save cookies
+    #         cookies["org_input"] = st.session_state["org_input"]
+    #         cookies["site_input"] = st.session_state["site_input"]
+    #         cookies["admin_input"] = st.session_state["admin_input"]
+    #         cookies["access_level"] = st.session_state["access_level"]
+    #         cookies.save()
 
 
+    #         # Write to sheet only if 'Other'
+    #         if org_search == "Other":
+    #             def append_clean_row(sheet, values):
+    #                 col_a = sheet.col_values(1)
+    #                 next_empty_row = len(col_a) + 1
+    #                 sheet.update(f"A{next_empty_row}", [values], value_input_option='USER_ENTERED')
 
-        # # Load orgs from cache
-        # org_names = get_org_names()
-        
+    #             append_clean_row(
+    #                 sheet,
+    #                 ["Active", "", "INSIGHT", custom_org, st.session_state["site_input"], address]
+    #             )
+    #             st.cache_data.clear()
 
-        def search_orgs(query: str):
-            return [org for org in org_names if query.lower() in org.lower()]
-
-        org_search = st.selectbox(
-            "Search for your organization",
-            options=org_names,
-        )
-
-        
-        if org_search == "Other":
-            custom_org = st.text_input("Please enter your organization name:")
-            address = st.text_input("Please enter your site's address:")
-            org_input = custom_org.strip()
-        elif org_search != "Search for your organization name...":
-            user_org = user_match.get("Organization", "").strip().lower()
-            selected_org = org_search.strip().lower()
-            normalized_orgs = [org.strip().lower() for org in org_names]
-            org_input = org_search
-            # else:
-            #     st.warning("The organization you selected does not match the organization in our system. Please try again.")
-            #     org_input = False
+    #         # Immediately redirect to home.py
+    #         st.switch_page("pages/home.py")
+    #         st.experimental_rerun()
+    
+    if st.button("Continue"):
+        if not org_input:
+            st.warning("Please select a valid organization before continuing.")
         else:
-            st.info("Please select the name of the organization you work for.")
+            # Save inputs
+            st.session_state["org_input"] = org_input.strip()
+            st.session_state["site_input"] = site_input.strip() if site_input else ""
+            st.session_state["admin_input"] = "false"
+            st.session_state["access_level"] = str(st.session_state["access"])
 
-    # --- Site input (optional) ---
-        site_input = st.text_input("If your organization has multiple sites, please enter your site name (optional):")
+            # Save cookies
+            cookies["org_input"] = st.session_state["org_input"]
+            cookies["site_input"] = st.session_state["site_input"]
+            cookies["admin_input"] = st.session_state["admin_input"]
+            cookies["access_level"] = st.session_state["access_level"]
+            cookies.save()
 
-        # # --- Continue button ---
-        # if st.button("Continue"):
-        #     if not org_input:
-        #         st.warning("Please select a valid organization before continuing.")
-        #     else:
-        #         # Save inputs
-        #         st.session_state["org_input"] = org_input.strip()
-        #         st.session_state["site_input"] = site_input.strip() if site_input else ""
-        #         st.session_state["admin_input"] = "false"
-        #         st.session_state["access_level"] = str(st.session_state["access"])
+            # Only write to sheet if 'Other'
+            if org_search == "Other":
+                def append_clean_row(sheet, values):
+                    col_a = sheet.col_values(1)
+                    next_empty_row = len(col_a) + 1
+                    sheet.update(f"A{next_empty_row}", [values], value_input_option='USER_ENTERED')
 
-        #         # Save cookies
-        #         cookies["org_input"] = st.session_state["org_input"]
-        #         cookies["site_input"] = st.session_state["site_input"]
-        #         cookies["admin_input"] = st.session_state["admin_input"]
-        #         cookies["access_level"] = st.session_state["access_level"]
-        #         cookies.save()
+                append_clean_row(
+                    sheet,
+                    ["Active", "", "INSIGHT", custom_org, st.session_state["site_input"], address]
+                )
+                st.cache_data.clear()
 
-
-        #         # Write to sheet only if 'Other'
-        #         if org_search == "Other":
-        #             def append_clean_row(sheet, values):
-        #                 col_a = sheet.col_values(1)
-        #                 next_empty_row = len(col_a) + 1
-        #                 sheet.update(f"A{next_empty_row}", [values], value_input_option='USER_ENTERED')
-
-        #             append_clean_row(
-        #                 sheet,
-        #                 ["Active", "", "INSIGHT", custom_org, st.session_state["site_input"], address]
-        #             )
-        #             st.cache_data.clear()
-
-        #         # Immediately redirect to home.py
-        #         st.switch_page("pages/home.py")
-        #         st.experimental_rerun()
-        
-        if st.button("Continue"):
-            if not org_input:
-                st.warning("Please select a valid organization before continuing.")
-            else:
-                # Save inputs
-                st.session_state["org_input"] = org_input.strip()
-                st.session_state["site_input"] = site_input.strip() if site_input else ""
-                st.session_state["admin_input"] = "false"
-                st.session_state["access_level"] = str(st.session_state["access"])
-
-                # Save cookies
-                cookies["org_input"] = st.session_state["org_input"]
-                cookies["site_input"] = st.session_state["site_input"]
-                cookies["admin_input"] = st.session_state["admin_input"]
-                cookies["access_level"] = st.session_state["access_level"]
-                cookies.save()
-
-                # Only write to sheet if 'Other'
-                if org_search == "Other":
-                    def append_clean_row(sheet, values):
-                        col_a = sheet.col_values(1)
-                        next_empty_row = len(col_a) + 1
-                        sheet.update(f"A{next_empty_row}", [values], value_input_option='USER_ENTERED')
-
-                    append_clean_row(
-                        sheet,
-                        ["Active", "", "INSIGHT", custom_org, st.session_state["site_input"], address]
-                    )
-                    st.cache_data.clear()
-
-                st.session_state["page_redirect"] = "pages/home.py"
-                st.rerun() # Trigger rerun so the top of script handles the redirect
+            st.session_state["page_redirect"] = "pages/home.py"
+            st.rerun() # Trigger rerun so the top of script handles the redirect
 
 
 
-def app():
-    st.title('Welcome!')
-    if not st.session_state.email:
-        get_logged_in_user_email()
-        show_login_button()
-
-    if st.session_state.email:
-        confirming()
-
-app()
