@@ -85,7 +85,7 @@ def login():
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }}
-
+        
         .left-panel {{
             width: 50%;
             background: linear-gradient(120deg, #084c61, #4f6d7a, #56a3a6);
