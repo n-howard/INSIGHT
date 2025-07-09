@@ -47,8 +47,7 @@ def login():
     authorization_url, state = auth0.authorization_url(
         f"https://{auth0_domain}/authorize",
         audience=f"https://{auth0_domain}/userinfo",
-        prompt="login",
-        state=state  
+        prompt="login"
     )
 
 
