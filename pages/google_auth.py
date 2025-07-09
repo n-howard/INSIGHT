@@ -58,20 +58,10 @@ def login():
     cookies.save()
 
 
-    log_display = """<style>.right-panel {{
-            width: 50%;
-            background: white;
-            padding: 5vh 5vw;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }}</style>
-    <div class="right-panel">
-                    <!--<a href="{authorization_url}">
+    log_display = """<a href="{authorization_url}">
                          <img src="https://i.imgur.com/HpRK4Jv.png"
                            alt="Sign in with Auth0"/>
-                    </a>-->
-                </div>"""
+                    </a>"""
 
     # Render login button with HTML + CSS
     st.html(f"""
@@ -157,16 +147,14 @@ def login():
                     <p>Sign in with your Auth0 account to access your dashboard.</p>
                 </div>
                 <div class="right-panel">
-                    <!--<a href="{authorization_url}">
+                    <a href="{authorization_url}">
                          <img src="https://i.imgur.com/HpRK4Jv.png"
                            alt="Sign in with Auth0"/>
-                    </a>-->
+                    </a>
                 </div>
             </div>
         </div>
     """)
-    if st.button(log_display):
-        st.login("auth0")
 
 
 def fetch_token(code):

@@ -1,28 +1,6 @@
 import streamlit as st 
 
 st.set_page_config(page_title="INSIGHT", layout="wide", page_icon="./oask_short_logo.png", initial_sidebar_state="collapsed")
-
-
-# ✅ LOGIN FLOW (only ask for login if not already logged in)
-if not st.user.is_logged_in:
-    st.title("Welcome to INSIGHT")
-    st.write("Please log in to continue.")
-
-    if st.button("Log in with Auth0"):
-        st.login("auth0")
-        st.stop()
-
-    # Block everything else on this page until they're logged in
-    st.stop()
-
-# ✅ USER IS LOGGED IN, continue to rest of app
-user_email = st.user.email.strip().lower()
-user_name = st.user.name.strip()
-
-st.success(f"Welcome, {user_name} ({user_email})")
-
-
-
 import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -46,14 +24,11 @@ if "cookies" not in st.session_state:
 else:
     cookies = st.session_state["cookies"]
 
-# if "page_redirect" in st.session_state:
-#     target = st.session_state["page_redirect"]
-#     del st.session_state["page_redirect"]
-#     st.switch_page(target)
+if "page_redirect" in st.session_state:
+    target = st.session_state["page_redirect"]
+    del st.session_state["page_redirect"]
+    st.switch_page(target)
 
-if st.button("Log out"):
-    st.session_state.clear()
-    st.rerun()
 
 
 
@@ -130,47 +105,28 @@ state = query_params.get("state")
 code = st.query_params.get("code")
 state = st.query_params.get("state") or st.session_state.get("oauth_state") or cookies.get("oauth_state")
 
-# if not st.user.is_logged_in:
-#     login()
-# if "auth0_token" not in st.session_state:
-#     if code and state:
-#         token = fetch_token(code)
-#         if token:
-#             st.session_state["auth0_token"] = token
-#             # st.session_state["user_info"] = get_user_info(token)
-#             st.session_state["user_info"] = st.user
-#         else:
-#             st.error("Login failed. Please try again.")
-#             login()
-#             st.stop()
-#     else:
-#         login()
-#         st.stop()
 
-# if not st.user.is_logged_in:
-#     if st.button("Sign In"):
-#         st.login("auth0")
-#         st.stop()
+if "auth0_token" not in st.session_state:
+    if code and state:
+        token = fetch_token(code)
+        if token:
+            st.session_state["auth0_token"] = token
+            st.session_state["user_info"] = get_user_info(token)
+        else:
+            st.error("Login failed. Please try again.")
+            login()
+            st.stop()
+    else:
+        login()
+        st.stop()
 
 
 
-# else:
-#     st.html("""
-#     <style>
-#     @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
-#     html, body, [class*="css"]  {
-#         font-family: 'Poppins', sans-serif;
-#     }
-#     </style>"""
-#     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
-#     )
 
-# user_info = st.session_state.get("user_info", {})
-# user_email = user_info.get("email", "").strip().lower()
-# user_name = user_info.get("name", "").strip()
-user_info = st.user
-user_email = st.user.email.strip().lower()
-user_name = st.user.name.strip()
+
+user_info = st.session_state.get("user_info", {})
+user_email = user_info.get("email", "").strip().lower()
+user_name = user_info.get("name", "").strip()
 
 
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -180,12 +136,10 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, s
 client = gspread.authorize(creds)
 
 # After successful Google login
-# user_info = st.session_state.get("user_info", {})
-# user_email = user_info.get("email", "").strip().lower()
-# user_name = user_info.get("name", "").strip()
-user_info = st.user
-user_email = st.user.email.strip().lower()
-user_name = st.user.name.strip()
+user_info = st.session_state.get("user_info", {})
+user_email = user_info.get("email", "").strip().lower()
+user_name = user_info.get("name", "").strip()
+
 # Load authorized users
 user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
 user_records = user_sheet.get_all_records()
@@ -264,22 +218,23 @@ if user_in:
     else:
         st.info("You have standard access.")
     user_org = user_match.get("Organization", "").strip().lower()
-    if user_match and user_org and not st.session_state.get("org_input") and not st.session_state.get("redirected_to_home"):
-        user_org = user_match.get("Organization", "").strip()
-        site_input = ""
+    if user_match and user_org!="" and not st.session_state.get("org_input"):
 
-        st.session_state["org_input"] = user_org
-        st.session_state["site_input"] = site_input
-        st.session_state["redirected_to_home"] = True
+            # Automatically log in
+            user_org = user_match.get("Organization", "").strip()
+            site_input = ""
 
-        cookies["org_input"] = user_org
-        cookies["site_input"] = site_input
-        cookies.save()
+            st.session_state["org_input"] = user_org
+            st.session_state["site_input"] = site_input
 
-        st.switch_page("pages/home.py")
-        st.stop()
+            cookies["org_input"] = user_org
+            cookies["site_input"] = site_input
 
+            cookies.save()
 
+            st.success(f"Signed in automatically to: {user_org}")
+
+            st.switch_page("pages/home.py")
 
     @st.cache_data(ttl=3600, show_spinner=False)
     def get_org_names():
@@ -398,8 +353,8 @@ if user_in:
                 )
                 st.cache_data.clear()
 
-            st.switch_page("pages/home.py")
-            # st.rerun() # Trigger rerun so the top of script handles the redirect
+            st.session_state["page_redirect"] = "pages/home.py"
+            st.rerun() # Trigger rerun so the top of script handles the redirect
 
 
 
