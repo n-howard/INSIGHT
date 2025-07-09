@@ -1,15 +1,21 @@
 import streamlit as st 
 
 st.set_page_config(page_title="INSIGHT", layout="wide", page_icon="./oask_short_logo.png", initial_sidebar_state="collapsed")
-if not hasattr(st, "user") or not st.user.is_logged_in:
-    st.session_state["__waiting_for_auth"] = True
-    if st.button("Sign In"):
+if not st.session_state.get("authenticated", False):
+    st.title("Welcome to INSIGHT")
+    st.write("Please log in to continue.")
+
+    if st.button("Log in with Auth0"):
         st.login("auth0")
         st.stop()
-elif st.session_state.get("__waiting_for_auth"):
-    # Prevent infinite loop during transition from login to page rerun
-    del st.session_state["__waiting_for_auth"]
+
     st.stop()
+
+# Now you're logged in
+user_email = st.user.email.lower().strip()
+user_name = st.user.name
+st.session_state["authenticated"] = True  # Set auth flag
+
 
 import pandas as pd
 import gspread
@@ -34,11 +40,14 @@ if "cookies" not in st.session_state:
 else:
     cookies = st.session_state["cookies"]
 
-if "page_redirect" in st.session_state:
-    target = st.session_state["page_redirect"]
-    del st.session_state["page_redirect"]
-    st.switch_page(target)
+# if "page_redirect" in st.session_state:
+#     target = st.session_state["page_redirect"]
+#     del st.session_state["page_redirect"]
+#     st.switch_page(target)
 
+if st.button("Log out"):
+    st.session_state.clear()
+    st.rerun()
 
 
 
