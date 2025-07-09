@@ -142,7 +142,7 @@ def login():
                     <p>Sign in with your Auth0 account to access your dashboard.</p>
                 </div>
                 <div class="right-panel">
-                    <a href="{authorization_url}" target="_self">
+                    <a href="{authorization_url}" target="_blank">
                          <img src="https://i.imgur.com/HpRK4Jv.png"
                            alt="Sign in with Auth0"/>
                     </a>
