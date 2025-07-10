@@ -136,13 +136,16 @@ st.markdown("""
 # user_info = st.session_state.get("user_info", {})
 # user_email = user_info.get("email", "").strip().lower()
 # user_name = user_info.get("name", "").strip()
-
+st.session_state["user_email"] = ""
+st.session_state["user_name"] = ""
 if not st.user.is_logged_in:
     if st.button("Sign In"):
         st.login("auth0")
 
         st.session_state["user_email"] = st.user.email.strip().lower()
         st.session_state["user_name"] = st.user.name.strip()
+        user_email = st.session_state.get("user_email")
+        user_name = st.session_state.get("user_name")
 
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 # Convert secrets section to JSON string and parse it
@@ -152,8 +155,8 @@ client = gspread.authorize(creds)
 
 # # After successful Google login
 # user_info = st.session_state.get("user_info", {})
-user_email = st.session_state.get("user_email").strip().lower()
-user_name = st.session_state.get("user_name").strip()
+user_email = st.session_state.get("user_email")
+user_name = st.session_state.get("user_name")
 
 # Load authorized users
 user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
