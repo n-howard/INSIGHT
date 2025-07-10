@@ -24,10 +24,6 @@ if "cookies" not in st.session_state:
 else:
     cookies = st.session_state["cookies"]
 
-if "page_redirect" in st.session_state:
-    target = st.session_state["page_redirect"]
-    del st.session_state["page_redirect"]
-    st.switch_page(target)
 
 
 
@@ -239,21 +235,27 @@ if user_in:
         st.info("You have standard access.")
     user_org = user_match.get("Organization", "").strip().lower()
     if user_match and user_org!="" and not st.session_state.get("org_input"):
-            # Automatically log in
-            user_org = user_match.get("Organization", "").strip()
-            site_input = ""
+            # # Automatically log in
+            # user_org = user_match.get("Organization", "").strip()
+            # site_input = ""
 
+            # st.session_state["org_input"] = user_org
+            # st.session_state["site_input"] = site_input
+
+            # cookies["org_input"] = user_org
+            # cookies["site_input"] = site_input
+
+            # cookies.save()
+
+            # st.success(f"Signed in automatically to: {user_org}")
+
+            # st.switch_page("pages/home.py")
             st.session_state["org_input"] = user_org
-            st.session_state["site_input"] = site_input
-
+            st.session_state["site_input"] = ""
             cookies["org_input"] = user_org
-            cookies["site_input"] = site_input
-
+            cookies["site_input"] = ""
             cookies.save()
-
-            st.success(f"Signed in automatically to: {user_org}")
-
-            st.switch_page("pages/home.py")
+            st.session_state["auto_login_trigger"] = True
 
     @st.cache_data(ttl=3600, show_spinner=False)
     def get_org_names():
@@ -341,25 +343,25 @@ if user_in:
     #         # Immediately redirect to home.py
     #         st.switch_page("pages/home.py")
     #         st.experimental_rerun()
+    if st.session_state.get("redirect_to_home"):
+        del st.session_state["redirect_to_home"]
+        st.switch_page("pages/home.py")
 
     if st.button("Continue"):
         if not org_input:
             st.warning("Please select a valid organization before continuing.")
         else:
-            # Save inputs
             st.session_state["org_input"] = org_input.strip()
             st.session_state["site_input"] = site_input.strip() if site_input else ""
             st.session_state["admin_input"] = "false"
             st.session_state["access_level"] = str(st.session_state["access"])
 
-            # Save cookies
             cookies["org_input"] = st.session_state["org_input"]
             cookies["site_input"] = st.session_state["site_input"]
             cookies["admin_input"] = st.session_state["admin_input"]
             cookies["access_level"] = st.session_state["access_level"]
             cookies.save()
 
-            # Only write to sheet if 'Other'
             if org_search == "Other":
                 def append_clean_row(sheet, values):
                     col_a = sheet.col_values(1)
@@ -372,8 +374,14 @@ if user_in:
                 )
                 st.cache_data.clear()
 
-            st.session_state["page_redirect"] = "pages/home.py"
-            st.rerun() # Trigger rerun so the top of script handles the redirect
+            # 👇 Trigger redirect cleanly
+            st.session_state["redirect_to_home"] = True
+            st.rerun()
+    if st.session_state.get("auto_login_trigger"):
+        del st.session_state["auto_login_trigger"]
+        st.success(f"Signed in automatically to: {st.session_state['org_input']}")
+        st.switch_page("pages/home.py")
+
 
 
 
