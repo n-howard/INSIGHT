@@ -49,7 +49,7 @@ def login():
     # 🛠 Pass state *explicitly* as a URL param to your redirect_uri
     st.markdown(f"""
         <div style="text-align:center; margin-top: 3rem;">
-            <a href="{authorization_url}" target="_self" rel="noopener noreferrer">
+            <a href="{authorization_url}" target="_blank" rel="noopener noreferrer">
                 <img src="https://i.imgur.com/HpRK4Jv.png" alt="Sign in with Auth0" width="250"/>
             </a>
         </div>
