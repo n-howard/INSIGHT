@@ -175,17 +175,17 @@ def login():
     cookies.save()
 
     # Show a button that links directly to Auth0
-    st.markdown(
-        f"""
-        <div style="text-align: center; padding-top: 40px;">
-            <a href="{authorization_url}" style="text-decoration: none;">
-                <img src="https://i.imgur.com/HpRK4Jv.png" alt="Sign in with Auth0" width="250" />
-            </a>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
+    # st.markdown(
+    #     f"""
+    #     <div style="text-align: center; padding-top: 40px;">
+    #         <a href="{authorization_url}" style="text-decoration: none;">
+    #             <img src="https://i.imgur.com/HpRK4Jv.png" alt="Sign in with Auth0" width="250" />
+    #         </a>
+    #     </div>
+    #     """,
+    #     unsafe_allow_html=True
+    # )
+    st.button("Sign In", on_click=authorization_url)
 
 def fetch_token(code):
     try:
