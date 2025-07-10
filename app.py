@@ -142,6 +142,7 @@ if not st.user.is_logged_in:
     st.info("Please sign in to continue.")
     if st.button("Sign In"):
         st.login("auth0")
+        st.user.is_logged_in = True
     st.stop()
 
 if st.user.is_logged_in:
@@ -239,7 +240,6 @@ if st.user.is_logged_in:
             st.info("You have standard access.")
         user_org = user_match.get("Organization", "").strip().lower()
         if user_match and user_org!="" and not st.session_state.get("org_input"):
-
                 # Automatically log in
                 user_org = user_match.get("Organization", "").strip()
                 site_input = ""
