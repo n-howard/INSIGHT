@@ -142,7 +142,7 @@ if not st.user.is_logged_in:
     st.info("Please sign in to continue.")
     if st.button("Sign In"):
         st.login("auth0")
-    st.stop()
+    
 
 if st.user.is_logged_in:
     # Now you can safely use user_info
@@ -158,8 +158,8 @@ if st.user.is_logged_in:
 
     # # After successful Google login
     # user_info = st.session_state.get("user_info", {})
-    # user_email = st.session_state.get("user_email")
-    # user_name = st.session_state.get("user_name")
+    user_email = st.session_state.get("user_email")
+    user_name = st.session_state.get("user_name")
 
     # Load authorized users
     user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
