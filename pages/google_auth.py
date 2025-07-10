@@ -188,7 +188,8 @@ def login():
     auth_url = authorization_url  # this must be a string containing the URL
 
     if st.button("Sign In"):
-        st.markdown(f'<meta http-equiv="refresh" content="0;URL=\'{auth_url}\'" />', unsafe_allow_html=True)
+        # st.markdown(f'<meta http-equiv="refresh" content="0;URL=\'{auth_url}\'" />', unsafe_allow_html=True)
+        st.login("auth0")
         st.stop()
 
 
