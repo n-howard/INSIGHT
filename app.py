@@ -141,8 +141,8 @@ if not st.user.is_logged_in:
     if st.button("Sign In"):
         st.login("auth0")
 
-user_email = st.user.email.strip().lower()
-user_name = st.user.name.strip()
+        user_email = st.user.email.strip().lower()
+        user_name = st.user.name.strip()
 
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 # Convert secrets section to JSON string and parse it
