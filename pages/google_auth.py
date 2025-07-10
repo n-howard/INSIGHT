@@ -4,6 +4,7 @@ from urllib.parse import urlencode
 from requests_oauthlib import OAuth2Session
 from requests import get
 from streamlit_cookies_manager import EncryptedCookieManager
+import streamlit.components.v1 as components
 import json
 
 
@@ -187,16 +188,19 @@ def login():
     # )
     auth_url = authorization_url  # this must be a string containing the URL
 
+
+
     if st.button("Sign In"):
-        st.markdown(f"""
+        components.html(f"""
             <script>
                 window.top.location.href = "{authorization_url}";
             </script>
             <noscript>
                 <a href="{authorization_url}">Click here to sign in</a>
             </noscript>
-        """, unsafe_allow_html=True)
+        """, height=0)
         st.stop()
+
 
 
 
