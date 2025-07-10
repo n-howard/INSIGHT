@@ -143,6 +143,8 @@ if not st.user.is_logged_in:
 
 st.session_state["user_email"] = st.user.email.strip().lower()
 st.session_state["user_name"] = st.user.name.strip()
+st.write("st.user.is_logged_in:", st.user.is_logged_in)
+st.write("st.user.email:", st.user.email if st.user.is_logged_in else "Not logged in")
 
 
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
