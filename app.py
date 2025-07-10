@@ -143,7 +143,7 @@ if "auth0_token" not in st.session_state:
 user_info = st.session_state.get("user_info", {})
 user_email = user_info.get("email", "").strip().lower()
 user_name = user_info.get("name", "").strip()
-user_info = st.user
+# user_info = st.user
 
 # if not st.user.is_logged_in:
 #     st.info("Please sign in to continue.")
