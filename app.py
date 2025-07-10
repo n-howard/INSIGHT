@@ -163,10 +163,10 @@ service_account_info = dict(st.secrets["gcp_service_account"])
 creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
 client = gspread.authorize(creds)
 
-# # After successful Google login
-user_info = st.session_state.get("user_info", {})
-user_email = st.session_state.get("user_email")
-user_name = st.session_state.get("user_name")
+# # # After successful Google login
+# user_info = st.session_state.get("user_info", {})
+# user_email = st.session_state.get("user_email")
+# user_name = st.session_state.get("user_name")
 
 # Load authorized users
 user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
