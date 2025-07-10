@@ -106,24 +106,44 @@ st.markdown("""
 
 
 # Extract code and state from URL
+# query_params = st.query_params
+# code = query_params.get("code")
+# state = query_params.get("state") or st.session_state.get("oauth_state")
+
+# if "auth0_token" not in st.session_state:
+#     if code and state:
+#         token = fetch_token(code)
+#         if token:
+#             st.session_state["auth0_token"] = token
+#             st.session_state["user_info"] = get_user_info(token)
+#         else:
+#             st.error("Login failed. Please try again.")
+#             login()
+#             st.stop()
+#     else:
+#         login()
+#         st.stop()
+
 query_params = st.query_params
 code = query_params.get("code")
-state = query_params.get("state") or st.session_state.get("oauth_state")
+state = query_params.get("state")  # <-- pull from URL, not cookies/session
 
-if "auth0_token" not in st.session_state:
-    if code and state:
-        token = fetch_token(code)
-        if token:
-            st.session_state["auth0_token"] = token
-            st.session_state["user_info"] = get_user_info(token)
-        else:
-            st.error("Login failed. Please try again.")
-            login()
-            st.stop()
-    else:
+if code and state:
+    auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, state=state)
+    try:
+        token = auth0.fetch_token(
+            token_url=token_url,
+            client_secret=client_secret,
+            code=code
+        )
+        st.session_state["auth0_token"] = token
+        st.session_state["user_info"] = get_user_info(token)
+        st.rerun()
+    except Exception as e:
+        st.error("Login failed.")
+        st.exception(e)
         login()
         st.stop()
-
 
 
 
