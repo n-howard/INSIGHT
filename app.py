@@ -31,6 +31,11 @@ else:
     cookies = st.session_state["cookies"]
 
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> d00d023ba3e3bd23bd35418e1cbdeeeb11f2d592
 
 
 
@@ -161,7 +166,7 @@ service_account_info = dict(st.secrets["gcp_service_account"])
 creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
 client = gspread.authorize(creds)
 
-# # After successful Google login
+# # # After successful Google login
 # user_info = st.session_state.get("user_info", {})
 # user_email = st.session_state.get("user_email")
 # user_name = st.session_state.get("user_name")
