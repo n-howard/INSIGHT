@@ -1359,7 +1359,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-query_params = st.query_params
+# query_params = st.query_params
 # query_params = st.query_params
 # # if st.query_params.get("code") and "google_token" not in st.session_state:
 # #     code = query_params["code"]
@@ -1390,9 +1390,9 @@ query_params = st.query_params
 
 
 # Extract code and state from URL
-code = st.query_params.get("code")
-state = st.query_params.get("state") or st.session_state.get("oauth_state") or cookies.get("oauth_state")
-
+query_params = st.query_params
+code = query_params.get("code")
+state = query_params.get("state") or st.session_state.get("oauth_state")
 
 if "auth0_token" not in st.session_state:
     if code and state:
@@ -1407,6 +1407,7 @@ if "auth0_token" not in st.session_state:
     else:
         login()
         st.stop()
+
 
 
 
