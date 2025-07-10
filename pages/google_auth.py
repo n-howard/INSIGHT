@@ -226,33 +226,46 @@ def login():
 
 
 
-def fetch_token(code):
+# def fetch_token(code):
+#     try:
+#         client_id = st.secrets["auth"]["auth0"]["client_id"]
+#         client_secret = st.secrets["auth"]["auth0"]["client_secret"]
+#         auth0_domain = st.secrets["auth"]["auth0"]["domain"]
+#         redirect_uri = st.secrets["redirect_uri"]
+#         token_url = f"https://{auth0_domain}/oauth/token"
+
+#         # Restore state from session or cookies
+#         cookies = st.session_state.get("cookies")
+#         state = st.session_state.get("oauth_state") or (cookies and cookies.get("oauth_state"))
+
+#         if not state:
+#             st.warning("OAuth state is missing. Please try logging in again.")
+#             return None
+
+#         # Create OAuth session with restored state
+#         auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, state=state)
+
+#         token = auth0.fetch_token(
+#             token_url=token_url,
+#             client_secret=client_secret,
+#             code=code
+#         )
+
+#         return token
+
+#     except Exception as e:
+#         st.error("Failed to fetch token from Auth0.")
+#         st.exception(e)
+#         return None
+def fetch_token(code, state):
     try:
-        client_id = st.secrets["auth"]["auth0"]["client_id"]
-        client_secret = st.secrets["auth"]["auth0"]["client_secret"]
-        auth0_domain = st.secrets["auth"]["auth0"]["domain"]
-        redirect_uri = st.secrets["redirect_uri"]
-        token_url = f"https://{auth0_domain}/oauth/token"
-
-        # Restore state from session or cookies
-        cookies = st.session_state.get("cookies")
-        state = st.session_state.get("oauth_state") or (cookies and cookies.get("oauth_state"))
-
-        if not state:
-            st.warning("OAuth state is missing. Please try logging in again.")
-            return None
-
-        # Create OAuth session with restored state
         auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, state=state)
-
         token = auth0.fetch_token(
             token_url=token_url,
             client_secret=client_secret,
             code=code
         )
-
         return token
-
     except Exception as e:
         st.error("Failed to fetch token from Auth0.")
         st.exception(e)

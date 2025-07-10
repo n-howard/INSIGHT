@@ -19,7 +19,32 @@ import re
 from streamlit_cookies_manager import EncryptedCookieManager
 import json
 
+from pages.google_auth import login, fetch_token, get_user_info
 
+# Always check if logged in
+def ensure_authenticated():
+    query_params = st.query_params
+    code = query_params.get("code")
+    state = query_params.get("state")
+
+    # If we already have the token, we're good
+    if "auth0_token" in st.session_state:
+        return
+
+    if code and state:
+        token = fetch_token(code, state)  # We'll update this next
+        if token:
+            st.session_state["auth0_token"] = token
+            st.session_state["user_info"] = get_user_info(token)
+            st.rerun()
+        else:
+            st.error("Login failed. Try again.")
+            login()
+            st.stop()
+    else:
+        login()
+        st.stop()
+ensure_authenticated()
 
 # Initialize cookies
 if "cookies" not in st.session_state:
@@ -124,26 +149,26 @@ st.markdown("""
 #         login()
 #         st.stop()
 
-query_params = st.query_params
-code = query_params.get("code")
-state = query_params.get("state")  # <-- pull from URL, not cookies/session
+# query_params = st.query_params
+# code = query_params.get("code")
+# state = query_params.get("state")  # <-- pull from URL, not cookies/session
 
-if code and state:
-    auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, state=state)
-    try:
-        token = auth0.fetch_token(
-            token_url=token_url,
-            client_secret=client_secret,
-            code=code
-        )
-        st.session_state["auth0_token"] = token
-        st.session_state["user_info"] = get_user_info(token)
-        st.rerun()
-    except Exception as e:
-        st.error("Login failed.")
-        st.exception(e)
-        login()
-        st.stop()
+# if code and state:
+#     auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, state=state)
+#     try:
+#         token = auth0.fetch_token(
+#             token_url=token_url,
+#             client_secret=client_secret,
+#             code=code
+#         )
+#         st.session_state["auth0_token"] = token
+#         st.session_state["user_info"] = get_user_info(token)
+#         st.rerun()
+#     except Exception as e:
+#         st.error("Login failed.")
+#         st.exception(e)
+#         login()
+#         st.stop()
 
 
 
@@ -158,9 +183,18 @@ if code and state:
 # #     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: Poppins; margin-bottom: 0px'>INSIGHT</h1>"
 # #     )
 
+# user_info = st.session_state.get("user_info", {})
+# user_email = user_info.get("email", "").strip().lower()
+# user_name = user_info.get("name", "").strip()
+
 user_info = st.session_state.get("user_info", {})
-user_email = user_info.get("email", "").strip().lower()
+user_email = user_info.get("email")
 user_name = user_info.get("name", "").strip()
+if not user_email:
+    st.error("Something went wrong. Please try logging in again.")
+    login()
+    st.stop()
+
 # user_info = st.user
 
 # if not st.user.is_logged_in:
