@@ -1389,24 +1389,24 @@ query_params = st.query_params
 
 
 
-# Extract code and state from URL
-code = st.query_params.get("code")
-state = st.query_params.get("state") or st.session_state.get("oauth_state") or cookies.get("oauth_state")
+# # Extract code and state from URL
+# code = st.query_params.get("code")
+# state = st.query_params.get("state") or st.session_state.get("oauth_state") or cookies.get("oauth_state")
 
 
-if "auth0_token" not in st.session_state:
-    if code and state:
-        token = fetch_token(code)
-        if token:
-            st.session_state["auth0_token"] = token
-            st.session_state["user_info"] = get_user_info(token)
-        else:
-            st.error("Login failed. Please try again.")
-            login()
-            st.stop()
-    else:
-        login()
-        st.stop()
+# if "auth0_token" not in st.session_state:
+#     if code and state:
+#         token = fetch_token(code)
+#         if token:
+#             st.session_state["auth0_token"] = token
+#             st.session_state["user_info"] = get_user_info(token)
+#         else:
+#             st.error("Login failed. Please try again.")
+#             login()
+#             st.stop()
+#     else:
+#         login()
+#         st.stop()
 
 
 
@@ -1426,13 +1426,13 @@ user_email = user_info.get("email", "").strip().lower()
 user_name = user_info.get("name", "").strip()
 user_info = st.user
 
-# if not st.user.is_logged_in:
-#     st.info("Please sign in to continue.")
-#     if st.button("Sign In"):
-#         st.login("auth0")
-#     st.stop()
-# if st.user.is_logged_in:
-#     home_run()
+if not st.user.is_logged_in:
+    st.info("Please sign in to continue.")
+    if st.button("Sign In"):
+        st.login("auth0")
+    st.stop()
+if st.user.is_logged_in:
+    home_run()
 
 # st.session_state["user_email"] = st.user.email.strip().lower()
 # st.session_state["user_name"] = st.user.name.strip()
