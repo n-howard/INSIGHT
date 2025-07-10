@@ -136,18 +136,18 @@ st.markdown("""
 # user_info = st.session_state.get("user_info", {})
 # user_email = user_info.get("email", "").strip().lower()
 # user_name = user_info.get("name", "").strip()
-st.session_state["user_email"] = ""
-st.session_state["user_name"] = ""
-if not st.user.is_logged_in:
+user_info = st.get_user_info()
+
+if user_info is None:
+    st.info("Please sign in to continue.")
     if st.button("Sign In"):
-        login = st.login("auth0")
-        st.stop()
-      
-user_info = st.user
-st.session_state["user_email"] = user_info.email.strip().lower()
-st.session_state["user_name"] = user_info.name.strip()
-user_email = st.session_state.get("user_email")
-user_name = st.session_state.get("user_name")
+        st.login("auth0")
+    st.stop()
+
+# Now you can safely use user_info
+st.session_state["user_email"] = user_info["email"].strip().lower()
+st.session_state["user_name"] = user_info.get("name", "").strip()
+
 
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 # Convert secrets section to JSON string and parse it
