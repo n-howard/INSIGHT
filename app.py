@@ -141,7 +141,7 @@ st.session_state["user_name"] = ""
 if not st.user.is_logged_in:
     if st.button("Sign In"):
         st.login("auth0")
-
+        st.stop()
         st.session_state["user_email"] = st.user.email.strip().lower()
         st.session_state["user_name"] = st.user.name.strip()
         user_email = st.session_state.get("user_email")
