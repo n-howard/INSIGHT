@@ -35,11 +35,6 @@ userinfo_url = f"https://{auth0_domain}/userinfo"
 scope = ["openid", "profile", "email"]
 
 def login():
-    cookies = st.session_state.get("cookies")
-    if cookies is None:
-        st.error("Cookies not initialized.")
-        st.stop()
-
     auth0 = OAuth2Session(client_id, redirect_uri=redirect_uri, scope=scope)
 
     authorization_url, state = auth0.authorization_url(
@@ -48,20 +43,19 @@ def login():
         prompt="login"
     )
 
-    # Store OAuth state
+    # Save state in session_state (as backup, but not reliable)
     st.session_state["oauth_state"] = state
-    cookies["oauth_state"] = state
-    cookies.save()
 
-    # Open Auth0 login in a new tab
+    # 🛠 Pass state *explicitly* as a URL param to your redirect_uri
     st.markdown(f"""
-        <div style="text-align:center;">
-            <a href="{authorization_url}" target="_blank" rel="noopener noreferrer">
+        <div style="text-align:center; margin-top: 3rem;">
+            <a href="{authorization_url}" target="_self" rel="noopener noreferrer">
                 <img src="https://i.imgur.com/HpRK4Jv.png" alt="Sign in with Auth0" width="250"/>
             </a>
         </div>
     """, unsafe_allow_html=True)
     st.stop()
+
 
 # def login():
 #     cookies = st.session_state.get("cookies")
