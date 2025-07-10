@@ -188,8 +188,16 @@ def login():
     auth_url = authorization_url  # this must be a string containing the URL
 
     if st.button("Sign In"):
-        st.html(f"""<a href="{authorization_url}" style="text-decoration: none;">""")
+        st.markdown(f"""
+            <script>
+                window.top.location.href = "{authorization_url}";
+            </script>
+            <noscript>
+                <a href="{authorization_url}">Click here to sign in</a>
+            </noscript>
+        """, unsafe_allow_html=True)
         st.stop()
+
 
 
 def fetch_token(code):
