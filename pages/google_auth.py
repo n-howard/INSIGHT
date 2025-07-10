@@ -185,7 +185,12 @@ def login():
     #     """,
     #     unsafe_allow_html=True
     # )
-    st.button("Sign In", on_click=authorization_url)
+    auth_url = authorization_url  # this must be a string containing the URL
+
+    if st.button("Sign In"):
+        st.markdown(f'<meta http-equiv="refresh" content="0;URL=\'{auth_url}\'" />', unsafe_allow_html=True)
+        st.stop()
+
 
 def fetch_token(code):
     try:
