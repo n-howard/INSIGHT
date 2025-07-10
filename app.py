@@ -87,7 +87,8 @@ def home():
 
 
         st.success("You have been logged out.")
-        st.switch_page("app.py")
+        # st.switch_page("app.py")
+        st.logout()
 
     if st.session_state["is_admin"]:
         ad = "Admin"
@@ -1429,9 +1430,9 @@ if not st.user.is_logged_in:
     st.info("Please sign in to continue.")
     if st.button("Sign In"):
         st.login("auth0")
-        home_run()
     st.stop()
-
+if st.user.is_logged_in:
+    home_run()
 
 # st.session_state["user_email"] = st.user.email.strip().lower()
 # st.session_state["user_name"] = st.user.name.strip()
