@@ -152,7 +152,7 @@ client = gspread.authorize(creds)
 
 # # After successful Google login
 # user_info = st.session_state.get("user_info", {})
-user_email = st.session_state.get("user_email")strip().lower()
+user_email = st.session_state.get("user_email").strip().lower()
 user_name = st.session_state.get("user_name").strip()
 
 # Load authorized users
