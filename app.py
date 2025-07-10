@@ -142,12 +142,11 @@ if not st.user.is_logged_in:
     st.info("Please sign in to continue.")
     if st.button("Sign In"):
         st.login("auth0")
-    
+    st.stop()
 
 if st.user.is_logged_in:
-    # Now you can safely use user_info
-    st.session_state["user_email"] = user_info["email"].strip().lower()
-    st.session_state["user_name"] = user_info.get("name", "").strip()
+    st.session_state["user_email"] = st.user.email.strip().lower()
+    st.session_state["user_name"] = st.user.name.strip()
 
 
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
