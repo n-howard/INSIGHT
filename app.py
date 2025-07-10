@@ -203,7 +203,7 @@ st.title("Welcome to INSIGHT")
 st.write("### Log In or Sign Up")
 first_name = st.text_input("Your first name")
 last_name = st.text_input("Your last name")
-user_email = st.text_input("Your email")
+user_email = st.text_input("Your email").strip().lower()
 role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, Staff, etc.)")
 curr_org_input = st.text_input("Your organization name")
 name_input = first_name + " " + last_name
