@@ -239,6 +239,7 @@ if st.button("Sign In"):
 
     user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)
 
+    
     if not user_hash_match:
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(password_to_verify, salt)
@@ -254,17 +255,11 @@ if st.button("Sign In"):
 
         else:
             st.error("You entered an incorrect password. Please try again.")
-            for key in ["org_input", "site_input", "admin_input", "google_token", "user_info", "access_level"]:
-                st.session_state.pop(key, None)
 
-            cookies["org_input"] = ""
-            cookies["site_input"] = ""
-            cookies["admin_input"] = ""
-            cookies["access_level"] = ""
-            cookies.save()
             st.switch_page("app.py")
             
-
+    user_hash = user_hash_match.get("Hash", "")
+    user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
 
             
     user_org = user_match.get("Organization", "").strip().lower()
