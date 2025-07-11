@@ -200,6 +200,7 @@ st.markdown("""
 
 # log_on()
 # st.warning("We couldn't find your email in the system. Please enter your information to create an account.")
+
 st.title("Welcome to INSIGHT")
 st.write("### Log In or Sign Up")
 first_name = st.text_input("Your first name")
@@ -211,6 +212,8 @@ role_input = st.text_input("Your role or title (e.g., Program Manager, Principal
 curr_org_input = st.text_input("Your organization name")
 name_input = first_name + " " + last_name
 user_name = name_input
+
+
 if st.button("Sign In"):
     # def log_on():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -259,9 +262,6 @@ if st.button("Sign In"):
             cookies["admin_input"] = ""
             cookies["access_level"] = ""
             cookies.save()
-
-
-            st.success("You have been logged out.")
             st.switch_page("app.py")
             
 
@@ -270,6 +270,8 @@ if st.button("Sign In"):
     user_org = user_match.get("Organization", "").strip().lower()
 
     user_in = bool(user_match)
+
+    org_in = bool(user_org)
 
     if not user_in:
         st.session_state["name_input"] = name_input.strip()
@@ -318,7 +320,7 @@ if st.button("Sign In"):
 #         st.rerun()
 #         # Force initialize once
 
-    if user_in and user_hash_in:
+    if user_in and user_hash_in and org_in:
         org_input = None
 
         # --- If user is found ---
@@ -353,42 +355,80 @@ if st.button("Sign In"):
             st.success("You have admin-level access.")
         else:
             st.info("You have standard access.")
-        user_org = user_match.get("Organization", "").strip().lower()
-        if user_match and user_org!="":
-                # Automatically log in
-                user_org = user_match.get("Organization", "").strip()
+        # user_org = user_match.get("Organization", "").strip().lower()
+        user_org = curr_org_input
+        site_input = ""
+
+        st.session_state["org_input"] = user_org
+        st.session_state["site_input"] = site_input
+
+        cookies["org_input"] = user_org
+        cookies["site_input"] = site_input
+
+        cookies.save()
+
+        st.success(f"Signed in automatically to: {user_org}")
+
+        st.switch_page("pages/home.py")
+
+    elif not org_in:
+        creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
+        admin_approved = "True" if creating_new_org else "False"
+
+        st.session_state["is_admin"] = admin_approved
+        cookies["admin_input"] = str(admin_approved)
+
+        oregonask_access = False
+        st.session_state["access"] = oregonask_access
+        cookies["access_level"] = str(oregonask_access)
+
+        user_org = curr_org_input
+        site_input = ""
+
+        st.session_state["org_input"] = user_org
+        st.session_state["site_input"] = site_input
+
+        cookies["org_input"] = user_org
+        cookies["site_input"] = site_input
+
+        cookies.save()
+
+
+        # if user_match and user_org!="":
+        #         # Automatically log in
+        #         user_org = user_match.get("Organization", "").strip()
                 
-                site_input = ""
+        #         site_input = ""
 
-                st.session_state["org_input"] = user_org
-                st.session_state["site_input"] = site_input
+        #         st.session_state["org_input"] = user_org
+        #         st.session_state["site_input"] = site_input
 
-                cookies["org_input"] = user_org
-                cookies["site_input"] = site_input
+        #         cookies["org_input"] = user_org
+        #         cookies["site_input"] = site_input
 
-                cookies.save()
+        #         cookies.save()
 
-                st.success(f"Signed in automatically to: {user_org}")
-                # home()
-                st.switch_page("pages/home.py")
-                # st.session_state["org_input"] = user_org
-                # st.session_state["site_input"] = ""
-                # cookies["org_input"] = user_org
-                # cookies["site_input"] = ""
-                # cookies.save()
-                # st.session_state["auto_login_trigger"] = True
-        elif user_org="":
-                admin_approved = False
-                st.session_state["is_admin"] = admin_approved
-                cookies["admin_input"] = str(admin_approved)
+        #         st.success(f"Signed in automatically to: {user_org}")
+        #         # home()
+        #         st.switch_page("pages/home.py")
+        #         # st.session_state["org_input"] = user_org
+        #         # st.session_state["site_input"] = ""
+        #         # cookies["org_input"] = user_org
+        #         # cookies["site_input"] = ""
+        #         # cookies.save()
+        #         # st.session_state["auto_login_trigger"] = True
+        # elif user_org="":
+        #         admin_approved = False
+        #         st.session_state["is_admin"] = admin_approved
+        #         cookies["admin_input"] = str(admin_approved)
 
-                site_input = ""
+        #         site_input = ""
 
-                st.session_state["org_input"] = curr_org_input
-                st.session_state["site_input"] = site_input
+        #         st.session_state["org_input"] = curr_org_input
+        #         st.session_state["site_input"] = site_input
 
-                cookies["org_input"] = curr_org_input
-                cookies["site_input"] = site_input
+        #         cookies["org_input"] = curr_org_input
+        #         cookies["site_input"] = site_input
 
     #     @st.cache_data(ttl=3600, show_spinner=False)
     #     def get_org_names():
