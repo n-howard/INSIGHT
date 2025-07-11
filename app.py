@@ -19,6 +19,7 @@ import re
 from streamlit_cookies_manager import EncryptedCookieManager
 import json
 import streamlit_authenticator as stauth
+import bcrypt
 
 
 
@@ -204,6 +205,8 @@ st.write("### Log In or Sign Up")
 first_name = st.text_input("Your first name")
 last_name = st.text_input("Your last name")
 user_email = st.text_input("Your email").strip().lower()
+password = st.text_input("Your password (or a new password if you are creating a new account)", type="password")
+password_to_verify = password.encode('utf-8')
 role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, Staff, etc.)")
 curr_org_input = st.text_input("Your organization name")
 name_input = first_name + " " + last_name
@@ -225,9 +228,41 @@ if st.button("Sign In"):
     user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
     user_records = user_sheet.get_all_records()
 
+    hash_sheet = client.open("Log In Information").worksheet("Sheet1")
+    hash_records = hash_sheet.get_all_records()
+
     # Match user by email
     user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
 
+    user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)
+
+    if not user_hash_match:
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(password_to_verify, salt)
+        hash_sheet.append_row([user_email,hashed_password.decode('utf-8')])
+        user_hash_in = True
+    else:
+        user_hash = user_hash_match.get("Hash", "")
+        if bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')):
+            user_hash_in = True
+        else:
+            st.error("You entered an incorrect password. Please try again.")
+            for key in ["org_input", "site_input", "admin_input", "google_token", "user_info", "access_level"]:
+                st.session_state.pop(key, None)
+
+            cookies["org_input"] = ""
+            cookies["site_input"] = ""
+            cookies["admin_input"] = ""
+            cookies["access_level"] = ""
+            cookies.save()
+
+
+            st.success("You have been logged out.")
+            st.switch_page("app.py")
+            
+
+
+            
     user_org = user_match.get("Organization", "").strip().lower()
 
     user_in = bool(user_match)
@@ -246,6 +281,7 @@ if st.button("Sign In"):
         st.session_state["is_admin"] = admin_approved == "True"
         cookies["admin_input"] = admin_approved
         cookies.save()
+        user_org = user_match.get("Organization", "").strip().lower()
 # --- If user not found: allow account creation ---
 # if not user_in:
 #     st.warning("We couldn't find your email in the system. Please enter your information to create an account.")
@@ -278,7 +314,7 @@ if st.button("Sign In"):
 #         st.rerun()
 #         # Force initialize once
 
-    if user_in:
+    if user_in and user_hash_in:
         org_input = None
             # Auto-fill org info
 
