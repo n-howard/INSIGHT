@@ -266,7 +266,7 @@ if st.session_state["mode"] == "forgot_password":
     st.button("Back to Login", on_click=lambda: st.session_state.update(mode="login"))
 
 # --- Mode: Reset Password with Token ---
-if st.session_state["mode"] == "reset_password":
+elif st.session_state["mode"] == "reset_password":
     st.title("Reset Your Password")
     token = st.session_state["reset_token"]
 
