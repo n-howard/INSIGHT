@@ -384,6 +384,7 @@ st.write("### Log In or Sign Up")
 col1, col2 = st.columns(2)
 with col1:
     if st.button("Log In", use_container_width=True):
+        st.rerun()
         user_email = st.text_input("Your email").strip().lower()
         password = st.text_input("Your password", type="password")
         password_to_verify = password.encode('utf-8')
@@ -391,6 +392,7 @@ with col1:
         sign(user_email, password_to_verify, curr_org_input, "", "", "")
 with col2:
     if st.button("Sign Up", use_container_width=True):
+        st.rerun()
         first_name = st.text_input("Your first name")
         last_name = st.text_input("Your last name")
         user_email = st.text_input("Your email").strip().lower()
