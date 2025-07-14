@@ -378,21 +378,33 @@ def sign(user_email, password_to_verify, curr_org_input, first_name, last_name, 
             cookies["site_input"] = site_input
 
             cookies.save()
+if 'show_login' not in st.session_state:
+    st.session_state.show_login = False
+
+def toggle_login():
+    st.session_state.show_login = not st.session_state.show_login
+
+if 'show_sign' not in st.session_state:
+    st.session_state.show_sign = False
+
+def toggle_sign():
+    st.session_state.show_sign = not st.session_state.show_sign
+
 
 st.title("Welcome to INSIGHT")
 st.write("### Log In or Sign Up")
 col1, col2 = st.columns(2)
 with col1:
-    if st.button("Log In", use_container_width=True):
-        st.rerun()
+    st.button("Log In", use_container_width=True, on_click=toggle_login)
+    if st.session_state.show_login:
         user_email = st.text_input("Your email").strip().lower()
         password = st.text_input("Your password", type="password")
         password_to_verify = password.encode('utf-8')
         curr_org_input = st.text_input("Your organization name")
         sign(user_email, password_to_verify, curr_org_input, "", "", "")
 with col2:
-    if st.button("Sign Up", use_container_width=True):
-        st.rerun()
+    st.button("Sign Up", use_container_width=True, on_click=toggle_sign)
+    if set.session_state.show_sign:
         first_name = st.text_input("Your first name")
         last_name = st.text_input("Your last name")
         user_email = st.text_input("Your email").strip().lower()
