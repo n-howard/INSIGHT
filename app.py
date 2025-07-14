@@ -406,7 +406,7 @@ else:
         # user_hash = user_hash_match.get("Hash", "")
         # user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
         user_hash_in = True
-
+        user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
         curr_org_input = cookies.get("org_input") or st.session_state.get("org_input")
                 
         user_org = user_match.get("Organization", "").strip().lower() == curr_org_input.strip().lower()
