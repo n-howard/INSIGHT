@@ -384,9 +384,12 @@ else:
         # user_hash = user_hash_match.get("Hash", "")
         # user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
         user_hash_in = True
-        curr_org_input = cookies.get("curr_org_input")
                 
         user_org = user_match.get("Organization", "").strip().lower() == curr_org_input.strip().lower()
+
+        if user_org:
+            cookies["org_input"] = curr_org_input
+            st.session_state["org_input"] = curr_org_input
 
         user_in = bool(user_match)
 
