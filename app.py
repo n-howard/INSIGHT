@@ -409,11 +409,11 @@ else:
         # user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
         user_hash_in = True
         
-        user_email = cookies.get("user_email") or st.session_state.get("user_email")
+        user_email = cookies.get("user_email")
         user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
-        curr_org_input = cookies.get("org_input") or st.session_state.get("org_input")
+        curr_org_input = cookies.get("org_input")
                 
-        user_org = user_match.get("Organization", "").strip().lower() 
+        user_org = user_match.get("Organization", "").strip().lower()
 
         
 
