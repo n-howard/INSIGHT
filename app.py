@@ -248,7 +248,6 @@ if st.button("Sign In"):
         user_hash_in = True
         if user_match:
             cookies["curr_org_input"] = curr_org_input
-            cookies.save()
             st.session_state["curr_org_input"] = curr_org_input
 
     else:
@@ -257,7 +256,6 @@ if st.button("Sign In"):
             user_hash_in = True
             if user_match:
                 cookies["curr_org_input"] = curr_org_input
-                cookies.save()
                 st.session_state["curr_org_input"] = curr_org_input
 
         else:
