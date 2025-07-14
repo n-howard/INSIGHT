@@ -408,7 +408,7 @@ elif (mode == "View Results") and assessment != None:
         #     user_info = get_user_info(st.session_state.token)
         #     email = user_info.get("email", None)
         if st.session_state.get("user_email")!="":
-            email = st.sesssion_state.get("user_email")
+            email = st.session_state.get("user_email")
         else:
             email = None
 
