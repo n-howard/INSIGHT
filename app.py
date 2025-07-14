@@ -249,19 +249,19 @@ if st.button("Sign In"):
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(password_to_verify, salt)
         # hash_sheet.append_row([user_email,hashed_password.decode('utf-8')])
-        res = supabase.table("users").insert({
-            "email": user_email,
-            "hash": hashed_password.decode('utf-8')
-        }).execute()
-
-        if res.error:
-            st.error(f"Registration failed: {res.error.message}")
-        else:
+        try:
+            res = supabase.table("users").insert({
+                "email": user_email,
+                "hash": hashed_password.decode('utf-8')
+            }).execute()
             st.success("Registration successful")
-        user_hash_in = True
-        if user_match:
-            cookies["curr_org_input"] = curr_org_input
-            st.session_state["curr_org_input"] = curr_org_input
+            user_hash_in = True
+            if user_match:
+                cookies["curr_org_input"] = curr_org_input
+                st.session_state["curr_org_input"] = curr_org_input
+        except Exception as e:
+            st.error(f"Registration failed: {e}")
+
 
     # else:
     #     # user_hash = user_hash_match.get("Hash", "")
