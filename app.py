@@ -298,6 +298,7 @@ else:
     user_email = st.text_input("Your email").strip().lower()
     password = st.text_input("Your password (or a new password if you are creating a new account)", type="password")
     password_to_verify = password.encode('utf-8')
+    st.button("Forgot Password?", on_click=lambda: st.session_state.update(mode="forgot_password"))
     curr_org_input = st.text_input("Your organization name")
     st.write("Additional Information (only required if this is your first time logging in):")
     first_name = st.text_input("Your first name")
