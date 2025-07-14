@@ -247,8 +247,9 @@ if st.button("Sign In"):
         hash_sheet.append_row([user_email,hashed_password.decode('utf-8')])
         user_hash_in = True
         if user_match:
-                cookies["org_input"] = curr_org_input
-                st.session_state["org_input"] = curr_org_input
+            cookies["org_input"] = curr_org_input
+            cookies.save()
+            st.session_state["org_input"] = curr_org_input
 
     else:
         user_hash = user_hash_match.get("Hash", "")
@@ -256,6 +257,7 @@ if st.button("Sign In"):
             user_hash_in = True
             if user_match:
                 cookies["org_input"] = curr_org_input
+                cookies.save()
                 st.session_state["org_input"] = curr_org_input
 
         else:
@@ -265,7 +267,7 @@ if st.button("Sign In"):
             
     user_hash = user_hash_match.get("Hash", "")
     user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
-
+    curr_org_input = cookies.get("org_input")
             
     user_org = user_match.get("Organization", "").strip().lower() == curr_org_input.strip().lower()
 
