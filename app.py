@@ -413,7 +413,7 @@ else:
         user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
         curr_org_input = cookies.get("org_input") or st.session_state.get("org_input")
                 
-        user_org = user_match.get("Organization", "").strip().lower() == curr_org_input.strip().lower()
+        user_org = user_match.get("Organization", "").strip().lower() 
 
         
 
