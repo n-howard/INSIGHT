@@ -21,6 +21,11 @@ import json
 import streamlit_authenticator as stauth
 import bcrypt
 from supabase import create_client, Client
+import smtplib
+from datetime import datetime, timedelta
+from uuid import uuid4
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 
 
@@ -203,508 +208,256 @@ st.markdown("""
 
 # log_on()
 # st.warning("We couldn't find your email in the system. Please enter your information to create an account.")
-st.title("Welcome to INSIGHT")
-st.write("### Log In or Sign Up")
-user_email = st.text_input("Your email").strip().lower()
-password = st.text_input("Your password (or a new password if you are creating a new account)", type="password")
-password_to_verify = password.encode('utf-8')
-curr_org_input = st.text_input("Your organization name")
-st.write("Additional Information (only required if this is your first time logging in):")
-first_name = st.text_input("Your first name")
-last_name = st.text_input("Your last name")
-role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, Staff, etc.)")
-name_input = first_name + " " + last_name
-user_name = name_input
+# --- Initialize state ---
+if "mode" not in st.session_state:
+    st.session_state["mode"] = "login"  # or "reset_password" if using query param
 
+# Check for password reset token in query string
+query_params = st.query_params
+if "token" in query_params:
+    st.session_state["mode"] = "reset_password"
+    st.session_state["reset_token"] = query_params["token"]
 
-# def sign(user_email, password_to_verify, curr_org_input, first_name, last_name, role_input):
-if st.button("Sign In"):
-    # def log_on():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    # Convert secrets section to JSON string and parse it
-    service_account_info = dict(st.secrets["gcp_service_account"])
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
-    client = gspread.authorize(creds)
+# --- Mode: Forgot Password ---
+if st.session_state["mode"] == "forgot_password":
+    st.title("Forgot Password")
+    email = st.text_input("Enter your email")
 
-    # # After successful Google login
-    # user_info = st.session_state.get("user_info", {})
-    # user_email = st.session_state.get("user_email")
-    # user_name = st.session_state.get("user_name")
+    if st.button("Send Reset Email"):
+        token = str(uuid4())
+        expiration = datetime.utcnow() + timedelta(minutes=30)
 
-    # Load authorized users
-    user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
-    user_records = user_sheet.get_all_records()
+        # Store in Supabase
+        supabase.table("password_resets").insert({
+            "email": email,
+            "token": token,
+            "expires_at": expiration.isoformat()
+        }).execute()
 
-    hash_sheet = client.open("Log In Information").worksheet("Sheet1")
-    hash_records = hash_sheet.get_all_records()
+        reset_link = f"https://getinsights.streamlit.app?token={token}"  # Update this!
 
-    # Match user by email
-    user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
+        # Send email
+        def send_reset_email(to_email, reset_link):
+            msg = MIMEMultipart()
+            msg["From"] = f"{st.secrets['FROM_NAME']} <{st.secrets['EMAIL_ADDRESS']}>"
+            msg["To"] = to_email
+            msg["Subject"] = "INSIGHT Password Reset"
+            html = f"""
+            <p>Click below to reset your password:</p>
+            <a href="{reset_link}">{reset_link}</a>
+            """
+            msg.attach(MIMEText(html, "html"))
+            try:
+                server = smtplib.SMTP(st.secrets["EMAIL_HOST"], st.secrets["EMAIL_PORT"])
+                server.starttls()
+                server.login(st.secrets["EMAIL_USERNAME"], st.secrets["EMAIL_PASSWORD"])
+                server.sendmail(st.secrets["EMAIL_ADDRESS"], to_email, msg.as_string())
+                server.quit()
+                return True
+            except Exception as e:
+                st.error(f"Failed to send email: {e}")
+                return False
 
-    # user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)
-
-    user_hash_match = supabase.table("users").select("*").eq("email", user_email).execute()
-    
-    if not user_hash_match.data:
-        salt = bcrypt.gensalt()
-        hashed_password = bcrypt.hashpw(password_to_verify, salt)
-        # hash_sheet.append_row([user_email,hashed_password.decode('utf-8')])
-        try:
-            res = supabase.table("users").insert({
-                "email": user_email,
-                "hash": hashed_password.decode('utf-8')
-            }).execute()
-            st.success("Registration successful")
-            user_hash_in = True
-            if user_match:
-                cookies["curr_org_input"] = curr_org_input
-                st.session_state["curr_org_input"] = curr_org_input
-        except Exception as e:
-            st.error(f"Registration failed: {e}")
-
-
-    # else:
-    #     # user_hash = user_hash_match.get("Hash", "")
-    #     res = supabase.table("users").select("*").eq("Email", email).execute()
-    
-    else:
-        res = supabase.table("users").select("*").eq("email", user_email).execute()
-        stored_hash = res.data[0]["hash"]
-        if bcrypt.checkpw(password_to_verify, stored_hash.encode()):
-            st.success("Login successful")
-            user_hash_in = True
-            if user_match:
-                cookies["curr_org_input"] = curr_org_input
-                st.session_state["curr_org_input"] = curr_org_input
+        if send_reset_email(email, reset_link):
+            st.success("Password reset link sent!")
         else:
-            st.error("You entered an incorrect password. Please try again.")
+            st.error("Email failed to send.")
 
-            st.switch_page("app.py")
-        # if bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')):
-        #     user_hash_in = True
-        #     if user_match:
-        #         cookies["curr_org_input"] = curr_org_input
-        #         st.session_state["curr_org_input"] = curr_org_input
+    st.button("Back to Login", on_click=lambda: st.session_state.update(mode="login"))
 
-        # else:
-        #     st.error("You entered an incorrect password. Please try again.")
+# --- Mode: Reset Password with Token ---
+if st.session_state["mode"] == "reset_password":
+    st.title("Reset Your Password")
+    token = st.session_state["reset_token"]
 
-        #     st.switch_page("app.py")
-            
-    # user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)       
-    # user_hash = user_hash_match.get("Hash", "")
-    # user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
-    user_hash_in = True
-    curr_org_input = cookies.get("curr_org_input")
-            
-    user_org = user_match.get("Organization", "").strip().lower() == curr_org_input.strip().lower()
+    res = supabase.table("password_resets").select("*").eq("token", token).execute()
+    if res.data:
+        record = res.data[0]
+        if datetime.fromisoformat(record["expires_at"]) > datetime.utcnow():
+            new_pw = st.text_input("New Password", type="password")
+            confirm_pw = st.text_input("Confirm Password", type="password")
+            if st.button("Reset Password"):
+                if new_pw != confirm_pw:
+                    st.error("Passwords do not match")
+                else:
+                    hashed = bcrypt.hashpw(new_pw.encode(), bcrypt.gensalt()).decode()
+                    supabase.table("users").update({"hash": hashed}).eq("email", record["email"]).execute()
+                    st.success("Password has been reset!")
+                    st.session_state["mode"] = "login"
+        else:
+            st.error("This reset link has expired.")
+    else:
+        st.error("Invalid reset token.")
 
-    user_in = bool(user_match)
-
-    org_in = bool(user_org)
-
-    if not user_in:
-        st.session_state["name_input"] = name_input.strip()
-        st.session_state["role"] = role_input.strip()
-        creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
-
-        admin_approved = "True" if creating_new_org else "False"
-
-        oregonask_access = "False"
-
-        user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email, "", "", admin_approved, "FALSE"])
-
-        st.session_state["is_admin"] = admin_approved == "True"
-        cookies["admin_input"] = admin_approved
-        cookies.save()
-        user_org = user_match.get("Organization", "").strip().lower()
-# --- If user not found: allow account creation ---
-# if not user_in:
-#     st.warning("We couldn't find your email in the system. Please enter your information to create an account.")
-#     first_name = st.text_input("Your first name")
-#     last_name = st.text_input("Your last name")
-#     user_email = st.text_input("Your email")
-#     role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, Staff, etc.)")
-#     curr_org_input = st.text_input("Your organization name")
-#     name_input = first_name + " " + last_name
-#     if st.button("Create Account") and role_input:
-#         st.session_state["name_input"] = name_input.strip()
-#         st.session_state["role"] = role_input.strip()
-
-#         creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
-
-#         admin_approved = "True" if creating_new_org else "False"
-
-#         oregonask_access = "False"
-
-#         user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email, "", "", admin_approved, "FALSE"])
-
-#         st.session_state["is_admin"] = admin_approved == "True"
-#         cookies["admin_input"] = admin_approved
-#         cookies.save()
+# --- Default: Login/Register Flow ---
 
 
+else:
+    st.title("Welcome to INSIGHT")
+    st.write("### Log In or Sign Up")
+    user_email = st.text_input("Your email").strip().lower()
+    password = st.text_input("Your password (or a new password if you are creating a new account)", type="password")
+    password_to_verify = password.encode('utf-8')
+    curr_org_input = st.text_input("Your organization name")
+    if st.button("Forgot Password?"):
+        st.session_state["forgot_pw"] = True
+    if st.session_state.get("forgot_pw"):
+        st.subheader("Reset Your Password")
+        reset_email = st.text_input("Enter your email to reset password")
 
-#         st.success("Account created successfully!")
-#         user_in = True
-#         st.rerun()
-#         # Force initialize once
+    if st.button("Send Reset Email"):
+        token = str(uuid4())
+        expiration = datetime.utcnow() + timedelta(minutes=30)
 
-    if user_in and user_hash_in and org_in:
-        org_input = None
+        # Save to Supabase
+        supabase.table("password_resets").insert({
+            "email": reset_email,
+            "token": token,
+            "expires_at": expiration.isoformat()
+        }).execute()
 
-        # --- If user is found ---
-        role = user_match["Title"]
-        st.session_state["role"] = role
-        # st.session_state["name"] = user_match.get("Name", user_name)
-        st.session_state["name"] = user_match.get("Name", "")
-        st.info(f"Welcome, **{st.session_state['name']}**! Your title: **{role}**")
+        reset_link = f"https://getinsights.streamlit.app/reset?token={token}"
+        
+        if send_reset_email(reset_email, reset_link):
+            st.success("Password reset link sent!")
+        else:
+            st.error("Failed to send email.")
 
-        # --- Define admin roles by substrings ---
-        # admin_keywords = ["director", "president", "principal", "ceo", "admin", "manager", "coordinator", "leader", "owner", "superintendent", "directora", "chief", "mayor", "chair", "founder", "oregonask intern"]
+    query_params = st.query_params
+    if "token" in query_params:
+        token = query_params["token"]
+        res = supabase.table("password_resets").select("*").eq("token", token).execute()
 
-        # Simple role check
-        def is_admin_role(role):
-            return any(keyword in role.lower() for keyword in admin_keywords)
+        if res.data:
+            record = res.data[0]
+            expires_at = datetime.fromisoformat(record["expires_at"])
 
-        # Flag admin access
-        # st.session_state["is_admin"] = is_admin_role(st.session_state.get("role", ""))
+            if expires_at > datetime.utcnow():
+                new_pw = st.text_input("New password", type="password")
+                confirm_pw = st.text_input("Confirm password", type="password")
+                if st.button("Reset Password"):
+                    if new_pw != confirm_pw:
+                        st.error("Passwords do not match")
+                    else:
+                        hashed = bcrypt.hashpw(new_pw.encode(), bcrypt.gensalt()).decode()
+                        supabase.table("users").update({"hash": hashed}).eq("email", record["email"]).execute()
+                        st.success("Password reset! You can now log in.")
+            else:
+                st.error("Reset link has expired.")
+        else:
+            st.error("Invalid reset link.")
 
-        # Pull the user's row by email
+
+    st.write("Additional Information (only required if this is your first time logging in):")
+    first_name = st.text_input("Your first name")
+    last_name = st.text_input("Your last name")
+    role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, Staff, etc.)")
+    name_input = first_name + " " + last_name
+    user_name = name_input
+
+
+    # def sign(user_email, password_to_verify, curr_org_input, first_name, last_name, role_input):
+    if st.button("Sign In"):
+        # def log_on():
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        # Convert secrets section to JSON string and parse it
+        service_account_info = dict(st.secrets["gcp_service_account"])
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
+        client = gspread.authorize(creds)
+
+        # # After successful Google login
+        # user_info = st.session_state.get("user_info", {})
+        # user_email = st.session_state.get("user_email")
+        # user_name = st.session_state.get("user_name")
+
+        # Load authorized users
+        user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
+        user_records = user_sheet.get_all_records()
+
+        hash_sheet = client.open("Log In Information").worksheet("Sheet1")
+        hash_records = hash_sheet.get_all_records()
+
+        # Match user by email
         user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
 
-        admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
-        st.session_state["is_admin"] = admin_approved
-        cookies["admin_input"] = str(admin_approved)
-        oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
-        st.session_state["access"] = oregonask_access
-        cookies["access_level"] = str(oregonask_access)
+        # user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)
+
+        user_hash_match = supabase.table("users").select("*").eq("email", user_email).execute()
+        
+        if not user_hash_match.data:
+            salt = bcrypt.gensalt()
+            hashed_password = bcrypt.hashpw(password_to_verify, salt)
+            # hash_sheet.append_row([user_email,hashed_password.decode('utf-8')])
+            try:
+                res = supabase.table("users").insert({
+                    "email": user_email,
+                    "hash": hashed_password.decode('utf-8')
+                }).execute()
+                st.success("Registration successful")
+                user_hash_in = True
+                if user_match:
+                    cookies["curr_org_input"] = curr_org_input
+                    st.session_state["curr_org_input"] = curr_org_input
+            except Exception as e:
+                st.error(f"Registration failed: {e}")
 
 
-
-        if st.session_state["is_admin"]:
-            st.success("You have admin-level access.")
+        # else:
+        #     # user_hash = user_hash_match.get("Hash", "")
+        #     res = supabase.table("users").select("*").eq("Email", email).execute()
+        
         else:
-            st.info("You have standard access.")
-        # user_org = user_match.get("Organization", "").strip().lower()
-        user_org = curr_org_input
-        site_input = ""
+            res = supabase.table("users").select("*").eq("email", user_email).execute()
+            stored_hash = res.data[0]["hash"]
+            if bcrypt.checkpw(password_to_verify, stored_hash.encode()):
+                st.success("Login successful")
+                user_hash_in = True
+                if user_match:
+                    cookies["curr_org_input"] = curr_org_input
+                    st.session_state["curr_org_input"] = curr_org_input
+            else:
+                st.error("You entered an incorrect password. Please try again.")
 
-        st.session_state["org_input"] = user_org
-        st.session_state["site_input"] = site_input
+                st.switch_page("app.py")
+            # if bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')):
+            #     user_hash_in = True
+            #     if user_match:
+            #         cookies["curr_org_input"] = curr_org_input
+            #         st.session_state["curr_org_input"] = curr_org_input
 
-        cookies["org_input"] = user_org
-        cookies["site_input"] = site_input
+            # else:
+            #     st.error("You entered an incorrect password. Please try again.")
 
-        cookies.save()
-
-        st.success(f"Signed in automatically to: {user_org}")
-
-        st.switch_page("pages/home.py")
-
-    elif not org_in:
-        creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
-        admin_approved = "True" if creating_new_org else "False"
-
-        st.session_state["is_admin"] = admin_approved
-        cookies["admin_input"] = str(admin_approved)
-
-        oregonask_access = False
-        st.session_state["access"] = oregonask_access
-        cookies["access_level"] = str(oregonask_access)
-
-        user_org = curr_org_input
-        site_input = ""
-
-        st.session_state["org_input"] = user_org
-        st.session_state["site_input"] = site_input
-
-        cookies["org_input"] = user_org
-        cookies["site_input"] = site_input
-
-        cookies.save()
-# if 'show_login' not in st.session_state:
-# st.session_state.show_login = False
-# if 'show_sign' not in st.session_state:
-# st.session_state.show_sign = False
-
-# def toggle_login():
-# st.session_state.show_login = not st.session_state.show_login
-
-
-
-# def toggle_sign():
-# st.session_state.show_sign = not st.session_state.show_sign
-
-
-# st.title("Welcome to INSIGHT")
-# st.write("### Log In or Sign Up")
-# col1, col2 = st.columns(2)
-# with col1:
-#     st.button("Log In", use_container_width=True, on_click=toggle_login)
-#     if st.session_state.show_login:
-#         st.session_state.show_sign = False
-#         user_email = st.text_input("Your email").strip().lower()
-#         password = st.text_input("Your password", type="password")
-#         password_to_verify = password.encode('utf-8')
-#         curr_org_input = st.text_input("Your organization name")
-#         if st.button("Sign In"):
-#             # def log_on():
-#             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-#             # Convert secrets section to JSON string and parse it
-#             service_account_info = dict(st.secrets["gcp_service_account"])
-#             creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
-#             client = gspread.authorize(creds)
-
-#             # # After successful Google login
-#             # user_info = st.session_state.get("user_info", {})
-#             # user_email = st.session_state.get("user_email")
-#             # user_name = st.session_state.get("user_name")
-
-#             # Load authorized users
-#             user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
-#             user_records = user_sheet.get_all_records()
-
-#             hash_sheet = client.open("Log In Information").worksheet("Sheet1")
-#             hash_records = hash_sheet.get_all_records()
-
-#             # Match user by email
-#             user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
-
-#             user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)
-
-        
-#             if not user_hash_match:
-#                 salt = bcrypt.gensalt()
-#                 hashed_password = bcrypt.hashpw(password_to_verify, salt)
-#                 hash_sheet.append_row([user_email,hashed_password.decode('utf-8')])
-#                 user_hash_in = True
-#             else:
-#                 user_hash = user_hash_match.get("Hash", "")
-#                 if bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')):
-#                     user_hash_in = True
-#                     if user_match:
-#                         cookies["org_input"] = curr_org_input
-#                         st.session_state["org_input"] = curr_org_input
-
-#                 else:
-#                     st.error("You entered an incorrect password. Please try again.")
-
-#                     st.switch_page("app.py")
+            #     st.switch_page("app.py")
                 
-#             user_hash = user_hash_match.get("Hash", "")
-#             user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
-
+        # user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)       
+        # user_hash = user_hash_match.get("Hash", "")
+        # user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
+        user_hash_in = True
+        curr_org_input = cookies.get("curr_org_input")
                 
-#             user_org = user_match.get("Organization", "").strip().lower() == curr_org_input.strip().lower()
+        user_org = user_match.get("Organization", "").strip().lower() == curr_org_input.strip().lower()
 
-#             user_in = bool(user_match)
+        user_in = bool(user_match)
 
-#             org_in = bool(user_org)
+        org_in = bool(user_org)
 
-#             if not user_in:
-#                 st.session_state["name_input"] = name_input.strip()
-#                 st.session_state["role"] = role_input.strip()
-#                 creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
+        if not user_in:
+            st.session_state["name_input"] = name_input.strip()
+            st.session_state["role"] = role_input.strip()
+            creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
 
-#                 admin_approved = "True" if creating_new_org else "False"
+            admin_approved = "True" if creating_new_org else "False"
 
-#                 oregonask_access = "False"
+            oregonask_access = "False"
 
-#                 user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email, "", "", admin_approved, "FALSE"])
+            user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email, "", "", admin_approved, "FALSE"])
 
-#                 st.session_state["is_admin"] = admin_approved == "True"
-#                 cookies["admin_input"] = admin_approved
-#                 cookies.save()
-#                 user_org = user_match.get("Organization", "").strip().lower()
-#         # --- If user not found: allow account creation ---
-#         # if not user_in:
-#         #     st.warning("We couldn't find your email in the system. Please enter your information to create an account.")
-#         #     first_name = st.text_input("Your first name")
-#         #     last_name = st.text_input("Your last name")
-#         #     user_email = st.text_input("Your email")
-#         #     role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, Staff, etc.)")
-#         #     curr_org_input = st.text_input("Your organization name")
-#         #     name_input = first_name + " " + last_name
-#         #     if st.button("Create Account") and role_input:
-#         #         st.session_state["name_input"] = name_input.strip()
-#         #         st.session_state["role"] = role_input.strip()
-
-#         #         creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
-
-#         #         admin_approved = "True" if creating_new_org else "False"
-
-#         #         oregonask_access = "False"
-
-#         #         user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email, "", "", admin_approved, "FALSE"])
-
-#         #         st.session_state["is_admin"] = admin_approved == "True"
-#         #         cookies["admin_input"] = admin_approved
-#         #         cookies.save()
-
-
-
-#         #         st.success("Account created successfully!")
-#         #         user_in = True
-#         #         st.rerun()
-#         #         # Force initialize once
-
-#             if user_in and user_hash_in and org_in:
-#                 org_input = None
-
-#                 # --- If user is found ---
-#                 role = user_match["Title"]
-#                 st.session_state["role"] = role
-#                 # st.session_state["name"] = user_match.get("Name", user_name)
-#                 st.session_state["name"] = user_match.get("Name", "")
-#                 st.info(f"Welcome, **{st.session_state['name']}**! Your title: **{role}**")
-
-#                 # --- Define admin roles by substrings ---
-#                 # admin_keywords = ["director", "president", "principal", "ceo", "admin", "manager", "coordinator", "leader", "owner", "superintendent", "directora", "chief", "mayor", "chair", "founder", "oregonask intern"]
-
-#                 # Simple role check
-#                 def is_admin_role(role):
-#                     return any(keyword in role.lower() for keyword in admin_keywords)
-
-#                 # Flag admin access
-#                 # st.session_state["is_admin"] = is_admin_role(st.session_state.get("role", ""))
-
-#                 # Pull the user's row by email
-#                 user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
-
-#                 admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
-#                 st.session_state["is_admin"] = admin_approved
-#                 cookies["admin_input"] = str(admin_approved)
-#                 oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
-#                 st.session_state["access"] = oregonask_access
-#                 cookies["access_level"] = str(oregonask_access)
-
-
-
-#                 if st.session_state["is_admin"]:
-#                     st.success("You have admin-level access.")
-#                 else:
-#                     st.info("You have standard access.")
-#                 # user_org = user_match.get("Organization", "").strip().lower()
-#                 user_org = curr_org_input
-#                 site_input = ""
-
-#                 st.session_state["org_input"] = user_org
-#                 st.session_state["site_input"] = site_input
-
-#                 cookies["org_input"] = user_org
-#                 cookies["site_input"] = site_input
-
-#                 cookies.save()
-
-#                 st.success(f"Signed in automatically to: {user_org}")
-
-#                 st.switch_page("pages/home.py")
-
-#             elif not org_in:
-#                 creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
-#                 admin_approved = "True" if creating_new_org else "False"
-
-#                 st.session_state["is_admin"] = admin_approved
-#                 cookies["admin_input"] = str(admin_approved)
-
-#                 oregonask_access = False
-#                 st.session_state["access"] = oregonask_access
-#                 cookies["access_level"] = str(oregonask_access)
-
-#                 user_org = curr_org_input
-#                 site_input = ""
-
-#                 st.session_state["org_input"] = user_org
-#                 st.session_state["site_input"] = site_input
-
-#                 cookies["org_input"] = user_org
-#                 cookies["site_input"] = site_input
-
-#                 cookies.save()
-# with col2:
-#     st.button("Sign Up", use_container_width=True, on_click=toggle_sign)
-#     if st.session_state.show_sign:
-#         st.session_state.show_login = False
-#         first_name = st.text_input("Your first name")
-#         last_name = st.text_input("Your last name")
-#         user_email = st.text_input("Your email").strip().lower()
-#         password = st.text_input("A password", type="password")
-#         password_to_verify = password.encode('utf-8')
-#         role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, Staff, etc.)")
-#         curr_org_input = st.text_input("Your organization name")
-#         name_input = first_name + " " + last_name
-#         user_name = name_input
-#         if st.button("Sign In"):
-#             # def log_on():
-#             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-#             # Convert secrets section to JSON string and parse it
-#             service_account_info = dict(st.secrets["gcp_service_account"])
-#             creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
-#             client = gspread.authorize(creds)
-
-#             # # After successful Google login
-#             # user_info = st.session_state.get("user_info", {})
-#             # user_email = st.session_state.get("user_email")
-#             # user_name = st.session_state.get("user_name")
-
-#             # Load authorized users
-#             user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
-#             user_records = user_sheet.get_all_records()
-
-#             hash_sheet = client.open("Log In Information").worksheet("Sheet1")
-#             hash_records = hash_sheet.get_all_records()
-
-#             # Match user by email
-#             user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
-
-#             user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)
-
-        
-#             if not user_hash_match:
-#                 salt = bcrypt.gensalt()
-#                 hashed_password = bcrypt.hashpw(password_to_verify, salt)
-#                 hash_sheet.append_row([user_email,hashed_password.decode('utf-8')])
-#                 user_hash_in = True
-#             else:
-#                 user_hash = user_hash_match.get("Hash", "")
-#                 if bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')):
-#                     user_hash_in = True
-#                     if user_match:
-#                         cookies["org_input"] = curr_org_input
-#                         st.session_state["org_input"] = curr_org_input
-
-#                 else:
-#                     st.error("You entered an incorrect password. Please try again.")
-
-#                     st.switch_page("app.py")
-                
-#             user_hash = user_hash_match.get("Hash", "")
-#             user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
-
-                
-#             user_org = user_match.get("Organization", "").strip().lower() == curr_org_input.strip().lower()
-
-#             user_in = bool(user_match)
-
-#             org_in = bool(user_org)
-
-#             if not user_in:
-#                 st.session_state["name_input"] = name_input.strip()
-#                 st.session_state["role"] = role_input.strip()
-#                 creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
-
-#                 admin_approved = "True" if creating_new_org else "False"
-
-#                 oregonask_access = "False"
-
-#                 user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email, "", "", admin_approved, "FALSE"])
-
-#                 st.session_state["is_admin"] = admin_approved == "True"
-#                 cookies["admin_input"] = admin_approved
-#                 cookies.save()
-#                 user_org = user_match.get("Organization", "").strip().lower()
-#         # --- If user not found: allow account creation ---
+            st.session_state["is_admin"] = admin_approved == "True"
+            cookies["admin_input"] = admin_approved
+            cookies.save()
+            user_org = user_match.get("Organization", "").strip().lower()
+    # --- If user not found: allow account creation ---
     # if not user_in:
     #     st.warning("We couldn't find your email in the system. Please enter your information to create an account.")
     #     first_name = st.text_input("Your first name")
@@ -736,279 +489,665 @@ if st.button("Sign In"):
     #         st.rerun()
     #         # Force initialize once
 
-        # if user_in and user_hash_in and org_in:
-        #     org_input = None
+        if user_in and user_hash_in and org_in:
+            org_input = None
 
-        #     # --- If user is found ---
-        #     role = user_match["Title"]
-        #     st.session_state["role"] = role
-        #     # st.session_state["name"] = user_match.get("Name", user_name)
-        #     st.session_state["name"] = user_match.get("Name", "")
-        #     st.info(f"Welcome, **{st.session_state['name']}**! Your title: **{role}**")
+            # --- If user is found ---
+            role = user_match["Title"]
+            st.session_state["role"] = role
+            # st.session_state["name"] = user_match.get("Name", user_name)
+            st.session_state["name"] = user_match.get("Name", "")
+            st.info(f"Welcome, **{st.session_state['name']}**! Your title: **{role}**")
 
-        #     # --- Define admin roles by substrings ---
-        #     # admin_keywords = ["director", "president", "principal", "ceo", "admin", "manager", "coordinator", "leader", "owner", "superintendent", "directora", "chief", "mayor", "chair", "founder", "oregonask intern"]
+            # --- Define admin roles by substrings ---
+            # admin_keywords = ["director", "president", "principal", "ceo", "admin", "manager", "coordinator", "leader", "owner", "superintendent", "directora", "chief", "mayor", "chair", "founder", "oregonask intern"]
 
-        #     # Simple role check
-        #     def is_admin_role(role):
-        #         return any(keyword in role.lower() for keyword in admin_keywords)
+            # Simple role check
+            def is_admin_role(role):
+                return any(keyword in role.lower() for keyword in admin_keywords)
 
-        #     # Flag admin access
-        #     # st.session_state["is_admin"] = is_admin_role(st.session_state.get("role", ""))
+            # Flag admin access
+            # st.session_state["is_admin"] = is_admin_role(st.session_state.get("role", ""))
 
-        #     # Pull the user's row by email
-        #     user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
+            # Pull the user's row by email
+            user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
 
-        #     admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
-        #     st.session_state["is_admin"] = admin_approved
-        #     cookies["admin_input"] = str(admin_approved)
-        #     oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
-        #     st.session_state["access"] = oregonask_access
-        #     cookies["access_level"] = str(oregonask_access)
+            admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
+            st.session_state["is_admin"] = admin_approved
+            cookies["admin_input"] = str(admin_approved)
+            oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
+            st.session_state["access"] = oregonask_access
+            cookies["access_level"] = str(oregonask_access)
 
 
 
-        #     if st.session_state["is_admin"]:
-        #         st.success("You have admin-level access.")
-        #     else:
-        #         st.info("You have standard access.")
-        #     # user_org = user_match.get("Organization", "").strip().lower()
-        #     user_org = curr_org_input
-        #     site_input = ""
+            if st.session_state["is_admin"]:
+                st.success("You have admin-level access.")
+            else:
+                st.info("You have standard access.")
+            # user_org = user_match.get("Organization", "").strip().lower()
+            user_org = curr_org_input
+            site_input = ""
 
-        #     st.session_state["org_input"] = user_org
-        #     st.session_state["site_input"] = site_input
+            st.session_state["org_input"] = user_org
+            st.session_state["site_input"] = site_input
 
-        #     cookies["org_input"] = user_org
-        #     cookies["site_input"] = site_input
+            cookies["org_input"] = user_org
+            cookies["site_input"] = site_input
 
-        #     cookies.save()
+            cookies.save()
 
-        #     st.success(f"Signed in automatically to: {user_org}")
+            st.success(f"Signed in automatically to: {user_org}")
 
-        #     st.switch_page("pages/home.py")
+            st.switch_page("pages/home.py")
 
-        # elif not org_in:
-        #     creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
-        #     admin_approved = "True" if creating_new_org else "False"
+        elif not org_in:
+            creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
+            admin_approved = "True" if creating_new_org else "False"
 
-        #     st.session_state["is_admin"] = admin_approved
-        #     cookies["admin_input"] = str(admin_approved)
+            st.session_state["is_admin"] = admin_approved
+            cookies["admin_input"] = str(admin_approved)
 
-        #     oregonask_access = False
-        #     st.session_state["access"] = oregonask_access
-        #     cookies["access_level"] = str(oregonask_access)
+            oregonask_access = False
+            st.session_state["access"] = oregonask_access
+            cookies["access_level"] = str(oregonask_access)
 
-        #     user_org = curr_org_input
-        #     site_input = ""
+            user_org = curr_org_input
+            site_input = ""
 
-        #     st.session_state["org_input"] = user_org
-        #     st.session_state["site_input"] = site_input
+            st.session_state["org_input"] = user_org
+            st.session_state["site_input"] = site_input
 
-        #     cookies["org_input"] = user_org
-        #     cookies["site_input"] = site_input
+            cookies["org_input"] = user_org
+            cookies["site_input"] = site_input
 
-        #     cookies.save()
-        #     # if user_match and user_org!="":
-        #     #         # Automatically log in
-        #     #         user_org = user_match.get("Organization", "").strip()
+            cookies.save()
+    # if 'show_login' not in st.session_state:
+    # st.session_state.show_login = False
+    # if 'show_sign' not in st.session_state:
+    # st.session_state.show_sign = False
+
+    # def toggle_login():
+    # st.session_state.show_login = not st.session_state.show_login
+
+
+
+    # def toggle_sign():
+    # st.session_state.show_sign = not st.session_state.show_sign
+
+
+    # st.title("Welcome to INSIGHT")
+    # st.write("### Log In or Sign Up")
+    # col1, col2 = st.columns(2)
+    # with col1:
+    #     st.button("Log In", use_container_width=True, on_click=toggle_login)
+    #     if st.session_state.show_login:
+    #         st.session_state.show_sign = False
+    #         user_email = st.text_input("Your email").strip().lower()
+    #         password = st.text_input("Your password", type="password")
+    #         password_to_verify = password.encode('utf-8')
+    #         curr_org_input = st.text_input("Your organization name")
+    #         if st.button("Sign In"):
+    #             # def log_on():
+    #             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    #             # Convert secrets section to JSON string and parse it
+    #             service_account_info = dict(st.secrets["gcp_service_account"])
+    #             creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
+    #             client = gspread.authorize(creds)
+
+    #             # # After successful Google login
+    #             # user_info = st.session_state.get("user_info", {})
+    #             # user_email = st.session_state.get("user_email")
+    #             # user_name = st.session_state.get("user_name")
+
+    #             # Load authorized users
+    #             user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
+    #             user_records = user_sheet.get_all_records()
+
+    #             hash_sheet = client.open("Log In Information").worksheet("Sheet1")
+    #             hash_records = hash_sheet.get_all_records()
+
+    #             # Match user by email
+    #             user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
+
+    #             user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)
+
+            
+    #             if not user_hash_match:
+    #                 salt = bcrypt.gensalt()
+    #                 hashed_password = bcrypt.hashpw(password_to_verify, salt)
+    #                 hash_sheet.append_row([user_email,hashed_password.decode('utf-8')])
+    #                 user_hash_in = True
+    #             else:
+    #                 user_hash = user_hash_match.get("Hash", "")
+    #                 if bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')):
+    #                     user_hash_in = True
+    #                     if user_match:
+    #                         cookies["org_input"] = curr_org_input
+    #                         st.session_state["org_input"] = curr_org_input
+
+    #                 else:
+    #                     st.error("You entered an incorrect password. Please try again.")
+
+    #                     st.switch_page("app.py")
                     
-        #     #         site_input = ""
+    #             user_hash = user_hash_match.get("Hash", "")
+    #             user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
 
-        #     #         st.session_state["org_input"] = user_org
-        #     #         st.session_state["site_input"] = site_input
+                    
+    #             user_org = user_match.get("Organization", "").strip().lower() == curr_org_input.strip().lower()
 
-        #     #         cookies["org_input"] = user_org
-        #     #         cookies["site_input"] = site_input
+    #             user_in = bool(user_match)
 
-        #     #         cookies.save()
+    #             org_in = bool(user_org)
 
-        #     #         st.success(f"Signed in automatically to: {user_org}")
-        #     #         # home()
-        #     #         st.switch_page("pages/home.py")
-        #     #         # st.session_state["org_input"] = user_org
-        #     #         # st.session_state["site_input"] = ""
-        #     #         # cookies["org_input"] = user_org
-        #     #         # cookies["site_input"] = ""
-        #     #         # cookies.save()
-        #     #         # st.session_state["auto_login_trigger"] = True
-        #     # elif user_org="":
-        #     #         admin_approved = False
-        #     #         st.session_state["is_admin"] = admin_approved
-        #     #         cookies["admin_input"] = str(admin_approved)
+    #             if not user_in:
+    #                 st.session_state["name_input"] = name_input.strip()
+    #                 st.session_state["role"] = role_input.strip()
+    #                 creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
 
-        #     #         site_input = ""
+    #                 admin_approved = "True" if creating_new_org else "False"
 
-        #     #         st.session_state["org_input"] = curr_org_input
-        #     #         st.session_state["site_input"] = site_input
+    #                 oregonask_access = "False"
 
-        #     #         cookies["org_input"] = curr_org_input
-        #     #         cookies["site_input"] = site_input
+    #                 user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email, "", "", admin_approved, "FALSE"])
 
-        # #     @st.cache_data(ttl=3600, show_spinner=False)
-        # #     def get_org_names():
-        # #         sheet = client.open("All Programs Statewide_6.17.25").worksheet("All Programs Statewide")
-        # #         records = sheet.get_all_records(head=9)
-        # #         org_names = list({row["Account Name"].strip() for row in records if row.get("Account Name")})
-        # #         return org_names
+    #                 st.session_state["is_admin"] = admin_approved == "True"
+    #                 cookies["admin_input"] = admin_approved
+    #                 cookies.save()
+    #                 user_org = user_match.get("Organization", "").strip().lower()
+    #         # --- If user not found: allow account creation ---
+    #         # if not user_in:
+    #         #     st.warning("We couldn't find your email in the system. Please enter your information to create an account.")
+    #         #     first_name = st.text_input("Your first name")
+    #         #     last_name = st.text_input("Your last name")
+    #         #     user_email = st.text_input("Your email")
+    #         #     role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, Staff, etc.)")
+    #         #     curr_org_input = st.text_input("Your organization name")
+    #         #     name_input = first_name + " " + last_name
+    #         #     if st.button("Create Account") and role_input:
+    #         #         st.session_state["name_input"] = name_input.strip()
+    #         #         st.session_state["role"] = role_input.strip()
 
-        # #     # Now outside the function: enrich with current user's org if missing
-        # #     org_names = get_org_names()
-        # #     if user_match:
-        # #         user_org = user_match.get("Organization", "").strip()
-        # #         if user_org and user_org.lower() not in [org.strip().lower() for org in org_names]:
-        # #             org_names.append(user_org)
+    #         #         creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
 
-        # #     org_names = sorted(org_names)
-        # #     org_names.insert(0, "Search for your organization name...")
-        # #     org_names.append("Other")
+    #         #         admin_approved = "True" if creating_new_org else "False"
 
+    #         #         oregonask_access = "False"
 
+    #         #         user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email, "", "", admin_approved, "FALSE"])
 
-        # #     # # Load orgs from cache
-        # #     # org_names = get_org_names()
+    #         #         st.session_state["is_admin"] = admin_approved == "True"
+    #         #         cookies["admin_input"] = admin_approved
+    #         #         cookies.save()
 
 
-        # #     def search_orgs(query: str):
-        # #         return [org for org in org_names if query.lower() in org.lower()]
 
-        # #     org_search = st.selectbox(
-        # #         "Search for your organization",
-        # #         options=org_names,
-        # #     )
+    #         #         st.success("Account created successfully!")
+    #         #         user_in = True
+    #         #         st.rerun()
+    #         #         # Force initialize once
 
+    #             if user_in and user_hash_in and org_in:
+    #                 org_input = None
 
-        # #     if org_search == "Other":
-        # #         custom_org = st.text_input("Please enter your organization name:")
-        # #         address = st.text_input("Please enter your site's address:")
-        # #         org_input = custom_org.strip()
-        # #     elif org_search != "Search for your organization name...":
-        # #         user_org = user_match.get("Organization", "").strip().lower()
-        # #         selected_org = org_search.strip().lower()
-        # #         normalized_orgs = [org.strip().lower() for org in org_names]
-        # #         org_input = org_search
-        # #         # else:
-        # #         #     st.warning("The organization you selected does not match the organization in our system. Please try again.")
-        # #         #     org_input = False
-        # #     else:
-        # #         st.info("Please select the name of the organization you work for.")
+    #                 # --- If user is found ---
+    #                 role = user_match["Title"]
+    #                 st.session_state["role"] = role
+    #                 # st.session_state["name"] = user_match.get("Name", user_name)
+    #                 st.session_state["name"] = user_match.get("Name", "")
+    #                 st.info(f"Welcome, **{st.session_state['name']}**! Your title: **{role}**")
 
-        # #     # --- Site input (optional) ---
-        # #     site_input = st.text_input("If your organization has multiple sites, please enter your site name (optional):")
+    #                 # --- Define admin roles by substrings ---
+    #                 # admin_keywords = ["director", "president", "principal", "ceo", "admin", "manager", "coordinator", "leader", "owner", "superintendent", "directora", "chief", "mayor", "chair", "founder", "oregonask intern"]
 
-        # #     # # --- Continue button ---
-        # #     # if st.button("Continue"):
-        # #     #     if not org_input:
-        # #     #         st.warning("Please select a valid organization before continuing.")
-        # #     #     else:
-        # #     #         # Save inputs
-        # #     #         st.session_state["org_input"] = org_input.strip()
-        # #     #         st.session_state["site_input"] = site_input.strip() if site_input else ""
-        # #     #         st.session_state["admin_input"] = "false"
-        # #     #         st.session_state["access_level"] = str(st.session_state["access"])
+    #                 # Simple role check
+    #                 def is_admin_role(role):
+    #                     return any(keyword in role.lower() for keyword in admin_keywords)
 
-        # #     #         # Save cookies
-        # #     #         cookies["org_input"] = st.session_state["org_input"]
-        # #     #         cookies["site_input"] = st.session_state["site_input"]
-        # #     #         cookies["admin_input"] = st.session_state["admin_input"]
-        # #     #         cookies["access_level"] = st.session_state["access_level"]
-        # #     #         cookies.save()
+    #                 # Flag admin access
+    #                 # st.session_state["is_admin"] = is_admin_role(st.session_state.get("role", ""))
+
+    #                 # Pull the user's row by email
+    #                 user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
+
+    #                 admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
+    #                 st.session_state["is_admin"] = admin_approved
+    #                 cookies["admin_input"] = str(admin_approved)
+    #                 oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
+    #                 st.session_state["access"] = oregonask_access
+    #                 cookies["access_level"] = str(oregonask_access)
 
 
-        # #     #         # Write to sheet only if 'Other'
-        # #     #         if org_search == "Other":
-        # #     #             def append_clean_row(sheet, values):
-        # #     #                 col_a = sheet.col_values(1)
-        # #     #                 next_empty_row = len(col_a) + 1
-        # #     #                 sheet.update(f"A{next_empty_row}", [values], value_input_option='USER_ENTERED')
 
-        # #     #             append_clean_row(
-        # #     #                 sheet,
-        # #     #                 ["Active", "", "INSIGHT", custom_org, st.session_state["site_input"], address]
-        # #     #             )
-        # #     #             st.cache_data.clear()
+    #                 if st.session_state["is_admin"]:
+    #                     st.success("You have admin-level access.")
+    #                 else:
+    #                     st.info("You have standard access.")
+    #                 # user_org = user_match.get("Organization", "").strip().lower()
+    #                 user_org = curr_org_input
+    #                 site_input = ""
 
-        # #     #         # Immediately redirect to home.py
-        # #     #         st.switch_page("pages/home.py")
-        # #     #         st.experimental_rerun()
-        # #     if st.session_state.get("redirect_to_home"):
-        # #         del st.session_state["redirect_to_home"]
-        # #         st.switch_page("pages/home.py")
+    #                 st.session_state["org_input"] = user_org
+    #                 st.session_state["site_input"] = site_input
 
-        # #     if st.button("Continue"):
-        # #         if not org_input:
-        #             st.warning("Please select a valid organization before continuing.")
-        #         else:
-        #             st.session_state["org_input"] = org_input.strip()
-        #             st.session_state["site_input"] = site_input.strip() if site_input else ""
-        #             st.session_state["admin_input"] = "false"
-        #             st.session_state["access_level"] = str(st.session_state["access"])
+    #                 cookies["org_input"] = user_org
+    #                 cookies["site_input"] = site_input
 
-        #             cookies["org_input"] = st.session_state["org_input"]
-        #             cookies["site_input"] = st.session_state["site_input"]
-        #             cookies["admin_input"] = st.session_state["admin_input"]
-        #             cookies["access_level"] = st.session_state["access_level"]
-        #             cookies.save()
+    #                 cookies.save()
 
-        #             if org_search == "Other":
-        #                 def append_clean_row(sheet, values):
-        #                     col_a = sheet.col_values(1)
-        #                     next_empty_row = len(col_a) + 1
-        #                     sheet.update(f"A{next_empty_row}", [values], value_input_option='USER_ENTERED')
+    #                 st.success(f"Signed in automatically to: {user_org}")
 
-        #                 append_clean_row(
-        #                     sheet,
-        #                     ["Active", "", "INSIGHT", custom_org, st.session_state["site_input"], address]
-        #                 )
-        #                 st.cache_data.clear()
-        #             # home()
-        #             # Trigger redirect cleanly
-        #             st.session_state["redirect_to_home"] = True
-        #             st.rerun()
-        #         # if st.session_state.get("auto_login_trigger"):
-        #         #     del st.session_state["auto_login_trigger"]
-        #         #     st.success(f"Signed in automatically to: {st.session_state['org_input']}")
-        #         #     st.switch_page("pages/home.py")
-        # # authenticator = stauth.Authenticate(
-        # #     dict(st.secrets['credentials']),
-        # #     st.secrets['cookie']['name'],
-        # #     st.secrets['cookie']['key'],
-        # #     st.secrets['cookie']['expiry_days']
-        # # )
-        # # if st.button("Sign Up"):
-        # #     try:
-        # #         user_email, user_username, user_name = authenticator.register_user(
-        # #             fields={'Form name':'Sign Up for INSIGHT', 'Email':'Email', 'Password': 'Password', 'Repeat Password':'Reenter Password', 'Captcha':'Enter CAPTCHA', 'Register':'Sign Up'}, 
-        # #             merge_username_email=True, password_hint=False)
-        # #         if user_email: 
-        # #             st.success('Account created successfully.')
-        # #     except Exception as e:
-        # #         st.error(e)
-        # # if st.button("Log In"):
-        # #     try:
-        # #         authenticator.login()
-        # #         user_email = st.session_state.get("username")
-        # #         user_name = st.session_state.get("name")
-        # #         if st.session_state.get('authentication_status') == True:
-        # #             log_on()
-        # #         elif st.session_state.get('authentication_status') is False:
-        # #             st.error('Username/password is incorrect')
-        # #         elif st.session_state.get('authentication_status') is None:
-        # #             st.warning('Please enter your username and password')
-        # #         # if st.button("Forgot Password"):
-        # #         #     try:
-        # #         #         username_of_forgotten_password, \
-        # #         #         email_of_forgotten_password, \
-        # #         #         new_random_password = authenticator.forgot_password()
-        # #         #         if username_of_forgotten_password:
-        # #         #             st.success('A new password will be sent securely.')
-        # #         #             # To securely transfer the new password to the user please see step 8.
-        # #         #         elif username_of_forgotten_password == False:
-        # #         #             st.error('Username not found')
-        # #         #     except Exception as e:
-        # #         #         st.error(e)
-        # #     except Exception as e:
-        # #         st.error(e)
+    #                 st.switch_page("pages/home.py")
+
+    #             elif not org_in:
+    #                 creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
+    #                 admin_approved = "True" if creating_new_org else "False"
+
+    #                 st.session_state["is_admin"] = admin_approved
+    #                 cookies["admin_input"] = str(admin_approved)
+
+    #                 oregonask_access = False
+    #                 st.session_state["access"] = oregonask_access
+    #                 cookies["access_level"] = str(oregonask_access)
+
+    #                 user_org = curr_org_input
+    #                 site_input = ""
+
+    #                 st.session_state["org_input"] = user_org
+    #                 st.session_state["site_input"] = site_input
+
+    #                 cookies["org_input"] = user_org
+    #                 cookies["site_input"] = site_input
+
+    #                 cookies.save()
+    # with col2:
+    #     st.button("Sign Up", use_container_width=True, on_click=toggle_sign)
+    #     if st.session_state.show_sign:
+    #         st.session_state.show_login = False
+    #         first_name = st.text_input("Your first name")
+    #         last_name = st.text_input("Your last name")
+    #         user_email = st.text_input("Your email").strip().lower()
+    #         password = st.text_input("A password", type="password")
+    #         password_to_verify = password.encode('utf-8')
+    #         role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, Staff, etc.)")
+    #         curr_org_input = st.text_input("Your organization name")
+    #         name_input = first_name + " " + last_name
+    #         user_name = name_input
+    #         if st.button("Sign In"):
+    #             # def log_on():
+    #             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    #             # Convert secrets section to JSON string and parse it
+    #             service_account_info = dict(st.secrets["gcp_service_account"])
+    #             creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
+    #             client = gspread.authorize(creds)
+
+    #             # # After successful Google login
+    #             # user_info = st.session_state.get("user_info", {})
+    #             # user_email = st.session_state.get("user_email")
+    #             # user_name = st.session_state.get("user_name")
+
+    #             # Load authorized users
+    #             user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
+    #             user_records = user_sheet.get_all_records()
+
+    #             hash_sheet = client.open("Log In Information").worksheet("Sheet1")
+    #             hash_records = hash_sheet.get_all_records()
+
+    #             # Match user by email
+    #             user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
+
+    #             user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)
+
+            
+    #             if not user_hash_match:
+    #                 salt = bcrypt.gensalt()
+    #                 hashed_password = bcrypt.hashpw(password_to_verify, salt)
+    #                 hash_sheet.append_row([user_email,hashed_password.decode('utf-8')])
+    #                 user_hash_in = True
+    #             else:
+    #                 user_hash = user_hash_match.get("Hash", "")
+    #                 if bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')):
+    #                     user_hash_in = True
+    #                     if user_match:
+    #                         cookies["org_input"] = curr_org_input
+    #                         st.session_state["org_input"] = curr_org_input
+
+    #                 else:
+    #                     st.error("You entered an incorrect password. Please try again.")
+
+    #                     st.switch_page("app.py")
+                    
+    #             user_hash = user_hash_match.get("Hash", "")
+    #             user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
+
+                    
+    #             user_org = user_match.get("Organization", "").strip().lower() == curr_org_input.strip().lower()
+
+    #             user_in = bool(user_match)
+
+    #             org_in = bool(user_org)
+
+    #             if not user_in:
+    #                 st.session_state["name_input"] = name_input.strip()
+    #                 st.session_state["role"] = role_input.strip()
+    #                 creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
+
+    #                 admin_approved = "True" if creating_new_org else "False"
+
+    #                 oregonask_access = "False"
+
+    #                 user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email, "", "", admin_approved, "FALSE"])
+
+    #                 st.session_state["is_admin"] = admin_approved == "True"
+    #                 cookies["admin_input"] = admin_approved
+    #                 cookies.save()
+    #                 user_org = user_match.get("Organization", "").strip().lower()
+    #         # --- If user not found: allow account creation ---
+        # if not user_in:
+        #     st.warning("We couldn't find your email in the system. Please enter your information to create an account.")
+        #     first_name = st.text_input("Your first name")
+        #     last_name = st.text_input("Your last name")
+        #     user_email = st.text_input("Your email")
+        #     role_input = st.text_input("Your role or title (e.g., Program Manager, Principal, Staff, etc.)")
+        #     curr_org_input = st.text_input("Your organization name")
+        #     name_input = first_name + " " + last_name
+        #     if st.button("Create Account") and role_input:
+        #         st.session_state["name_input"] = name_input.strip()
+        #         st.session_state["role"] = role_input.strip()
+
+        #         creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
+
+        #         admin_approved = "True" if creating_new_org else "False"
+
+        #         oregonask_access = "False"
+
+        #         user_sheet.append_row(["INSIGHT", first_name, last_name, role_input, curr_org_input, user_email, "", "", admin_approved, "FALSE"])
+
+        #         st.session_state["is_admin"] = admin_approved == "True"
+        #         cookies["admin_input"] = admin_approved
+        #         cookies.save()
+
+
+
+        #         st.success("Account created successfully!")
+        #         user_in = True
+        #         st.rerun()
+        #         # Force initialize once
+
+            # if user_in and user_hash_in and org_in:
+            #     org_input = None
+
+            #     # --- If user is found ---
+            #     role = user_match["Title"]
+            #     st.session_state["role"] = role
+            #     # st.session_state["name"] = user_match.get("Name", user_name)
+            #     st.session_state["name"] = user_match.get("Name", "")
+            #     st.info(f"Welcome, **{st.session_state['name']}**! Your title: **{role}**")
+
+            #     # --- Define admin roles by substrings ---
+            #     # admin_keywords = ["director", "president", "principal", "ceo", "admin", "manager", "coordinator", "leader", "owner", "superintendent", "directora", "chief", "mayor", "chair", "founder", "oregonask intern"]
+
+            #     # Simple role check
+            #     def is_admin_role(role):
+            #         return any(keyword in role.lower() for keyword in admin_keywords)
+
+            #     # Flag admin access
+            #     # st.session_state["is_admin"] = is_admin_role(st.session_state.get("role", ""))
+
+            #     # Pull the user's row by email
+            #     user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
+
+            #     admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
+            #     st.session_state["is_admin"] = admin_approved
+            #     cookies["admin_input"] = str(admin_approved)
+            #     oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
+            #     st.session_state["access"] = oregonask_access
+            #     cookies["access_level"] = str(oregonask_access)
+
+
+
+            #     if st.session_state["is_admin"]:
+            #         st.success("You have admin-level access.")
+            #     else:
+            #         st.info("You have standard access.")
+            #     # user_org = user_match.get("Organization", "").strip().lower()
+            #     user_org = curr_org_input
+            #     site_input = ""
+
+            #     st.session_state["org_input"] = user_org
+            #     st.session_state["site_input"] = site_input
+
+            #     cookies["org_input"] = user_org
+            #     cookies["site_input"] = site_input
+
+            #     cookies.save()
+
+            #     st.success(f"Signed in automatically to: {user_org}")
+
+            #     st.switch_page("pages/home.py")
+
+            # elif not org_in:
+            #     creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
+            #     admin_approved = "True" if creating_new_org else "False"
+
+            #     st.session_state["is_admin"] = admin_approved
+            #     cookies["admin_input"] = str(admin_approved)
+
+            #     oregonask_access = False
+            #     st.session_state["access"] = oregonask_access
+            #     cookies["access_level"] = str(oregonask_access)
+
+            #     user_org = curr_org_input
+            #     site_input = ""
+
+            #     st.session_state["org_input"] = user_org
+            #     st.session_state["site_input"] = site_input
+
+            #     cookies["org_input"] = user_org
+            #     cookies["site_input"] = site_input
+
+            #     cookies.save()
+            #     # if user_match and user_org!="":
+            #     #         # Automatically log in
+            #     #         user_org = user_match.get("Organization", "").strip()
+                        
+            #     #         site_input = ""
+
+            #     #         st.session_state["org_input"] = user_org
+            #     #         st.session_state["site_input"] = site_input
+
+            #     #         cookies["org_input"] = user_org
+            #     #         cookies["site_input"] = site_input
+
+            #     #         cookies.save()
+
+            #     #         st.success(f"Signed in automatically to: {user_org}")
+            #     #         # home()
+            #     #         st.switch_page("pages/home.py")
+            #     #         # st.session_state["org_input"] = user_org
+            #     #         # st.session_state["site_input"] = ""
+            #     #         # cookies["org_input"] = user_org
+            #     #         # cookies["site_input"] = ""
+            #     #         # cookies.save()
+            #     #         # st.session_state["auto_login_trigger"] = True
+            #     # elif user_org="":
+            #     #         admin_approved = False
+            #     #         st.session_state["is_admin"] = admin_approved
+            #     #         cookies["admin_input"] = str(admin_approved)
+
+            #     #         site_input = ""
+
+            #     #         st.session_state["org_input"] = curr_org_input
+            #     #         st.session_state["site_input"] = site_input
+
+            #     #         cookies["org_input"] = curr_org_input
+            #     #         cookies["site_input"] = site_input
+
+            # #     @st.cache_data(ttl=3600, show_spinner=False)
+            # #     def get_org_names():
+            # #         sheet = client.open("All Programs Statewide_6.17.25").worksheet("All Programs Statewide")
+            # #         records = sheet.get_all_records(head=9)
+            # #         org_names = list({row["Account Name"].strip() for row in records if row.get("Account Name")})
+            # #         return org_names
+
+            # #     # Now outside the function: enrich with current user's org if missing
+            # #     org_names = get_org_names()
+            # #     if user_match:
+            # #         user_org = user_match.get("Organization", "").strip()
+            # #         if user_org and user_org.lower() not in [org.strip().lower() for org in org_names]:
+            # #             org_names.append(user_org)
+
+            # #     org_names = sorted(org_names)
+            # #     org_names.insert(0, "Search for your organization name...")
+            # #     org_names.append("Other")
+
+
+
+            # #     # # Load orgs from cache
+            # #     # org_names = get_org_names()
+
+
+            # #     def search_orgs(query: str):
+            # #         return [org for org in org_names if query.lower() in org.lower()]
+
+            # #     org_search = st.selectbox(
+            # #         "Search for your organization",
+            # #         options=org_names,
+            # #     )
+
+
+            # #     if org_search == "Other":
+            # #         custom_org = st.text_input("Please enter your organization name:")
+            # #         address = st.text_input("Please enter your site's address:")
+            # #         org_input = custom_org.strip()
+            # #     elif org_search != "Search for your organization name...":
+            # #         user_org = user_match.get("Organization", "").strip().lower()
+            # #         selected_org = org_search.strip().lower()
+            # #         normalized_orgs = [org.strip().lower() for org in org_names]
+            # #         org_input = org_search
+            # #         # else:
+            # #         #     st.warning("The organization you selected does not match the organization in our system. Please try again.")
+            # #         #     org_input = False
+            # #     else:
+            # #         st.info("Please select the name of the organization you work for.")
+
+            # #     # --- Site input (optional) ---
+            # #     site_input = st.text_input("If your organization has multiple sites, please enter your site name (optional):")
+
+            # #     # # --- Continue button ---
+            # #     # if st.button("Continue"):
+            # #     #     if not org_input:
+            # #     #         st.warning("Please select a valid organization before continuing.")
+            # #     #     else:
+            # #     #         # Save inputs
+            # #     #         st.session_state["org_input"] = org_input.strip()
+            # #     #         st.session_state["site_input"] = site_input.strip() if site_input else ""
+            # #     #         st.session_state["admin_input"] = "false"
+            # #     #         st.session_state["access_level"] = str(st.session_state["access"])
+
+            # #     #         # Save cookies
+            # #     #         cookies["org_input"] = st.session_state["org_input"]
+            # #     #         cookies["site_input"] = st.session_state["site_input"]
+            # #     #         cookies["admin_input"] = st.session_state["admin_input"]
+            # #     #         cookies["access_level"] = st.session_state["access_level"]
+            # #     #         cookies.save()
+
+
+            # #     #         # Write to sheet only if 'Other'
+            # #     #         if org_search == "Other":
+            # #     #             def append_clean_row(sheet, values):
+            # #     #                 col_a = sheet.col_values(1)
+            # #     #                 next_empty_row = len(col_a) + 1
+            # #     #                 sheet.update(f"A{next_empty_row}", [values], value_input_option='USER_ENTERED')
+
+            # #     #             append_clean_row(
+            # #     #                 sheet,
+            # #     #                 ["Active", "", "INSIGHT", custom_org, st.session_state["site_input"], address]
+            # #     #             )
+            # #     #             st.cache_data.clear()
+
+            # #     #         # Immediately redirect to home.py
+            # #     #         st.switch_page("pages/home.py")
+            # #     #         st.experimental_rerun()
+            # #     if st.session_state.get("redirect_to_home"):
+            # #         del st.session_state["redirect_to_home"]
+            # #         st.switch_page("pages/home.py")
+
+            # #     if st.button("Continue"):
+            # #         if not org_input:
+            #             st.warning("Please select a valid organization before continuing.")
+            #         else:
+            #             st.session_state["org_input"] = org_input.strip()
+            #             st.session_state["site_input"] = site_input.strip() if site_input else ""
+            #             st.session_state["admin_input"] = "false"
+            #             st.session_state["access_level"] = str(st.session_state["access"])
+
+            #             cookies["org_input"] = st.session_state["org_input"]
+            #             cookies["site_input"] = st.session_state["site_input"]
+            #             cookies["admin_input"] = st.session_state["admin_input"]
+            #             cookies["access_level"] = st.session_state["access_level"]
+            #             cookies.save()
+
+            #             if org_search == "Other":
+            #                 def append_clean_row(sheet, values):
+            #                     col_a = sheet.col_values(1)
+            #                     next_empty_row = len(col_a) + 1
+            #                     sheet.update(f"A{next_empty_row}", [values], value_input_option='USER_ENTERED')
+
+            #                 append_clean_row(
+            #                     sheet,
+            #                     ["Active", "", "INSIGHT", custom_org, st.session_state["site_input"], address]
+            #                 )
+            #                 st.cache_data.clear()
+            #             # home()
+            #             # Trigger redirect cleanly
+            #             st.session_state["redirect_to_home"] = True
+            #             st.rerun()
+            #         # if st.session_state.get("auto_login_trigger"):
+            #         #     del st.session_state["auto_login_trigger"]
+            #         #     st.success(f"Signed in automatically to: {st.session_state['org_input']}")
+            #         #     st.switch_page("pages/home.py")
+            # # authenticator = stauth.Authenticate(
+            # #     dict(st.secrets['credentials']),
+            # #     st.secrets['cookie']['name'],
+            # #     st.secrets['cookie']['key'],
+            # #     st.secrets['cookie']['expiry_days']
+            # # )
+            # # if st.button("Sign Up"):
+            # #     try:
+            # #         user_email, user_username, user_name = authenticator.register_user(
+            # #             fields={'Form name':'Sign Up for INSIGHT', 'Email':'Email', 'Password': 'Password', 'Repeat Password':'Reenter Password', 'Captcha':'Enter CAPTCHA', 'Register':'Sign Up'}, 
+            # #             merge_username_email=True, password_hint=False)
+            # #         if user_email: 
+            # #             st.success('Account created successfully.')
+            # #     except Exception as e:
+            # #         st.error(e)
+            # # if st.button("Log In"):
+            # #     try:
+            # #         authenticator.login()
+            # #         user_email = st.session_state.get("username")
+            # #         user_name = st.session_state.get("name")
+            # #         if st.session_state.get('authentication_status') == True:
+            # #             log_on()
+            # #         elif st.session_state.get('authentication_status') is False:
+            # #             st.error('Username/password is incorrect')
+            # #         elif st.session_state.get('authentication_status') is None:
+            # #             st.warning('Please enter your username and password')
+            # #         # if st.button("Forgot Password"):
+            # #         #     try:
+            # #         #         username_of_forgotten_password, \
+            # #         #         email_of_forgotten_password, \
+            # #         #         new_random_password = authenticator.forgot_password()
+            # #         #         if username_of_forgotten_password:
+            # #         #             st.success('A new password will be sent securely.')
+            # #         #             # To securely transfer the new password to the user please see step 8.
+            # #         #         elif username_of_forgotten_password == False:
+            # #         #             st.error('Username not found')
+            # #         #     except Exception as e:
+            # #         #         st.error(e)
+            # #     except Exception as e:
+            # #         st.error(e)
 
 
 
