@@ -273,7 +273,10 @@ elif st.session_state["mode"] == "reset_password":
     res = supabase.table("password_resets").select("*").eq("token", token).execute()
     if res.data:
         record = res.data[0]
-        if datetime.fromisoformat(record["expires_at"]) > datetime.utcnow():
+        expires_at = datetime.fromisoformat(record["expires_at"])
+        
+        # ✅ Compare timezone-aware datetimes
+        if expires_at > datetime.now(timezone.utc):
             new_pw = st.text_input("New Password", type="password")
             confirm_pw = st.text_input("Confirm Password", type="password")
             if st.button("Reset Password"):
@@ -282,7 +285,7 @@ elif st.session_state["mode"] == "reset_password":
                 else:
                     hashed = bcrypt.hashpw(new_pw.encode(), bcrypt.gensalt()).decode()
                     supabase.table("users").update({"hash": hashed}).eq("email", record["email"]).execute()
-                    st.success("Password has been reset!")
+                    st.success("Password has been reset. You can now log in.")
                     st.session_state["mode"] = "login"
         else:
             st.error("This reset link has expired.")
