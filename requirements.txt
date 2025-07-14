@@ -14,3 +14,4 @@ firebase_admin
 httpx-oauth
 streamlit-authenticator
 bcrypt
+supabase

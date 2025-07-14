@@ -20,6 +20,7 @@ from streamlit_cookies_manager import EncryptedCookieManager
 import json
 import streamlit_authenticator as stauth
 import bcrypt
+from supabase import create_client, Client
 
 
 
@@ -34,7 +35,9 @@ else:
 
 
 
-
+url = st.secrets("SUPABASE_URL")  
+key = st.secrets("SUPABASE_KEY")  
+supabase: Client = create_client(url, key)
 
 
 
@@ -238,30 +241,55 @@ if st.button("Sign In"):
     # Match user by email
     user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
 
-    user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)
+    # user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)
 
+    user_hash_match = supabase.table("users").select("*").eq("email", email).execute()
     
     if not user_hash_match:
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(password_to_verify, salt)
-        hash_sheet.append_row([user_email,hashed_password.decode('utf-8')])
+        # hash_sheet.append_row([user_email,hashed_password.decode('utf-8')])
+        res = supabase.table("users").insert({
+            "Email": user_email,
+            "Hash": hashed_password.decode('utf-8')
+        }).execute()
+
+        if res.error:
+            st.error(f"Registration failed: {res.error.message}")
+        else:
+            st.success("Registration successful")
         user_hash_in = True
         if user_match:
             cookies["curr_org_input"] = curr_org_input
             st.session_state["curr_org_input"] = curr_org_input
 
+    # else:
+    #     # user_hash = user_hash_match.get("Hash", "")
+    #     res = supabase.table("users").select("*").eq("Email", email).execute()
+    
     else:
-        user_hash = user_hash_match.get("Hash", "")
-        if bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')):
+        res = supabase.table("users").select("*").eq("Email", email).execute()
+        stored_hash = res.data[0]["Hash"]
+        if bcrypt.checkpw(password_to_verify, stored_hash.encode()):
+            st.success("Login successful")
             user_hash_in = True
             if user_match:
                 cookies["curr_org_input"] = curr_org_input
                 st.session_state["curr_org_input"] = curr_org_input
-
         else:
             st.error("You entered an incorrect password. Please try again.")
 
             st.switch_page("app.py")
+        # if bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')):
+        #     user_hash_in = True
+        #     if user_match:
+        #         cookies["curr_org_input"] = curr_org_input
+        #         st.session_state["curr_org_input"] = curr_org_input
+
+        # else:
+        #     st.error("You entered an incorrect password. Please try again.")
+
+        #     st.switch_page("app.py")
             
     # user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)       
     # user_hash = user_hash_match.get("Hash", "")
