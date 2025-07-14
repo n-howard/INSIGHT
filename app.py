@@ -267,6 +267,21 @@ if st.session_state["mode"] == "forgot_password":
 
 # --- Mode: Reset Password with Token ---
 elif st.session_state["mode"] == "reset_password":
+    def update_user_password(email, new_password):
+        # Hash the new password
+        hashed = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+
+        # Update the user record in Supabase
+        try:
+            res = supabase.table("users").update({"hash": hashed}).eq("email", email).execute()
+            if res.data:
+                return True
+            else:
+                return False
+        except Exception as e:
+            st.error(f"Failed to update password: {e}")
+            return False
+
     st.title("Reset Your Password")
     token = st.session_state["reset_token"]
 
@@ -283,10 +298,12 @@ elif st.session_state["mode"] == "reset_password":
                 if new_pw != confirm_pw:
                     st.error("Passwords do not match")
                 else:
-                    hashed = bcrypt.hashpw(new_pw.encode(), bcrypt.gensalt()).decode()
-                    supabase.table("users").update({"hash": hashed}).eq("email", record["email"]).execute()
-                    st.success("Password has been reset. You can now log in.")
-                    st.session_state["mode"] = "login"
+                    if update_user_password(record["email"], new_pw):
+                        st.success("Password updated. You can now log in.")
+                        st.session_state["mode"] = "login"
+                    else:
+                        st.error("Error updating password.")
+
         else:
             st.error("This reset link has expired.")
     else:
