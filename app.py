@@ -22,7 +22,7 @@ import streamlit_authenticator as stauth
 import bcrypt
 from supabase import create_client, Client
 import smtplib
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from uuid import uuid4
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -225,7 +225,7 @@ if st.session_state["mode"] == "forgot_password":
 
     if st.button("Send Reset Email"):
         token = str(uuid4())
-        expiration = datetime.utcnow() + timedelta(minutes=30)
+        expiration = datetime.now(timezone.utc) + timedelta(minutes=30)
 
         # Store in Supabase
         supabase.table("password_resets").insert({
