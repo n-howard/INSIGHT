@@ -353,6 +353,10 @@ else:
         # Match user by email
         user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
 
+        
+        st.session_state["email"] = user_email
+        email = st.session_state.get("email")
+        cookies["email"] = email
         # user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)
 
         user_hash_match = supabase.table("users").select("*").eq("email", user_email).execute()
@@ -533,7 +537,10 @@ else:
             cookies["org_input"] = user_org
             cookies["site_input"] = site_input
 
+
             cookies.save()
+
+            st.switch_page("pages/home.py")
     # if 'show_login' not in st.session_state:
     # st.session_state.show_login = False
     # if 'show_sign' not in st.session_state:

@@ -30,12 +30,14 @@ if "org_input" not in st.session_state:
     cookie_site = cookies.get("site_input")
     cookie_admin = cookies.get("admin_input")
     cookie_access = cookies.get("access_level")
+    email = cookies.get("email")
 
     if cookie_org:
         st.session_state["org_input"] = cookie_org
         st.session_state["site_input"] = cookie_site or ""
         st.session_state["admin_input"] = cookie_admin or ""
         st.session_state["access_level"] = cookie_access or ""
+        st.session_state["email"] = email or ""
 
 
 if "is_admin" not in st.session_state:
@@ -402,9 +404,11 @@ elif (mode == "View Results") and assessment != None:
         chart_df = org_df.copy() # the below code is for once the sheet is working
 
         # Step 1: Confirm login and fetch user email
-        if "token" in st.session_state:
-            user_info = get_user_info(st.session_state.token)
-            email = user_info.get("email", None)
+        # if "token" in st.session_state:
+        #     user_info = get_user_info(st.session_state.token)
+        #     email = user_info.get("email", None)
+        if st.session_state["email"]!="":
+            email = st.sesssion_state.get("email")
         else:
             email = None
 
@@ -412,7 +416,7 @@ elif (mode == "View Results") and assessment != None:
         if is_admin:
             chart_df = org_df.copy()
         else:
-            chart_df = org_df[org_df["Contact Email"].str.lower().str.strip() == email]
+            chart_df = org_df[org_df["Contact Email"].str.lower().str.strip() == email.strip().lower()]
             st.info("You are viewing your own results only.")
 
         if selected_contacts:
@@ -430,7 +434,7 @@ elif (mode == "View Results") and assessment != None:
             converted_df[col] = pd.to_numeric(converted_df[col], errors="coerce")
 
         # Keep only mostly-numeric columns
-        EXCLUDED_SUBSTRINGS = ["How many students", "Timestamp", "Contact Phone", "Program Zip Code"]
+        EXCLUDED_SUBSTRINGS = ["How many students", "Timestamp", "Contact Phone", "Program Zip Code", "Program Street Address"]
 
         def is_numeric_column(series):
             return (
