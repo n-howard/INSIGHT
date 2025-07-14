@@ -245,7 +245,7 @@ if st.button("Sign In"):
 
     user_hash_match = supabase.table("users").select("*").eq("email", user_email).execute()
     
-    if not user_hash_match:
+    if not user_hash_match.data:
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(password_to_verify, salt)
         # hash_sheet.append_row([user_email,hashed_password.decode('utf-8')])
