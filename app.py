@@ -22,7 +22,7 @@ import streamlit_authenticator as stauth
 import bcrypt
 from supabase import create_client, Client
 import smtplib
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
