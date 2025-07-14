@@ -299,55 +299,6 @@ else:
     password = st.text_input("Your password (or a new password if you are creating a new account)", type="password")
     password_to_verify = password.encode('utf-8')
     curr_org_input = st.text_input("Your organization name")
-    if st.button("Forgot Password?"):
-        st.session_state["forgot_pw"] = True
-    if st.session_state.get("forgot_pw"):
-        st.subheader("Reset Your Password")
-        reset_email = st.text_input("Enter your email to reset password")
-
-    if st.button("Send Reset Email"):
-        token = str(uuid4())
-        expiration = datetime.utcnow() + timedelta(minutes=30)
-
-        # Save to Supabase
-        supabase.table("password_resets").insert({
-            "email": reset_email,
-            "token": token,
-            "expires_at": expiration.isoformat()
-        }).execute()
-
-        reset_link = f"https://getinsights.streamlit.app/reset?token={token}"
-        
-        if send_reset_email(reset_email, reset_link):
-            st.success("Password reset link sent!")
-        else:
-            st.error("Failed to send email.")
-
-    query_params = st.query_params
-    if "token" in query_params:
-        token = query_params["token"]
-        res = supabase.table("password_resets").select("*").eq("token", token).execute()
-
-        if res.data:
-            record = res.data[0]
-            expires_at = datetime.fromisoformat(record["expires_at"])
-
-            if expires_at > datetime.utcnow():
-                new_pw = st.text_input("New password", type="password")
-                confirm_pw = st.text_input("Confirm password", type="password")
-                if st.button("Reset Password"):
-                    if new_pw != confirm_pw:
-                        st.error("Passwords do not match")
-                    else:
-                        hashed = bcrypt.hashpw(new_pw.encode(), bcrypt.gensalt()).decode()
-                        supabase.table("users").update({"hash": hashed}).eq("email", record["email"]).execute()
-                        st.success("Password reset! You can now log in.")
-            else:
-                st.error("Reset link has expired.")
-        else:
-            st.error("Invalid reset link.")
-
-
     st.write("Additional Information (only required if this is your first time logging in):")
     first_name = st.text_input("Your first name")
     last_name = st.text_input("Your last name")
