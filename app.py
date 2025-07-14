@@ -243,7 +243,7 @@ if st.button("Sign In"):
 
     # user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)
 
-    user_hash_match = supabase.table("users").select("*").eq("email", email).execute()
+    user_hash_match = supabase.table("users").select("*").eq("Email", user_email).execute()
     
     if not user_hash_match:
         salt = bcrypt.gensalt()
@@ -268,7 +268,7 @@ if st.button("Sign In"):
     #     res = supabase.table("users").select("*").eq("Email", email).execute()
     
     else:
-        res = supabase.table("users").select("*").eq("Email", email).execute()
+        res = supabase.table("users").select("*").eq("Email", user_email).execute()
         stored_hash = res.data[0]["Hash"]
         if bcrypt.checkpw(password_to_verify, stored_hash.encode()):
             st.success("Login successful")
