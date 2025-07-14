@@ -380,12 +380,13 @@ def sign(user_email, password_to_verify, curr_org_input, first_name, last_name, 
             cookies.save()
 if 'show_login' not in st.session_state:
     st.session_state.show_login = False
+if 'show_sign' not in st.session_state:
+    st.session_state.show_sign = False
 
 def toggle_login():
     st.session_state.show_login = not st.session_state.show_login
 
-if 'show_sign' not in st.session_state:
-    st.session_state.show_sign = False
+
 
 def toggle_sign():
     st.session_state.show_sign = not st.session_state.show_sign
@@ -397,6 +398,7 @@ col1, col2 = st.columns(2)
 with col1:
     st.button("Log In", use_container_width=True, on_click=toggle_login)
     if st.session_state.show_login:
+        st.session_state.show_sign = False
         user_email = st.text_input("Your email").strip().lower()
         password = st.text_input("Your password", type="password")
         password_to_verify = password.encode('utf-8')
@@ -405,6 +407,7 @@ with col1:
 with col2:
     st.button("Sign Up", use_container_width=True, on_click=toggle_sign)
     if st.session_state.show_sign:
+        st.session_state.show_login = False
         first_name = st.text_input("Your first name")
         last_name = st.text_input("Your last name")
         user_email = st.text_input("Your email").strip().lower()
