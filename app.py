@@ -246,6 +246,10 @@ if st.button("Sign In"):
         hashed_password = bcrypt.hashpw(password_to_verify, salt)
         hash_sheet.append_row([user_email,hashed_password.decode('utf-8')])
         user_hash_in = True
+        if user_match:
+                cookies["org_input"] = curr_org_input
+                st.session_state["org_input"] = curr_org_input
+
     else:
         user_hash = user_hash_match.get("Hash", "")
         if bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')):
