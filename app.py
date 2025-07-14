@@ -262,7 +262,7 @@ if st.button("Sign In"):
     #         st.error("You entered an incorrect password. Please try again.")
 
     #         st.switch_page("app.py")
-            
+    hash_records = hash_sheet.get_all_records()
     user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)       
     user_hash = user_hash_match.get("Hash", "")
     user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
