@@ -410,7 +410,7 @@ else:
         user_hash_in = True
         
         user_email = cookies.get("user_email")
-        user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
+        user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email.strip().lower()), None)
         curr_org_input = cookies.get("org_input")
                 
         user_org = user_match.get("Organization", "").strip().lower()
