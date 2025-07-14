@@ -404,10 +404,10 @@ else:
         # user_hash = user_hash_match.get("Hash", "")
         # user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
         user_hash_in = True
+
+        curr_org_input = st.session_state.get("org_input")
                 
         user_org = user_match.get("Organization", "").strip().lower() == curr_org_input.strip().lower()
-
-        curr_org_input = cookies.get("org_input")
 
         user_in = bool(user_match)
 
@@ -460,8 +460,8 @@ else:
     #         st.rerun()
     #         # Force initialize once
 
+
         if user_in and user_hash_in and org_in:
-            org_input = None
 
             # --- If user is found ---
             role = user_match["Title"]
