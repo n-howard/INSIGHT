@@ -265,6 +265,7 @@ if st.button("Sign In"):
 
             st.switch_page("app.py")
             
+    user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)       
     user_hash = user_hash_match.get("Hash", "")
     user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
     curr_org_input = cookies.get("org_input")
