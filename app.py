@@ -273,7 +273,8 @@ elif st.session_state["mode"] == "reset_password":
 
         # Update the user record in Supabase
         try:
-            res = supabase.table("users").update({"hash": hashed}).eq("email", email).execute()
+            reserve = supabase.table("users").update({"hash": hashed}).eq("email", email).execute()
+            res = supabase.table("users").select("*").eq("email", email).execute()
             if res.data:
                 return True
             else:
