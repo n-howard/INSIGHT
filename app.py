@@ -404,7 +404,7 @@ with col1:
         sign(user_email, password_to_verify, curr_org_input, "", "", "")
 with col2:
     st.button("Sign Up", use_container_width=True, on_click=toggle_sign)
-    if set.session_state.show_sign:
+    if st.session_state.show_sign:
         first_name = st.text_input("Your first name")
         last_name = st.text_input("Your last name")
         user_email = st.text_input("Your email").strip().lower()
