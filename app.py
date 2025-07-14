@@ -412,19 +412,25 @@ else:
         user_email = cookies.get("user_email")
         user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email.strip().lower()), None)
         curr_org_input = cookies.get("org_input")
-                
+
         user_org = user_match.get("Organization", "").strip().lower()
 
+        
         
 
         user_in = bool(user_match)
 
         org_in = bool(user_org)
 
+        if user_org=="":
+            org_in = False
+        else:
+            org_in = True
+
         if not user_in:
             st.session_state["name_input"] = name_input.strip()
             st.session_state["role"] = role_input.strip()
-            creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
+            creating_new_org = curr_org_input.strip().lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
 
             admin_approved = "True" if creating_new_org else "False"
 
@@ -434,8 +440,7 @@ else:
 
             st.session_state["is_admin"] = admin_approved == "True"
             cookies["admin_input"] = admin_approved
-            cookies.save()
-            user_org = user_match.get("Organization", "").strip().lower()
+
     # --- If user not found: allow account creation ---
     # if not user_in:
     #     st.warning("We couldn't find your email in the system. Please enter your information to create an account.")
@@ -521,7 +526,7 @@ else:
             st.switch_page("pages/home.py")
 
         elif not org_in:
-            creating_new_org = curr_org_input.lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
+            creating_new_org = curr_org_input.strip().lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
             admin_approved = "True" if creating_new_org else "False"
 
             st.session_state["is_admin"] = admin_approved
