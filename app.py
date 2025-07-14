@@ -268,13 +268,13 @@ if st.session_state["mode"] == "forgot_password":
 # --- Mode: Reset Password with Token ---
 elif st.session_state["mode"] == "reset_password":
     def update_user_password(email, new_password):
+        email = email.strip().lower()
         # Hash the new password
         hashed = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
 
         # Update the user record in Supabase
         try:
-            reserve = supabase.table("users").update({"hash": hashed}).eq("email", email).execute()
-            res = supabase.table("users").select("*").eq("email", email).execute()
+            res = supabase.table("users").update({"hash": hashed}).eq("email", email).execute()
             if res.data:
                 return True
             else:
@@ -406,7 +406,7 @@ else:
         # user_hash_in = bool(bcrypt.checkpw(password_to_verify, user_hash.encode('utf-8')))
         user_hash_in = True
 
-        curr_org_input = st.session_state.get("org_input")
+        curr_org_input = cookies.get("org_input")
                 
         user_org = user_match.get("Organization", "").strip().lower() == curr_org_input.strip().lower()
 
