@@ -354,9 +354,6 @@ else:
         user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
 
         
-        st.session_state["email"] = user_email
-        email = st.session_state.get("email")
-        cookies["email"] = email
         # user_hash_match = next((u for u in hash_records if u["Email"].strip().lower() == user_email), None)
 
         user_hash_match = supabase.table("users").select("*").eq("email", user_email).execute()
@@ -413,6 +410,10 @@ else:
         curr_org_input = cookies.get("org_input")
                 
         user_org = user_match.get("Organization", "").strip().lower() == curr_org_input.strip().lower()
+
+        st.session_state["user_email"] = user_email
+        email = st.session_state.get("user_email")
+        cookies["user_email"] = email
 
         user_in = bool(user_match)
 

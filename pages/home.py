@@ -30,14 +30,14 @@ if "org_input" not in st.session_state:
     cookie_site = cookies.get("site_input")
     cookie_admin = cookies.get("admin_input")
     cookie_access = cookies.get("access_level")
-    email = cookies.get("email")
+    email = cookies.get("user_email")
 
     if cookie_org:
         st.session_state["org_input"] = cookie_org
         st.session_state["site_input"] = cookie_site or ""
         st.session_state["admin_input"] = cookie_admin or ""
         st.session_state["access_level"] = cookie_access or ""
-        st.session_state["email"] = email or ""
+        st.session_state["user_email"] = email or ""
 
 
 if "is_admin" not in st.session_state:
@@ -407,8 +407,8 @@ elif (mode == "View Results") and assessment != None:
         # if "token" in st.session_state:
         #     user_info = get_user_info(st.session_state.token)
         #     email = user_info.get("email", None)
-        if st.session_state["email"]!="":
-            email = st.sesssion_state.get("email")
+        if st.session_state.get("user_email")!="":
+            email = st.sesssion_state.get("user_email")
         else:
             email = None
 
