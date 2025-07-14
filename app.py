@@ -347,9 +347,8 @@ else:
                 }).execute()
                 st.success("Registration successful")
                 user_hash_in = True
-                if user_match:
-                    cookies["curr_org_input"] = curr_org_input
-                    st.session_state["curr_org_input"] = curr_org_input
+                cookies["curr_org_input"] = curr_org_input
+                st.session_state["curr_org_input"] = curr_org_input
             except Exception as e:
                 st.error(f"Registration failed: {e}")
 
@@ -364,9 +363,8 @@ else:
             if bcrypt.checkpw(password_to_verify, stored_hash.encode()):
                 st.success("Login successful")
                 user_hash_in = True
-                if user_match:
-                    cookies["curr_org_input"] = curr_org_input
-                    st.session_state["curr_org_input"] = curr_org_input
+                cookies["curr_org_input"] = curr_org_input
+                st.session_state["curr_org_input"] = curr_org_input
             else:
                 st.error("You entered an incorrect password. Please try again.")
 
