@@ -18,6 +18,8 @@ import os
 import re
 from streamlit_cookies_manager import EncryptedCookieManager
 import json
+from typing import Literal
+from streamlit.components.v1 import html
 
 cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
 if not cookies.ready():
@@ -67,6 +69,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 logo = st.logo("./oask_light_mode_tagline.png", size="large", link="https://oregonask.org/")
+
+
+            
 
 # Handle logout trigger from query string
 if st.query_params.get("logout") == "1":
@@ -189,6 +194,7 @@ mode = st.session_state.selected_mode #initializing mode as a global variable
 
 
 
+
 # Always show "Select a Form" button if anything is selected
 if st.session_state.selected_assessment or st.session_state.selected_mode:
     if st.button("Select a Different Form", use_container_width=True):
@@ -225,6 +231,7 @@ mode = st.session_state.selected_mode
 
 
 
+    
 
 
 
@@ -252,7 +259,10 @@ if (mode == "Self-Assess") and assessment != None:
     )
     st.components.v1.iframe(ASSESSMENTS[assessment]["form_url"], height=800, scrolling=True)
 
-
+    if st.button("View Your Results", use_container_width=True):
+        st.session_state.selected_mode = "View Results"
+        mode = st.session_state.selected_mode
+        st.rerun()
 # -------- VIEW RESULTS MODE --------
 elif (mode == "View Results") and assessment != None:
     st.subheader(f"{assessment} Results Dashboard")
