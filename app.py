@@ -418,7 +418,7 @@ else:
                     "INSIGHT", sign_first_name, sign_last_name, sign_role_input,
                     sign_org_input, sign_email, "", "", admin_approved, "FALSE"
                 ])
-                 creating_new_org = curr_org_input.strip().lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
+                creating_new_org = curr_org_input.strip().lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
                 st.success("Account created! Please log in.")
             except Exception as e:
                 st.error(f"Failed to write to Google Sheet: {e}")
