@@ -347,8 +347,7 @@ else:
         user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
         user_records = user_sheet.get_all_records()
 
-        hash_sheet = client.open("Log In Information").worksheet("Sheet1")
-        hash_records = hash_sheet.get_all_records()
+
 
         # Match user by email
         user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
@@ -430,6 +429,9 @@ else:
             st.session_state["is_admin"] = admin_approved == "True"
             cookies["admin_input"] = admin_approved
 
+
+        user_sheet = client.open("All Contacts (Arlo + Salesforce)_6.17.25").worksheet("Sheet1")
+        user_records = user_sheet.get_all_records()
         user_email = cookies.get("user_email")
         user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email.strip().lower()), None)
 
@@ -437,7 +439,10 @@ else:
 
         curr_org_input = cookies.get("org_input")
 
-        user_org = user_match.get("Organization", "").strip().lower()
+        try:
+            user_org = user_match.get("Organization", "").strip().lower()
+        except:
+            user_org = curr_org_input
 
         
         
