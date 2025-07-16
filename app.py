@@ -430,8 +430,12 @@ else:
             st.session_state["is_admin"] = admin_approved == "True"
             cookies["admin_input"] = admin_approved
 
-
+        user_email = cookies.get("user_email")
         user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email.strip().lower()), None)
+
+        user_in = bool(user_match)
+
+        curr_org_input = cookies.get("org_input")
 
         user_org = user_match.get("Organization", "").strip().lower()
 
