@@ -368,6 +368,12 @@ else:
                 st.session_state["org_input"] = log_org_input
                 cookies["user_email"] = log_email
                 cookies["org_input"] = log_org_input
+                admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
+                st.session_state["is_admin"] = admin_approved
+                cookies["admin_input"] = str(admin_approved)
+                oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
+                st.session_state["access"] = oregonask_access
+                cookies["access_level"] = str(oregonask_access)
                 cookies.save()
                 st.switch_page("pages/home.py")
             else:
@@ -412,6 +418,7 @@ else:
                     "INSIGHT", sign_first_name, sign_last_name, sign_role_input,
                     sign_org_input, sign_email, "", "", admin_approved, "FALSE"
                 ])
+                 creating_new_org = curr_org_input.strip().lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
                 st.success("Account created! Please log in.")
             except Exception as e:
                 st.error(f"Failed to write to Google Sheet: {e}")
