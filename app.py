@@ -348,7 +348,9 @@ else:
         user_records = user_sheet.get_all_records()
 
 
-
+        if curr_org_input == "":
+            st.error("Please enter an organization.")
+            st.switch_page("app.py")
         # Match user by email
         user_match = next((u for u in user_records if u["Email"].strip().lower() == user_email), None)
 
@@ -445,11 +447,11 @@ else:
             user_org = curr_org_input
 
         
-        
+
 
         # user_in = bool(user_match)
 
-        org_in = bool(user_org)
+        # org_in = bool(user_org)
 
         # if user_org=="":
         #     org_in = False
@@ -469,10 +471,10 @@ else:
 
         #     st.session_state["is_admin"] = admin_approved == "True"
         #     cookies["admin_input"] = admin_approved
-        if user_org=="":
-                org_in = False
-        else:
-            org_in = True
+        # if user_org=="":
+        #     org_in = False
+        # else:
+        #     org_in = True
     # --- If user not found: allow account creation ---
     # if not user_in:
     #     st.warning("We couldn't find your email in the system. Please enter your information to create an account.")
@@ -506,7 +508,7 @@ else:
     #         # Force initialize once
 
 
-        if user_in and user_hash_in and org_in:
+        if user_in and user_hash_in: #and org_in:
 
             # --- If user is found ---
             role = user_match["Title"]
@@ -557,30 +559,30 @@ else:
 
             st.switch_page("pages/home.py")
 
-        if user_in and user_hash_in and not org_in:
-            creating_new_org = curr_org_input.strip().lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
-            admin_approved = "True" if creating_new_org else "False"
+        # if user_in and user_hash_in and not org_in:
+        #     creating_new_org = curr_org_input.strip().lower() not in [r["Organization"].strip().lower() for r in user_records if "Organization" in r]
+        #     admin_approved = "True" if creating_new_org else "False"
 
-            st.session_state["is_admin"] = admin_approved
-            cookies["admin_input"] = str(admin_approved)
+        #     st.session_state["is_admin"] = admin_approved
+        #     cookies["admin_input"] = str(admin_approved)
 
-            oregonask_access = False
-            st.session_state["access"] = oregonask_access
-            cookies["access_level"] = str(oregonask_access)
+        #     oregonask_access = False
+        #     st.session_state["access"] = oregonask_access
+        #     cookies["access_level"] = str(oregonask_access)
 
-            user_org = curr_org_input
-            site_input = ""
+        #     user_org = curr_org_input
+        #     site_input = ""
 
-            st.session_state["org_input"] = user_org
-            st.session_state["site_input"] = site_input
+        #     st.session_state["org_input"] = user_org
+        #     st.session_state["site_input"] = site_input
 
-            cookies["org_input"] = user_org
-            cookies["site_input"] = site_input
+        #     cookies["org_input"] = user_org
+        #     cookies["site_input"] = site_input
 
 
-            cookies.save()
+        #     cookies.save()
 
-            st.switch_page("pages/home.py")
+        #     st.switch_page("pages/home.py")
     # if 'show_login' not in st.session_state:
     # st.session_state.show_login = False
     # if 'show_sign' not in st.session_state:
