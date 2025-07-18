@@ -314,6 +314,26 @@ elif st.session_state["mode"] == "reset_password":
 
 
 else:
+
+    def add_autofill_detection():
+        components.html("""
+        <script>
+        function checkAutofill() {
+            const inputs = parent.document.querySelectorAll('input[type="text"], input[type="password"]');
+            inputs.forEach(input => {
+                if (input.value && input.value !== '') {
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+        
+        // Check for autofill after a short delay
+        setTimeout(checkAutofill, 100);
+        setTimeout(checkAutofill, 500);
+        setTimeout(checkAutofill, 1000);
+        </script>
+        """, height=0)
     # --- UI ---
     st.title("Welcome to INSIGHT")
     col1, col2 = st.columns(2)
@@ -322,6 +342,7 @@ else:
     with col1:
         with st.form("log_in"):
             st.write("### Log In")
+            add_autofill_detection()
             log_org_input = st.text_input("Your organization name", key="log_org")
             log_email = st.text_input("Your email", key="log_email").strip().lower()
             log_password = st.text_input("Your password", type="password", key="log_pass")
@@ -332,6 +353,7 @@ else:
     with col2:
         with st.form("sign_up"):
             st.write("### Sign Up")
+            add_autofill_detection()
             sign_org_input = st.text_input("Your organization name", key="sign_org")
             sign_role_input = st.text_input("Your role or title")
             sign_first_name = st.text_input("Your first name")
