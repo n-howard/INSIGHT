@@ -423,9 +423,9 @@ else:
 
         user_in = bool(user_match)
 
-        if user_in:
+        if user_in and match:
             st.warning("User already exists. Please log in.")
-        if not match:
+        elif not match and not user_in:
             salt = bcrypt.gensalt()
             hashed_pw = bcrypt.hashpw(sign_password.encode(), salt).decode()
             supabase.table("users").insert({"email": sign_email, "hash": hashed_pw}).execute()
@@ -462,6 +462,11 @@ else:
                     st.error(f"Failed to write to Google Sheet: {e}")
             else:
                 st.error("Please fill in all sign up fields.")
+        elif not match and user_in:
+            salt = bcrypt.gensalt()
+            hashed_pw = bcrypt.hashpw(sign_password.encode(), salt).decode()
+            supabase.table("users").insert({"email": sign_email, "hash": hashed_pw}).execute()
+
     # st.title("Welcome to INSIGHT")
     # col1, col2 = st.columns(2)
     # with col1:
