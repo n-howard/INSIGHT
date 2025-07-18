@@ -418,8 +418,10 @@ else:
     if submitted:
         match = supabase.table("users").select("*").eq("email", sign_email).execute()
 
-        user_match = next((u for u in user_records if u["Email"].strip().lower() == sign_email), None)
+        match = bool(match)
 
+        user_match = next((u for u in user_records if u["Email"].strip().lower() == sign_email), None)
+        match = bool(match)
 
         user_in = bool(user_match)
 
