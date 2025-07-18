@@ -385,19 +385,22 @@ else:
         else:
             stored_hash = match.data[0]["hash"]
             if bcrypt.checkpw(log_password.encode(), stored_hash.encode()):
-                st.success("Login successful!")
-                st.session_state["user_email"] = log_email
-                st.session_state["org_input"] = log_org_input
-                cookies["user_email"] = log_email
-                cookies["org_input"] = log_org_input
-                admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
-                st.session_state["is_admin"] = admin_approved
-                cookies["admin_input"] = str(admin_approved)
-                oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
-                st.session_state["access"] = oregonask_access
-                cookies["access_level"] = str(oregonask_access)
-                cookies.save()
-                st.switch_page("pages/home.py")
+                if log_org_input != "":
+                    st.success("Login successful!")
+                    st.session_state["user_email"] = log_email
+                    st.session_state["org_input"] = log_org_input
+                    cookies["user_email"] = log_email
+                    cookies["org_input"] = log_org_input
+                    admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
+                    st.session_state["is_admin"] = admin_approved
+                    cookies["admin_input"] = str(admin_approved)
+                    oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
+                    st.session_state["access"] = oregonask_access
+                    cookies["access_level"] = str(oregonask_access)
+                    cookies.save()
+                    st.switch_page("pages/home.py")
+                else:
+                    st.error("Please enter an organization.")
             else:
                 st.error("Incorrect password.")
 
@@ -415,34 +418,39 @@ else:
             salt = bcrypt.gensalt()
             hashed_pw = bcrypt.hashpw(sign_password.encode(), salt).decode()
             supabase.table("users").insert({"email": sign_email, "hash": hashed_pw}).execute()
+            if sign_org_input != "" and sign_first_name != "" and sign_last_name!= "" and sign_email != "" and sign_role_input!="":
+                try:
+                    creating_new_org = sign_org_input.strip().lower() not in [
+                        r["Organization"].strip().lower() for r in user_records if "Organization" in r
+                    ]
+                    admin_approved = "True" if creating_new_org else "False"
 
-            try:
-                creating_new_org = sign_org_input.strip().lower() not in [
-                    r["Organization"].strip().lower() for r in user_records if "Organization" in r
-                ]
-                admin_approved = "True" if creating_new_org else "False"
-
-                user_sheet.append_row([
-                    "INSIGHT", sign_first_name, sign_last_name, sign_role_input,
-                    sign_org_input, sign_email, "", "", admin_approved, "FALSE"
-                ])
-                st.success("Account created! Please log in.")
-            except Exception as e:
-                st.error(f"Failed to write to Google Sheet: {e}")
+                    user_sheet.append_row([
+                        "INSIGHT", sign_first_name, sign_last_name, sign_role_input,
+                        sign_org_input, sign_email, "", "", admin_approved, "FALSE"
+                    ])
+                    st.success("Account created! Please log in.")
+                except Exception as e:
+                    st.error(f"Failed to write to Google Sheet: {e}")
+            else:
+                st.error("Please fill in all sign up fields.")
         elif match and not user_in:
-            try:
-                creating_new_org = sign_org_input.strip().lower() not in [
-                    r["Organization"].strip().lower() for r in user_records if "Organization" in r
-                ]
-                admin_approved = "True" if creating_new_org else "False"
+            if sign_org_input != "" and sign_first_name != "" and sign_last_name!= "" and sign_email != "" and sign_role_input!="":
+                try:
+                    creating_new_org = sign_org_input.strip().lower() not in [
+                        r["Organization"].strip().lower() for r in user_records if "Organization" in r
+                    ]
+                    admin_approved = "True" if creating_new_org else "False"
 
-                user_sheet.append_row([
-                    "INSIGHT", sign_first_name, sign_last_name, sign_role_input,
-                    sign_org_input, sign_email, "", "", admin_approved, "FALSE"
-                ])
-                st.success("Account created! Please log in.")
-            except Exception as e:
-                st.error(f"Failed to write to Google Sheet: {e}")
+                    user_sheet.append_row([
+                        "INSIGHT", sign_first_name, sign_last_name, sign_role_input,
+                        sign_org_input, sign_email, "", "", admin_approved, "FALSE"
+                    ])
+                    st.success("Account created! Please log in.")
+                except Exception as e:
+                    st.error(f"Failed to write to Google Sheet: {e}")
+            else:
+                st.error("Please fill in all sign up fields.")
     # st.title("Welcome to INSIGHT")
     # col1, col2 = st.columns(2)
     # with col1:
