@@ -393,13 +393,18 @@ else:
                     st.session_state["org_input"] = log_org_input
                     cookies["user_email"] = log_email
                     cookies["org_input"] = log_org_input
-                    if user_org == "" or not user_org == log_org_input.strip().lower():
-                        admin_approved = False
+                    oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
+                    if bool(oregonask_access) == False:
+                        if user_org == "" or not user_org == log_org_input.strip().lower():
+                            admin_approved = False   
+                        else:
+                            admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
                     else:
                         admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
+                    oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
                     st.session_state["is_admin"] = admin_approved
                     cookies["admin_input"] = str(admin_approved)
-                    oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
+
                     st.session_state["access"] = oregonask_access
                     cookies["access_level"] = str(oregonask_access)
                     cookies.save()
