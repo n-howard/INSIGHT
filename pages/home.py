@@ -709,6 +709,17 @@ elif (mode == "View Results") and assessment != None:
                     st.info("Please select at least one column to display the chart.")
             else:
                 st.info("No score-type columns available for charting based on your filters.")
+            st.session_state.recs = False
+            if st.button("View Recommendations", use_container_width=True):
+                st.session_state.recs = True
+            if st.session_state.recs == True:
+                for column in org_df:
+                    if "Indicator" in column:
+
+                    
+                if st.button("Hide Recommendations"):
+                    st.session_state.recs = False
+
             # Step 1: Get all columns that include "Overall Score"
             overall_score_cols = [col for col in org_df.columns if "Overall Score" in col]
 
