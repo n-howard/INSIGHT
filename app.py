@@ -380,15 +380,14 @@ else:
         
         user_in = bool(user_match)
 
-        user_org = user_match.get("Organization", "").strip().lower()
-
-
         if not user_in or not match:
             st.error("Email not found. Please sign up.")
         else:
+            
             stored_hash = match.data[0]["hash"]
             if bcrypt.checkpw(log_password.encode(), stored_hash.encode()):
                 if log_org_input != "":
+                    user_org = user_match.get("Organization", "").strip().lower()
                     st.success("Login successful!")
                     st.session_state["user_email"] = log_email
                     st.session_state["org_input"] = log_org_input
