@@ -375,7 +375,7 @@ else:
     # --- Login Logic ---
     if log_submitted:
         match = supabase.table("users").select("*").eq("email", log_email).execute()
-
+        match = match.data
         user_match = next((u for u in user_records if u["Email"].strip().lower() == log_email), None)
         
         user_in = bool(user_match)
@@ -418,10 +418,9 @@ else:
     if submitted:
         match = supabase.table("users").select("*").eq("email", sign_email).execute()
 
-        match = bool(match)
 
         user_match = next((u for u in user_records if u["Email"].strip().lower() == sign_email), None)
-        match = bool(match)
+        match = match.data
 
         user_in = bool(user_match)
 
