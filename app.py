@@ -380,6 +380,9 @@ else:
         
         user_in = bool(user_match)
 
+        user_org = user_match.get("Organization", "").strip().lower()
+
+
         if not user_in or not match:
             st.error("Email not found. Please sign up.")
         else:
@@ -391,10 +394,15 @@ else:
                     st.session_state["org_input"] = log_org_input
                     cookies["user_email"] = log_email
                     cookies["org_input"] = log_org_input
-                    admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
+                    if user_org == "" or not user_org == log_org_input.strip().lower():
+                        admin_approved = False
+                        oregonask_access = False
+                    else:
+                        admin_approved = user_match.get("Admin Approved", "").strip().lower() == "true"
+                        oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
                     st.session_state["is_admin"] = admin_approved
                     cookies["admin_input"] = str(admin_approved)
-                    oregonask_access = user_match.get("OregonASK Access", "").strip().lower() == "true"
+
                     st.session_state["access"] = oregonask_access
                     cookies["access_level"] = str(oregonask_access)
                     cookies.save()
@@ -409,6 +417,7 @@ else:
         match = supabase.table("users").select("*").eq("email", sign_email).execute()
 
         user_match = next((u for u in user_records if u["Email"].strip().lower() == sign_email), None)
+
 
         user_in = bool(user_match)
 
