@@ -384,7 +384,7 @@ else:
             st.error("Email not found. Please sign up.")
         else:
             
-            stored_hash = match.data[0]["hash"]
+            stored_hash = match[0]["hash"]
             if bcrypt.checkpw(log_password.encode(), stored_hash.encode()):
                 if log_org_input != "":
                     user_org = user_match.get("Organization", "").strip().lower()
