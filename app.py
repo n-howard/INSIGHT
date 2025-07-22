@@ -291,7 +291,7 @@ elif st.session_state["mode"] == "reset_password":
         record = res.data[0]
         expires_at = datetime.fromisoformat(record["expires_at"])
         
-        # ✅ Compare timezone-aware datetimes
+        # Compare timezone-aware datetimes
         if expires_at > datetime.now(timezone.utc):
             new_pw = st.text_input("New Password", type="password")
             confirm_pw = st.text_input("Confirm Password", type="password")

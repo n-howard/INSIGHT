@@ -301,6 +301,7 @@ elif (mode == "View Results") and assessment != None:
 
         # Create DataFrame
         df = pd.DataFrame(raw_data[1:], columns=unique_headers)
+        reg_df = df.copy()
 
         if access_level:
             org_df = df.copy()
@@ -411,7 +412,7 @@ elif (mode == "View Results") and assessment != None:
         converted_df = df.copy()
         # Apply staff and site filters to org_df before generating charts
 
-        chart_df = org_df.copy() # the below code is for once the sheet is working
+        chart_df = org_df.copy() 
 
         # Step 1: Confirm login and fetch user email
         # if "token" in st.session_state:
@@ -426,7 +427,7 @@ elif (mode == "View Results") and assessment != None:
         if is_admin:
             chart_df = org_df.copy()
         else:
-            chart_df = org_df[org_df["Contact Email"].str.lower().str.strip() == email.strip().lower()]
+            chart_df = reg_df[reg_df["Contact Email"].str.lower().str.strip() == email.strip().lower()]
             st.info("You are viewing your own results only.")
 
         if selected_contacts:
@@ -709,326 +710,237 @@ elif (mode == "View Results") and assessment != None:
                     st.info("Please select at least one column to display the chart.")
             else:
                 st.info("No score-type columns available for charting based on your filters.")
+            if is_admin or access_level:
+                # Step 1: Get all columns that include "Overall Score"
+                overall_score_cols = [col for col in org_df.columns if "Overall Score" in col]
 
-            # Step 1: Get all columns that include "Overall Score"
-            overall_score_cols = [col for col in org_df.columns if "Overall Score" in col]
+                # Step 2: Collect all numeric values from these columns
+                all_scores = []
 
-            # Step 2: Collect all numeric values from these columns
-            all_scores = []
+                for col in overall_score_cols:
+                    series = pd.to_numeric(org_df[col], errors="coerce")  # convert to numbers, NaN if invalid
+                    scores = series.dropna().tolist()  # drop non-numeric
+                    all_scores.extend(scores)
 
-            for col in overall_score_cols:
-                series = pd.to_numeric(org_df[col], errors="coerce")  # convert to numbers, NaN if invalid
-                scores = series.dropna().tolist()  # drop non-numeric
-                all_scores.extend(scores)
+                # Step 3: Calculate the average
+                if all_scores:
+                    overall_av = sum(all_scores) / len(all_scores)
+                else:
+                    overall_av = 0  # fallback value or message
+    # 
+    
+                # Build the staff-specific average score (one number)
+                staff_scores = []
 
-            # Step 3: Calculate the average
-            if all_scores:
-                overall_av = sum(all_scores) / len(all_scores)
-            else:
-                overall_av = 0  # fallback value or message
-# 
-   
-            # Build the staff-specific average score (one number)
-            staff_scores = []
+                if selected_contacts:
+                    for contact in selected_contacts:
+                        contact_df = org_df[org_df["Contact Name"] == contact]
+                        if contact_df.empty:
+                            continue
 
-            if selected_contacts:
-                for contact in selected_contacts:
-                    contact_df = org_df[org_df["Contact Name"] == contact]
-                    if contact_df.empty:
+                        overall_score_cols = [col for col in contact_df.columns if "Overall Score" in col]
+
+                        for col in overall_score_cols:
+                            # Add all numeric values from this staff’s column to the total list
+                            series = pd.to_numeric(contact_df[col], errors="coerce").dropna()
+                            staff_scores.extend(series.tolist())
+
+                if staff_scores:
+                    staff_overall_avg = sum(staff_scores) / len(staff_scores)
+                    staff_score_html = f"<h1>{staff_overall_avg: .2f}</h1>"
+                else:
+                    staff_score_html = f"<h1>{overall_av: .2f}</h1>"
+
+
+
+
+                text_var = ""
+                for column in org_df:
+                    if "Overall Score" in column:
                         continue
 
-                    overall_score_cols = [col for col in contact_df.columns if "Overall Score" in col]
+                    # Clean and convert
+                    series = org_df[column].replace('%', '', regex=True)
+                    series = pd.to_numeric(series, errors="coerce")
+                    av = series.mean()
+                    name = ""
+                    if pd.notna(av):
+                        if "Standard" in column:
+                            if "percent" in column.lower() or "%" in column:
+                                name = f"<div class='p2' style='font-weight: 600;'>Organization Average {column}: {av:.0f}%</div><br>"
+                            elif 0 < av < 1:
+                                name = f"<div class='p2' style='font-weight: 600;'>Organization Average {column}: {av * 100:.0f}%</div><br>"
+                            else:
+                                name = f"<div class='p2' style='font-weight: 600;'>Organization Average {column}: {av:.2f}</div><br>"
+                        elif "Indicator" in column:
+                            name = f"<div class='p3'>Organization Average {column}: {av:.2f}</div><br>"
 
-                    for col in overall_score_cols:
-                        # Add all numeric values from this staff’s column to the total list
-                        series = pd.to_numeric(contact_df[col], errors="coerce").dropna()
-                        staff_scores.extend(series.tolist())
+                        text_var += name
 
-            if staff_scores:
-                staff_overall_avg = sum(staff_scores) / len(staff_scores)
-                staff_score_html = f"<h1>{staff_overall_avg: .2f}</h1>"
-            else:
-                staff_score_html = f"<h1>{overall_av: .2f}</h1>"
-
-
-
-
-            text_var = ""
-            for column in org_df:
-                if "Overall Score" in column:
-                    continue
-
-                # Clean and convert
-                series = org_df[column].replace('%', '', regex=True)
-                series = pd.to_numeric(series, errors="coerce")
-                av = series.mean()
-                name = ""
-                if pd.notna(av):
-                    if "Standard" in column:
-                        if "percent" in column.lower() or "%" in column:
-                            name = f"<div class='p2' style='font-weight: 600;'>Organization Average {column}: {av:.0f}%</div><br>"
-                        elif 0 < av < 1:
-                            name = f"<div class='p2' style='font-weight: 600;'>Organization Average {column}: {av * 100:.0f}%</div><br>"
-                        else:
-                            name = f"<div class='p2' style='font-weight: 600;'>Organization Average {column}: {av:.2f}</div><br>"
                     elif "Indicator" in column:
-                        name = f"<div class='p3'>Organization Average {column}: {av:.2f}</div><br>"
+                        name = f"<div class='p3'>Organization Average {column}: {av: .2f}</div><br>"
+                        text_var += name
 
-                    text_var += name
+                # Step 1: Group by Contact Name
+                staff_summaries = ""
 
-                elif "Indicator" in column:
-                    name = f"<div class='p3'>Organization Average {column}: {av: .2f}</div><br>"
-                    text_var += name
+                program_summaries = ""
+                program_avgs = [] 
 
-            # Step 1: Group by Contact Name
-            staff_summaries = ""
+                if access_level and "Extracted Orgs" in org_df.columns:
+                    programs_to_show = selected_orgs if selected_orgs else list(
+                        sorted(set(org for sublist in org_df["Extracted Orgs"] for org in sublist if org))
+                    )
 
-            program_summaries = ""
-            program_avgs = [] 
+                    for program in programs_to_show:
+                        program_df = org_df[org_df["Extracted Orgs"].apply(lambda lst: program in lst)]
+                        if program_df.empty:
+                            continue
 
-            if access_level and "Extracted Orgs" in org_df.columns:
-                programs_to_show = selected_orgs if selected_orgs else list(
-                    sorted(set(org for sublist in org_df["Extracted Orgs"] for org in sublist if org))
-                )
+                        prog_text = ""
+                        for column in program_df.columns:
+                            if "Overall Score" in column or "Standard" in column or "Indicator" in column:
+                                series = program_df[column].replace('%', '', regex=True)
+                                series = pd.to_numeric(series, errors="coerce")
+                                avg = series.mean()
+                                if pd.notna(avg):
+                                    if "Overall Score" in column:
+                                        program_avgs.append(avg)  # ← ADD THIS
+                                        prog_text += f"<div class='p1' style='font-weight: 700;'>{program}'s Average {column}: {avg:.2f}</div><br>"
+                                    elif "Standard" in column:
+                                        if "percent" in column.lower() or "%" in column:
+                                            prog_text += f"<div class='p2' style='font-weight: 600'>{program}'s Average {column}: {avg:.0f}%</div><br>"
+                                        elif 0 < avg < 1:
+                                            prog_text += f"<div class='p2' style='font-weight: 600'>{program}'s Average {column}: {avg * 100:.0f}%</div><br>"
+                                        else:
+                                            prog_text += f"<div class='p2' style='font-weight: 600'>{program}'s Average {column}: {avg:.2f}</div><br>"
+                                    elif "Indicator" in column:
+                                        prog_text += f"<div class='p3'>{program}'s Average {column}: {avg:.2f}</div><br>"
 
-                for program in programs_to_show:
-                    program_df = org_df[org_df["Extracted Orgs"].apply(lambda lst: program in lst)]
-                    if program_df.empty:
-                        continue
+                        program_summaries += f"<div>{prog_text}</div>"
 
-                    prog_text = ""
-                    for column in program_df.columns:
-                        if "Overall Score" in column or "Standard" in column or "Indicator" in column:
-                            series = program_df[column].replace('%', '', regex=True)
+
+                    if program_avgs:
+                        org_overall_avg = sum(program_avgs) / len(program_avgs)
+                        org_score = f"<h1>{org_overall_avg: .2f}</h1>"
+                    else:
+                        org_score = f"<h1>{overall_av:.2f}</h1>"
+
+                if "Contact Name" in org_df.columns:
+                    # Use selected staff if any; otherwise, use all unique contacts
+                    contacts_to_show = selected_contacts if selected_contacts else org_df["Contact Name"].dropna().unique()
+
+                    for contact in contacts_to_show:
+                        contact_df = org_df[org_df["Contact Name"] == contact]
+                        if contact_df.empty:
+                            continue
+                        staff_text = ""
+                        for column in contact_df.columns:
+                            series = contact_df[column].replace('%', '', regex=True)
                             series = pd.to_numeric(series, errors="coerce")
                             avg = series.mean()
                             if pd.notna(avg):
                                 if "Overall Score" in column:
-                                    program_avgs.append(avg)  # ← ADD THIS
-                                    prog_text += f"<div class='p1' style='font-weight: 700;'>{program}'s Average {column}: {avg:.2f}</div><br>"
+                                    staff_text += f"<div class='p1' style='font-weight: 700;'>{contact}'s Average {column}: {avg:.2f}</div><br>"
                                 elif "Standard" in column:
                                     if "percent" in column.lower() or "%" in column:
-                                        prog_text += f"<div class='p2' style='font-weight: 600'>{program}'s Average {column}: {avg:.0f}%</div><br>"
+                                        staff_text += f"<div class='p2' style='font-weight: 600'>{contact}'s Average {column}: {avg:.0f}%</div><br>"
                                     elif 0 < avg < 1:
-                                        prog_text += f"<div class='p2' style='font-weight: 600'>{program}'s Average {column}: {avg * 100:.0f}%</div><br>"
+                                        staff_text += f"<div class='p2' style='font-weight: 600'>{contact}'s Average {column}: {avg * 100:.0f}%</div><br>"
                                     else:
-                                        prog_text += f"<div class='p2' style='font-weight: 600'>{program}'s Average {column}: {avg:.2f}</div><br>"
+                                        staff_text += f"<div class='p2' style='font-weight: 600'>{contact}'s Average {column}: {avg:.2f}</div><br>"
                                 elif "Indicator" in column:
-                                    prog_text += f"<div class='p3'>{program}'s Average {column}: {avg:.2f}</div><br>"
+                                    staff_text += f"<div class='p3'>{contact}'s Average {column}: {avg:.2f}</div><br>"
+                        staff_summaries += f"<div>{staff_text}</div>"
 
-                    program_summaries += f"<div>{prog_text}</div>"
-
-
-                if program_avgs:
-                    org_overall_avg = sum(program_avgs) / len(program_avgs)
-                    org_score = f"<h1>{org_overall_avg: .2f}</h1>"
                 else:
-                    org_score = f"<h1>{overall_av:.2f}</h1>"
+                    staff_summaries = "<div class='p1' style='margin-bottom: 2vw;'>No contact data available.</div>"
 
-            if "Contact Name" in org_df.columns:
-                # Use selected staff if any; otherwise, use all unique contacts
-                contacts_to_show = selected_contacts if selected_contacts else org_df["Contact Name"].dropna().unique()
+            
 
-                for contact in contacts_to_show:
-                    contact_df = org_df[org_df["Contact Name"] == contact]
-                    if contact_df.empty:
+
+
+                site_df = org_df[org_df["Extracted Sites"].apply(matches_selected_sites)].copy()
+
+                # Calculate site-level average from 'Overall Score' columns
+                site_scores = []
+                for col in overall_score_cols:
+                    site_scores.extend(pd.to_numeric(site_df[col], errors="coerce").dropna().tolist())
+
+                site_overall_avg = sum(site_scores) / len(site_scores) if site_scores else 0
+
+                # Generate per-site score text (Standards/Indicators)
+                site_text_var = ""
+                for site in selected_sites:
+                    this_site_df = site_df[site_df["Extracted Sites"].apply(lambda lst: site in lst)]
+                    if this_site_df.empty:
                         continue
-                    staff_text = ""
-                    for column in contact_df.columns:
-                        series = contact_df[column].replace('%', '', regex=True)
+
+                    for column in this_site_df.columns:
+
+                        series = this_site_df[column].replace('%', '', regex=True)
                         series = pd.to_numeric(series, errors="coerce")
-                        avg = series.mean()
-                        if pd.notna(avg):
+                        av = series.mean()
+                        if pd.notna(av):
                             if "Overall Score" in column:
-                                staff_text += f"<div class='p1' style='font-weight: 700;'>{contact}'s Average {column}: {avg:.2f}</div><br>"
+                                site_text_var += f"<div class='p1' style='font-weight: 700;'>{site}'s Average {column}: {av:.2f}</div><br>"
                             elif "Standard" in column:
                                 if "percent" in column.lower() or "%" in column:
-                                    staff_text += f"<div class='p2' style='font-weight: 600'>{contact}'s Average {column}: {avg:.0f}%</div><br>"
-                                elif 0 < avg < 1:
-                                    staff_text += f"<div class='p2' style='font-weight: 600'>{contact}'s Average {column}: {avg * 100:.0f}%</div><br>"
+                                    site_text_var += f"<div class='p2' style='font-weight: 600'>{site}'s Average {column}: {av:.0f}%</div><br>"
+                                elif 0 < av < 1:
+                                    site_text_var += f"<div class='p2' style='font-weight: 600'>{site}'s Average {column}: {av * 100:.0f}%</div><br>"
                                 else:
-                                    staff_text += f"<div class='p2' style='font-weight: 600'>{contact}'s Average {column}: {avg:.2f}</div><br>"
+                                    site_text_var += f"<div class='p2' style='font-weight: 600'>{site}'s Average {column}: {av:.2f}</div><br>"
                             elif "Indicator" in column:
-                                staff_text += f"<div class='p3'>{contact}'s Average {column}: {avg:.2f}</div><br>"
-                    staff_summaries += f"<div>{staff_text}</div>"
-
-            else:
-                staff_summaries = "<div class='p1' style='margin-bottom: 2vw;'>No contact data available.</div>"
-
-           
+                                site_text_var += f"<div class='p3'>{site}'s Average {column}: {av:.2f}</div><br>"
 
 
+                # Determine whether to show the site column
+                show_site_column = bool(selected_sites and site_text_var.strip())
+                grid_template = "1fr 1fr 1fr" if show_site_column else "1fr 1fr"
 
-            site_df = org_df[org_df["Extracted Sites"].apply(matches_selected_sites)].copy()
-
-            # Calculate site-level average from 'Overall Score' columns
-            site_scores = []
-            for col in overall_score_cols:
-                site_scores.extend(pd.to_numeric(site_df[col], errors="coerce").dropna().tolist())
-
-            site_overall_avg = sum(site_scores) / len(site_scores) if site_scores else 0
-
-            # Generate per-site score text (Standards/Indicators)
-            site_text_var = ""
-            for site in selected_sites:
-                this_site_df = site_df[site_df["Extracted Sites"].apply(lambda lst: site in lst)]
-                if this_site_df.empty:
-                    continue
-
-                for column in this_site_df.columns:
-
-                    series = this_site_df[column].replace('%', '', regex=True)
-                    series = pd.to_numeric(series, errors="coerce")
-                    av = series.mean()
-                    if pd.notna(av):
-                        if "Overall Score" in column:
-                            site_text_var += f"<div class='p1' style='font-weight: 700;'>{site}'s Average {column}: {av:.2f}</div><br>"
-                        elif "Standard" in column:
-                            if "percent" in column.lower() or "%" in column:
-                                site_text_var += f"<div class='p2' style='font-weight: 600'>{site}'s Average {column}: {av:.0f}%</div><br>"
-                            elif 0 < av < 1:
-                                site_text_var += f"<div class='p2' style='font-weight: 600'>{site}'s Average {column}: {av * 100:.0f}%</div><br>"
-                            else:
-                                site_text_var += f"<div class='p2' style='font-weight: 600'>{site}'s Average {column}: {av:.2f}</div><br>"
-                        elif "Indicator" in column:
-                            site_text_var += f"<div class='p3'>{site}'s Average {column}: {av:.2f}</div><br>"
-
-
-            # Determine whether to show the site column
-            show_site_column = bool(selected_sites and site_text_var.strip())
-            grid_template = "1fr 1fr 1fr" if show_site_column else "1fr 1fr"
-
-            site_column_html = f"""
-                <!-- Site Column -->
-                <div class="site-group">
-                    <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-                        display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
-                        padding: 15px; box-sizing: border-box;">
-                        <h3>Average Scores for Selected Site(s)</h3>
-                        <h1>{site_overall_avg:.2f}</h1>
-                    </div>
-
-                    <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-                        filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
-                        {site_text_var}
-                    </div>
-                </div>
-            """ if show_site_column else ""
-            # Only show this if access_level is True
-            if access_level:
-                # Replace organization column with per-program summary
-                org_column_html = f"""
-                    <!-- Program Column -->
-                    <div class="org-group">
+                site_column_html = f"""
+                    <!-- Site Column -->
+                    <div class="site-group">
                         <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
                             display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
                             padding: 15px; box-sizing: border-box;">
-                            <h3>Average Scores for Program(s)</h3>
-                            <div style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%; text-align: center;">
-                                    {org_score}
+                            <h3>Average Scores for Selected Site(s)</h3>
+                            <h1>{site_overall_avg:.2f}</h1>
+                        </div>
+
+                        <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                            filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
+                            {site_text_var}
+                        </div>
+                    </div>
+                """ if show_site_column else ""
+                # Only show this if access_level is True
+                if access_level:
+                    # Replace organization column with per-program summary
+                    org_column_html = f"""
+                        <!-- Program Column -->
+                        <div class="org-group">
+                            <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
+                                padding: 15px; box-sizing: border-box;">
+                                <h3>Average Scores for Program(s)</h3>
+                                <div style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%; text-align: center;">
+                                        {org_score}
+                                </div>
+                            </div>
+
+                            <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                    filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
+                                {program_summaries}
                             </div>
                         </div>
-
-                        <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-                                filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
-                            {program_summaries}
-                        </div>
-                    </div>
-                """
-            else:
-                # Show standard org-wide summary if no access level
-                org_column_html = f"""
-                    <!-- Organization Column -->
-                    <div class="org-group">
-                        <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-                            display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
-                            padding: 15px; box-sizing: border-box;">
-                            <h3>Organization Average Overall Score</h3>
-                            <h1>{overall_av:.2f}</h1>
-                        </div>
-
-                        <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-                                filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
-                            {text_var}
-                        </div>
-                    </div>
-                """
-
-            if is_admin: 
-            # Render full layout
-                st.html(f"""
-                    <style>
-                        @media screen and (min-width: 768px) {{
-                            .responsive-container {{
-                                display: grid;
-                                grid-template-columns: {grid_template};
-                                gap: 20px;
-                            }}
-                            .org-group, .staff-group, .site-group {{
-                                display: flex;
-                                flex-direction: column;
-                                gap: 20px;
-                            }}
-                            .equal-box {{
-                                height: 400px;
-                            }}
-                            .equal-box h1 {{
-                                font-size: 5rem;
-                                color: black;
-                                font-weight: 900;
-                            }}
-                            .equal-box h3 {{
-                                font-size: 1.5rem;
-                            }}
-                            .p1 {{
-                                font-size: 1.4rem;
-                            }}
-                            .p2 {{
-                                font-size: 1.2rem;
-                            }}
-                            .p3 {{
-                                font-size: 1.1rem;
-                            }}
-                        }}
-                        @media screen and (max-width: 768px) {{
-                            .responsive-container {{
-                                display: flex;
-                                flex-direction: column;
-                                gap: 20px;
-                            }}
-                            .responsive-box {{
-                                width: 100% !important;
-                                gap: 20px;
-                            }}
-                            .org-group, .staff-group, .site-group {{
-                                display: flex;
-                                flex-direction: column;
-                                gap: 20px;
-                            }}
-                            .equal-box h1 {{
-                                font-size: 4rem;
-                                color: black;
-                                font-weight: 900;
-                            }}
-                            .equal-box h3 {{
-                                font-size: 1.2rem;
-                            }}
-                            .p1 {{
-                                font-size: 1.1rem;
-                            }}
-                            .p2 {{
-                                font-size: 1rem;
-                            }}
-                            .p3 {{
-                                font-size: 0.9rem;
-                            }}
-                        }}
-                    </style>
-
-                    <div class="responsive-container">
-                        {org_column_html}
+                    """
+                else:
+                    # Show standard org-wide summary if no access level
+                    org_column_html = f"""
                         <!-- Organization Column -->
-                        <!--<div class="org-group">
+                        <div class="org-group">
                             <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
                                 display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
                                 padding: 15px; box-sizing: border-box;">
@@ -1040,36 +952,125 @@ elif (mode == "View Results") and assessment != None:
                                     filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
                                 {text_var}
                             </div>
-                        </div> -->
-
-                        
-
-                        <!-- Staff Column -->
-                        <div class="staff-group">
-                            <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-                                display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
-                                padding: 15px; box-sizing: border-box;">
-                                <h3>Average Scores for Selected Staff</h3>
-                                <div style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%; text-align: center;">
-                                    {staff_score_html}
-                                </div>
-                            </div>
-
-                            <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
-                                    filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
-                                {staff_summaries}
-                            </div>
-                            
                         </div>
+                    """
 
-                        {site_column_html}
+                if is_admin: 
+                # Render full layout
+                    st.html(f"""
+                        <style>
+                            @media screen and (min-width: 768px) {{
+                                .responsive-container {{
+                                    display: grid;
+                                    grid-template-columns: {grid_template};
+                                    gap: 20px;
+                                }}
+                                .org-group, .staff-group, .site-group {{
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 20px;
+                                }}
+                                .equal-box {{
+                                    height: 400px;
+                                }}
+                                .equal-box h1 {{
+                                    font-size: 5rem;
+                                    color: black;
+                                    font-weight: 900;
+                                }}
+                                .equal-box h3 {{
+                                    font-size: 1.5rem;
+                                }}
+                                .p1 {{
+                                    font-size: 1.4rem;
+                                }}
+                                .p2 {{
+                                    font-size: 1.2rem;
+                                }}
+                                .p3 {{
+                                    font-size: 1.1rem;
+                                }}
+                            }}
+                            @media screen and (max-width: 768px) {{
+                                .responsive-container {{
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 20px;
+                                }}
+                                .responsive-box {{
+                                    width: 100% !important;
+                                    gap: 20px;
+                                }}
+                                .org-group, .staff-group, .site-group {{
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 20px;
+                                }}
+                                .equal-box h1 {{
+                                    font-size: 4rem;
+                                    color: black;
+                                    font-weight: 900;
+                                }}
+                                .equal-box h3 {{
+                                    font-size: 1.2rem;
+                                }}
+                                .p1 {{
+                                    font-size: 1.1rem;
+                                }}
+                                .p2 {{
+                                    font-size: 1rem;
+                                }}
+                                .p3 {{
+                                    font-size: 0.9rem;
+                                }}
+                            }}
+                        </style>
 
-                    </div>
-                """)
+                        <div class="responsive-container">
+                            {org_column_html}
+                            <!-- Organization Column -->
+                            <!--<div class="org-group">
+                                <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                    display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
+                                    padding: 15px; box-sizing: border-box;">
+                                    <h3>Organization Average Overall Score</h3>
+                                    <h1>{overall_av:.2f}</h1>
+                                </div>
+
+                                <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                        filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
+                                    {text_var}
+                                </div>
+                            </div> -->
+
+                            
+
+                            <!-- Staff Column -->
+                            <div class="staff-group">
+                                <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                    display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
+                                    padding: 15px; box-sizing: border-box;">
+                                    <h3>Average Scores for Selected Staff</h3>
+                                    <div style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%; text-align: center;">
+                                        {staff_score_html}
+                                    </div>
+                                </div>
+
+                                <div class="responsive-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
+                                        filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15)); padding: 15px; box-sizing: border-box;">
+                                    {staff_summaries}
+                                </div>
+                                
+                            </div>
+
+                            {site_column_html}
+
+                        </div>
+                    """)
 
         else:
             st.info("No data available for charting.")
-#            
+    #            
 
 
 
@@ -1080,4 +1081,4 @@ elif (mode == "View Results") and assessment != None:
         import traceback
         st.error(f"Error accessing or visualizing data: {e}")
         st.write(traceback.format_exc())
- 
+    
