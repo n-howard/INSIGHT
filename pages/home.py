@@ -306,7 +306,7 @@ elif (mode == "View Results") and assessment != None:
         if access_level:
             org_df = df.copy()
 
-            if "Program Name" in org_df.columns:
+            if "Please enter the organization name you logged in with (Program Name)." in org_df.columns:
                 # Try structured extraction first
                 def extract_orgs(text):
                     if not text:
@@ -319,12 +319,12 @@ elif (mode == "View Results") and assessment != None:
                             org_names.append(match.group(1).strip())
                     return org_names
 
-                org_df["Extracted Orgs"] = org_df["Program Name"].fillna("").apply(extract_orgs)
+                org_df["Extracted Orgs"] = org_df["Please enter the organization name you logged in with (Program Name)."].fillna("").apply(extract_orgs)
 
                 # Fallback: if all lists are empty, just use raw org names
                 if org_df["Extracted Orgs"].apply(len).sum() == 0:
                     if org_df["Extracted Orgs"].apply(len).sum() == 0:
-                        org_df["Extracted Orgs"] = org_df["Program Name"].apply(lambda x: [x.strip()] if x else [])
+                        org_df["Extracted Orgs"] = org_df["Please enter the organization name you logged in with (Program Name)."].apply(lambda x: [x.strip()] if x else [])
 
 
                 all_orgs = sorted(set(org for sublist in org_df["Extracted Orgs"] for org in sublist if org))
@@ -342,12 +342,12 @@ elif (mode == "View Results") and assessment != None:
         
         else:
 
-            if "Program Name" not in df.columns:
-                st.error("Column 'Program Name' not found in the data.")
+            if "Please enter the organization name you logged in with (Program Name)." not in df.columns:
+                st.error("Column 'Please enter the organization name you logged in with (Program Name).' not found in the data.")
                 st.stop()
 
             # Clean both Program Name column and org_input for flexible comparison
-            df["Program Name_clean"] = df["Program Name"].str.strip().str.lower()
+            df["Program Name_clean"] = df["Please enter the organization name you logged in with (Program Name)."].str.strip().str.lower()
             org_clean = org_input.strip().lower()
 
             # Filter the DataFrame to just this org
