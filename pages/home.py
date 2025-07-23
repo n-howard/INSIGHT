@@ -369,7 +369,7 @@ elif (mode == "View Results") and assessment != None:
         # Get site name from session (if any)
         site_input = st.session_state.get("site_input", "").strip()
 
-        site_column_name = next((col for col in df.columns if "which site" in col.lower()), None)
+        site_column_name = next((col for col in df.columns if "the site" in col.lower()), None)
 
         if site_column_name is None:
             site_column_name = "__NO_SITE_COL__"
