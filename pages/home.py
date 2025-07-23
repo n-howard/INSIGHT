@@ -302,6 +302,7 @@ elif (mode == "View Results") and assessment != None:
         # Create DataFrame
         df = pd.DataFrame(raw_data[1:], columns=unique_headers)
         reg_df = df.copy()
+
         Program_Name = "Please enter the organization name you logged in with." # ***Update this code if you change the question format***
         if access_level:
             org_df = df.copy()
@@ -358,23 +359,24 @@ elif (mode == "View Results") and assessment != None:
 
             # Drop the temporary clean column
             df = df.drop(columns=["Program Name_clean"])
-
+            
+        site_name = "Please enter the name of the site and/or program you work at."
        # --- MULTI-FILTER CONTROLS ---
         # Normalize Site Name
-        if "Site Name" in df.columns:
-            df["Site Name"] = df["Site Name"].fillna("").astype(str).str.strip()
+        if site_name in org_df.columns:
+            org_df["Site Name"] = org_df[site_name].fillna("").astype(str).str.strip()
         else:
-            df["Site Name"] = ""  # Add a blank column if missing
+            org_df["Site Name"] = ""  # Add a blank column if missing
 
         # Get site name from session (if any)
         site_input = st.session_state.get("site_input", "").strip()
 
-        site_column_name = next((col for col in df.columns if "the site" in col.lower()), None)
+        # site_column_name = next((col for col in df.columns if site_name.lower() in col.lower()), None)
+        # site_column_name = df["Site Name"]
 
-        if site_column_name is None:
-            site_column_name = "__NO_SITE_COL__"
-            df[site_column_name] = ""
-
+        # if site_column_name is None:
+        #     site_column_name = "__NO_SITE_COL__"
+        #     df[site_column_name] = ""
         def extract_sites(text):
             lines = text.split('\n')
             site_names = []
@@ -385,12 +387,14 @@ elif (mode == "View Results") and assessment != None:
             return site_names
 
         # Apply to org_df only (filtered by org_input earlier)
-        org_df["Extracted Sites"] = org_df[site_column_name].fillna("").apply(extract_sites)
+        org_df["Extracted Sites"] = org_df["Site Name"]#.fillna("").apply(extract_sites)
+
 
         # Build site dropdown options (only if admin has sites)
-        all_sites = sorted(set(site for sublist in org_df["Extracted Sites"] for site in sublist if site))
+        # all_sites = sorted(set(site for sublist in org_df["Extracted Sites"] for site in sublist if site))
+        all_sites = sorted(set(site for site in org_df["Extracted Sites"] if site))
 
-        if is_admin and all_sites:
+        if (is_admin or access_level) and all_sites:
             selected_sites = st.multiselect("Filter by Site Name (optional):", options=all_sites)
         else:
             selected_sites = []  # No site filtering available or needed
