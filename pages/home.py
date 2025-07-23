@@ -302,7 +302,7 @@ elif (mode == "View Results") and assessment != None:
         # Create DataFrame
         df = pd.DataFrame(raw_data[1:], columns=unique_headers)
         reg_df = df.copy()
-        Program_Name = "Please enter the organization name you logged in with (Program Name)." # ***Update this code if you change the question format***
+        Program_Name = "Please enter the organization name you logged in with." # ***Update this code if you change the question format***
         if access_level:
             org_df = df.copy()
 
