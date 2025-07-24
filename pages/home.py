@@ -148,6 +148,11 @@ st.html("""
     html, body, [class*="css"]  {
         font-family: 'Poppins', sans-serif;
     }
+
+    em, i {
+        font-family: 'Poppins', sans-serif;
+        font-style: italic
+    }
     </style>"""
     "<h1 style='text-align: center; font-size: 65px; font-weight: 900; font-family: 'Poppins'; margin-bottom: 0px'>INSIGHT</h1>"
 )
@@ -715,7 +720,132 @@ elif (mode == "View Results") and assessment != None:
                     st.info("Please select at least one column to display the chart.")
             else:
                 st.info("No score-type columns available for charting based on your filters.")
+            def categories():
+                with st.container():
+                    with st.expander("**View Descriptions of Standards and Indicators**"):
+                        spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
+                        cat_sheet = spreadsheet.worksheet("Indicators")
+                        sheet3_data = cat_sheet.get_all_values()
+
+                        # Extract data (skip header row)
+                        data_rows = sheet3_data[1:]
+
+                        # Create a mapping from Column A to Column B
+                        col_a_to_b = {row[0]: row[1] for row in data_rows if len(row) >= 2 and row[0]}
+                        st.write("#### View Descriptions")
+
+                        # Multi-select dropdown menu
+                        selected_categories = st.multiselect("Choose one or more Standard(s) and/or Indicator(s) (optional)", list(col_a_to_b.keys()))
+                        if st.session_state.get("user_email")!="":
+                            email = st.session_state.get("user_email")
+                        else:
+                            email = None
+                        
+                        email_df = reg_df[reg_df["Contact Email"].str.lower().str.strip() == email.strip().lower()]
+                        # Display descriptions and most recent scores
+                        for category in selected_categories:
+                            # st.markdown(f"**{category}**: {col_a_to_b[category]}")
+
+                            # Try to find the corresponding score column in org_df
+                            matching_column = next(
+                                (col for col in email_df.columns if category.strip().lower() in col.strip().lower()),
+                                None
+                            )
+
+                            if matching_column:
+                                recent_scores = email_df[matching_column].dropna()
+                                if not recent_scores.empty:
+                                    try:
+                                        # Show the most recent non-null numeric score
+                                        recent_score = pd.to_numeric(recent_scores.iloc[-1], errors="coerce")
+                                        if pd.notna(recent_score):
+                                            st.markdown(f"**{category}**: {col_a_to_b[category]} _Your most recent {category} score is **{recent_score:.2f}**._")
+                                    except:
+                                        pass
+                                else: 
+                                    st.markdown(f"**{category}**: {col_a_to_b[category]}")
+
+
+            def display_recommendation(indicator, sheet2_data):
+                """Helper function to display a single recommendation"""
+                column = indicator['name']
+                av = indicator['average']
+                per = indicator['per']
+                
+                # Find the matching row in sheet2
+                for row in sheet2_data:
+                    if len(row) >= 2 and row[0] == column:  # Column A matches our indicator
+                        # Get the organization name and replace placeholder
+                        org_name = st.session_state.get("org_input", cookies.get("org_input"))
+                        recommendation = row[1].replace("{YOUR PROGRAM NAME}", org_name)
+                        name_op = column.replace("Score","")
+                        # Display the recommendation from column B
+                        st.write(f"###### {name_op} (Average: {av:.2f}{per})")
+                        st.write(recommendation)
+                        # st.write("---")  # Separator
+                        break
+
+            def recs():
+                # Open the spreadsheet and get the "Recommendations" worksheet
+                spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
+                recs_sheet = spreadsheet.worksheet("Recommendations")
+                
+                # Get all data from sheet2 as a list of lists
+                sheet2_data = recs_sheet.get_all_values()
+                
+                # First, identify all low indicators
+                low_indicators = []
+                
+                for column in org_df:
+                    series = org_df[column].replace('%', '', regex=True)
+                    series = pd.to_numeric(series, errors="coerce")
+                    av = series.mean()
+                    
+                    if pd.notna(av):
+                        if "Indicator" in column:
+                            if av < 3:
+                                low_indicators.append({"name": column, "average": av, "name_op": column.replace("Score",""), "per":""})
+                            elif "Percent" in column:
+                                if av < 75:
+                                    low_indicators.append({"name": column, "average": av, "name_op": column.replace("Score",""), "per":"%"})
+                
+                if not low_indicators:
+                    st.write("No indicators found with averages below 3.0")
+                    return
+                
+                # Create dropdown options
+                dropdown_options = ["View All Recommendations"] + [f"{ind['name_op']} (Average: {ind['average']:.2f}{ind['per']})" for ind in low_indicators]
+                
+                # Dropdown selection
+                selected_option = st.selectbox(
+                    "Select which recommendations to view:",
+                    dropdown_options
+                )
+                
+                # Display based on selection
+                if selected_option == "View All Recommendations":
+                    # Show all recommendations
+                    for indicator in low_indicators:
+                        display_recommendation(indicator, sheet2_data)
+                        if indicator != low_indicators[len(low_indicators)-1]:
+                            st.write("---")  # Separator
+                else:
+                    # Show only the selected indicator
+                    # Extract the indicator name from the dropdown option
+                    selected_indicator_name = selected_option.split(" (Average:")[0]
+                    selected_indicator = next(ind for ind in low_indicators if ind['name_op'] == selected_indicator_name)
+                    display_recommendation(selected_indicator, sheet2_data)
+            def org_recs():
+                org_name = st.session_state.get("org_input", cookies.get("org_input"))
+                rec_title = "**Recommendations for " + org_name +"**"
+                if is_admin:
+                    with st.expander(rec_title, expanded=False):
+                        with st.container():
+                            st.write("#### View Recommendations")
+                            recs()
+            categories()
             if is_admin or access_level:
+                # org_recs()
                 # Step 1: Get all columns that include "Overall Score"
                 overall_score_cols = [col for col in org_df.columns if "Overall Score" in col]
 
