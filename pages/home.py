@@ -309,6 +309,22 @@ elif (mode == "View Results") and assessment != None:
         reg_df = df.copy()
 
         Program_Name = "Please enter the organization name you logged in with." # ***Update this code if you change the question format***
+        
+        # --- STEP 1: Dynamically detect the "Program Name" column ---
+        candidate_keywords = ["organization name", "program name", "your org", "site or organization", "Please enter the organization name you logged in with."]
+        Program_Name = None
+
+        for col in df.columns:
+            col_lower = col.strip().lower()
+            if any(keyword in col_lower for keyword in candidate_keywords):
+                Program_Name = col
+                break
+
+        # If no matching column found, show error
+        if not Program_Name:
+            st.error("Could not find the column with organization/program name. Please check your form question titles.")
+            st.stop()
+        
         if access_level:
             org_df = df.copy()
 
@@ -366,6 +382,11 @@ elif (mode == "View Results") and assessment != None:
             df = df.drop(columns=["Program Name_clean"])
             
         site_name = "Please enter the name of the site and/or program you work at."
+        site_keywords = ["name of the site", "site", "the site", "which site", "Please enter the name of the site and/or program you work at."]
+        for col in df.columns:
+            col_lower = col.strip().lower()
+            if any(keyword in col_lower for keyword in candidate_keywords):
+                site_name = col
        # --- MULTI-FILTER CONTROLS ---
         # Normalize Site Name
         if site_name in org_df.columns:
@@ -471,23 +492,6 @@ elif (mode == "View Results") and assessment != None:
         filtered_df = converted_df[numeric_cols].dropna(axis=1, how="all")
 
 
-        # Keep only mostly-numeric columns (60%+ numeric values)
-        # Exclude columns containing any of these substrings (case-insensitive)
-        EXCLUDED_SUBSTRINGS = ["How many students", "Timestamp", "Contact Phone", "Program Zip Code"]
-
-        def is_numeric_column(series):
-            # Must have mostly numeric values and no comma-separated strings
-            return (
-                series.notna().mean() >= 0.6 and
-                series.apply(lambda x: isinstance(x, (int, float)) or (isinstance(x, str) and "," not in x)).all()
-            )
-
-        numeric_cols = [
-            col for col in converted_df.columns
-            if is_numeric_column(converted_df[col]) and not any(sub.lower() in col.lower() for sub in EXCLUDED_SUBSTRINGS)
-        ]
-
-        filtered_df = converted_df[numeric_cols].dropna(axis=1, how="all")
         
  
 
