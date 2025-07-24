@@ -902,18 +902,18 @@ elif (mode == "View Results") and assessment != None:
                     if pd.notna(av):
                         if "Standard" in column:
                             if "percent" in column.lower() or "%" in column:
-                                name = f"<div class='p2' style='font-weight: 600;'>Organization Average {column}: {av:.0f}%</div><br>"
+                                name = f"<div class='p2' style='font-weight: 600;'>{org_input}'s Average {column}: {av:.0f}%</div><br>"
                             elif 0 < av < 1:
-                                name = f"<div class='p2' style='font-weight: 600;'>Organization Average {column}: {av * 100:.0f}%</div><br>"
+                                name = f"<div class='p2' style='font-weight: 600;'>{org_input}'s Average {column}: {av * 100:.0f}%</div><br>"
                             else:
-                                name = f"<div class='p2' style='font-weight: 600;'>Organization Average {column}: {av:.2f}</div><br>"
+                                name = f"<div class='p2' style='font-weight: 600;'>{org_input}'s Average {column}: {av:.2f}</div><br>"
                         elif "Indicator" in column:
-                            name = f"<div class='p3'>Organization Average {column}: {av:.2f}</div><br>"
+                            name = f"<div class='p3'>{org_input}'s Average {column}: {av:.2f}</div><br>"
 
                         text_var += name
 
                     elif "Indicator" in column:
-                        name = f"<div class='p3'>Organization Average {column}: {av: .2f}</div><br>"
+                        name = f"<div class='p3'>{org_input}'s Average {column}: {av: .2f}</div><br>"
                         text_var += name
 
                 # Step 1: Group by Contact Name
@@ -1079,7 +1079,7 @@ elif (mode == "View Results") and assessment != None:
                             <div class="responsive-box equal-box" style="border-radius: 15px; background-color: white; color: #084c61; text-align: center;
                                 display: flex; flex-direction: column; justify-content: center; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.15));
                                 padding: 15px; box-sizing: border-box;">
-                                <h3>Organization Average Overall Score</h3>
+                                <h3>{org_input}'s Average Overall Score</h3>
                                 <h1>{overall_av:.2f}</h1>
                             </div>
 
