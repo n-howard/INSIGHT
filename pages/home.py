@@ -671,7 +671,10 @@ if page == "self-assess":
     # Create HTML for buttons
     button_html = ""
     for cat in categories:
-        href = f"?page=self-assess&variation={cat.replace(' ', '+').replace(',', '%2C')}"
+        # href = f"?page=self-assess&variation={cat.replace(' ', '+').replace(',', '%2C')}"
+        variation = cat.replace(" ", "+").replace(",", "%2C")
+        org = st.session_state.get("org_input", "")
+        href = f"?page=view-results&variation={variation}&org={org}&user={user_email}&admin={is_admin}&access={access}"
         if cat == active_variation:
             class_name = "custom-button active"
         else:
@@ -967,6 +970,7 @@ elif page == "view-results":
     for cat in categories:
         # href = f"?page=view-results&variation={cat.replace(' ', '+').replace(',', '%2C')}"
         variation = cat.replace(" ", "+").replace(",", "%2C")
+        org = st.session_state.get("org_input", "")
         href = f"?page=view-results&variation={variation}&org={org}&user={user_email}&admin={is_admin}&access={access}"
 
         if cat == active_variation:
