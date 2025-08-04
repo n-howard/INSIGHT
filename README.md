@@ -1,2 +1,2 @@
 # INSIGHT
-A StreamLit prototype of a self-assessment web-app for partners of OregonASK.
+A Streamlit-based web app used for self-assessment of afterschool organizations.
