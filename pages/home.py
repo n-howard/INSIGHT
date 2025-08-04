@@ -311,9 +311,9 @@ html, body, [class*="css"] {{
 <div class="fixed-header">
     <div class="header-content">
         <div class="navbar">
-            <a href="?page=home&org={st.session_state.get("org_input", "")}" class="{ 'active' if active_page == 'home' else '' }">Home</a>
-            <a href="?page=self-assess&org={st.session_state.get("org_input", "")}" class="{ 'active' if active_page == 'self-assess' else '' }">Self-Assess</a>
-            <a href="?page=view-results&org={st.session_state.get("org_input", "")}" class="{ 'active' if active_page == 'view-results' else '' }">View Results</a>
+            <a href="?page=home&org={st.session_state.get("org_input", "")}&user={st.session_state["user_email"]}&admin={st.session_state["admin_input"]}&access={st.session_state["access_level"]}" class="{ 'active' if active_page == 'home' else '' }">Home</a>
+            <a href="?page=self-assess&org={st.session_state.get("org_input", "")}&user={st.session_state["user_email"]}&admin={st.session_state["admin_input"]}&access={st.session_state["access_level"]}" class="{ 'active' if active_page == 'self-assess' else '' }">Self-Assess</a>
+            <a href="?page=view-results&org={st.session_state.get("org_input", "")}&user={st.session_state["user_email"]}&admin={st.session_state["admin_input"]}&access={st.session_state["access_level"]}" class="{ 'active' if active_page == 'view-results' else '' }">View Results</a>
         </div>
         <div class="logout-section">
             <div class="org-name-display">{st.session_state.get("org_input", "Organization")} {ad}</div>
