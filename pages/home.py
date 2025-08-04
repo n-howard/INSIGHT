@@ -520,6 +520,11 @@ ASSESSMENTS = {
 }
 
 if page == "self-assess":
+    query = st.query_params
+    for key in ["org", "user", "admin", "access"]:
+        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" else "user_email"):
+            st.session_state[f"{key}_input" if key != "user" else "user_email"] = query[key]
+
 #     st.html("""
 # <style>
 # @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
@@ -655,6 +660,11 @@ if page == "self-assess":
 
     org_from_url = query_params.get("org", "").replace("+", " ")
 
+    for key in ["org", "user", "admin", "access"]:
+        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" else "user_email"):
+            st.session_state[f"{key}_input" if key != "user" else "user_email"] = query[key]
+
+
     # Optionally restore it if missing from session
     if not st.session_state.get("org_input") and org_from_url:
         st.session_state["org_input"] = org_from_url
@@ -674,7 +684,7 @@ if page == "self-assess":
         # href = f"?page=self-assess&variation={cat.replace(' ', '+').replace(',', '%2C')}"
         variation = cat.replace(" ", "+").replace(",", "%2C")
         org = st.session_state.get("org_input", "")
-        href = f"?page=view-results&variation={variation}&org={st.session_state.get("org_input", "")}&user={st.session_state["user_email"]}&admin={st.session_state["admin_input"]}&access={st.session_state["access_level"]}
+        href = f"?page=view-results&variation={variation}&org={org}&user={user_email}&admin={is_admin}&access={access}"
         if cat == active_variation:
             class_name = "custom-button active"
         else:
@@ -807,6 +817,11 @@ if page == "self-assess":
 
 
 elif page == "view-results":
+    query = st.query_params
+    for key in ["org", "user", "admin", "access"]:
+        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" else "user_email"):
+            st.session_state[f"{key}_input" if key != "user" else "user_email"] = query[key]
+
     if not st.session_state.get("org_input"):
         st.session_state["org_input"] = cookies.get("org_input", "")
     # Access the value stored in session state
@@ -971,7 +986,7 @@ elif page == "view-results":
         # href = f"?page=view-results&variation={cat.replace(' ', '+').replace(',', '%2C')}"
         variation = cat.replace(" ", "+").replace(",", "%2C")
         org = st.session_state.get("org_input", "")
-        href = f"?page=view-results&variation={variation}&org={st.session_state.get("org_input", "")}&user={st.session_state["user_email"]}&admin={st.session_state["admin_input"]}&access={st.session_state["access_level"]}
+        href = f"?page=view-results&variation={variation}&org={org}&user={user_email}&admin={is_admin}&access={access}"
 
         if cat == active_variation:
             class_name = "custom-button active"
