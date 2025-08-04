@@ -27,6 +27,16 @@ cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SEC
 if not cookies.ready():
     st.stop()
 
+# --- Restore session state from cookies if missing ---
+for key in ["org_input", "site_input", "admin_input", "access_level", "user_email"]:
+    if not st.session_state.get(key):
+        cookie_val = cookies.get(key)
+        if cookie_val:  # only restore if cookie has value
+            st.session_state[key] = cookie_val
+
+# Derived values
+st.session_state["is_admin"] = str(st.session_state.get("admin_input", "")).strip().lower() == "true"
+st.session_state["access"] = str(st.session_state.get("access_level", "")).strip().lower() == "true"
 
 # # Restore from cookies if needed
 # if "org_input" not in st.session_state:
@@ -1078,7 +1088,8 @@ elif page == "view-results":
         sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
         org_input = cookies.get("org_input")
         org_name = cookies.get("org_input")
-        st.session_state["org_input"] = org_name
+        if not st.session_state.get("org_input"):
+            st.session_state["org_input"] = org_name
         # Access the value stored in session state
         org_input = st.session_state.get("org_input", "")
         st.session_state.admin_input = cookies.get("admin_level")
