@@ -384,6 +384,7 @@ else:
             salt = bcrypt.gensalt()
             hashed_pw = bcrypt.hashpw(sign_password.encode(), salt).decode()
             supabase.table("users").insert({"email": sign_email, "hash": hashed_pw}).execute()
+            st.success("Account created! Please log in.")
         else:
             st.warning("User already exists. Please log in.")
 
