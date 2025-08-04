@@ -826,9 +826,9 @@ elif page == "view-results":
         st.session_state["org_input"] = cookies.get("org_input", "")
     # Access the value stored in session state
     org_input = st.session_state.get("org_input", "")
-    st.session_state.admin_input = cookies.get("admin_level")
+    # st.session_state.admin_input = cookies.get("admin_level")
     admin_input = st.session_state.get("admin_input", "")
-    st.session_state.access_level = cookies.get("access_level")
+    # st.session_state.access_level = cookies.get("access_level")
     access_level = st.session_state.get("access_level", "")
     
 #     st.html("""
@@ -1129,9 +1129,9 @@ elif page == "view-results":
             st.session_state["org_input"] = org_name
         # Access the value stored in session state
         org_input = st.session_state.get("org_input", "")
-        st.session_state.admin_input = cookies.get("admin_level")
+        # st.session_state.admin_input = cookies.get("admin_level")
         admin_input = st.session_state.get("admin_input", "")
-        st.session_state.access_level = cookies.get("access_level")
+        # st.session_state.access_level = cookies.get("access_level")
         access_level = st.session_state.get("access_level", "")
 
 
