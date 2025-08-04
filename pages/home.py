@@ -75,6 +75,10 @@ if not st.session_state.get("user_email"):
 st.session_state["is_admin"] = str(st.session_state.get("admin_input", "")).strip().lower() == "true"
 st.session_state["access"] = str(st.session_state.get("access_level", "")).strip().lower() == "true"
 
+if not st.session_state.get("org_input"):
+    st.warning("Loading session...")
+    st.stop()
+
 
 
 
