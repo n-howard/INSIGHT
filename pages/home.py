@@ -28,20 +28,43 @@ if not cookies.ready():
     st.stop()
 
 
-# Restore from cookies if needed
-if "org_input" not in st.session_state:
-    cookie_org = cookies.get("org_input")
-    cookie_site = cookies.get("site_input")
-    cookie_admin = cookies.get("admin_input")
-    cookie_access = cookies.get("access_level")
-    email = cookies.get("user_email")
+# # Restore from cookies if needed
+# if "org_input" not in st.session_state:
+#     cookie_org = cookies.get("org_input")
+#     cookie_site = cookies.get("site_input")
+#     cookie_admin = cookies.get("admin_input")
+#     cookie_access = cookies.get("access_level")
+#     email = cookies.get("user_email")
 
-    if cookie_org:
-        st.session_state["org_input"] = cookie_org
-        st.session_state["site_input"] = cookie_site or ""
-        st.session_state["admin_input"] = cookie_admin or ""
-        st.session_state["access_level"] = cookie_access or ""
-        st.session_state["user_email"] = email or ""
+#     if cookie_org:
+#         st.session_state["org_input"] = cookie_org
+#         st.session_state["site_input"] = cookie_site or ""
+#         st.session_state["admin_input"] = cookie_admin or ""
+#         st.session_state["access_level"] = cookie_access or ""
+#         st.session_state["user_email"] = email or ""
+# Always restore session state from cookies if the session is fresh or values are missing
+cookie_org = cookies.get("org_input", "")
+cookie_site = cookies.get("site_input", "")
+cookie_admin = cookies.get("admin_input", "")
+cookie_access = cookies.get("access_level", "")
+cookie_email = cookies.get("user_email", "")
+
+# Restore if missing or empty in session_state
+if not st.session_state.get("org_input"):
+    st.session_state["org_input"] = cookie_org
+if not st.session_state.get("site_input"):if not st.session_state.get("org_input"):
+    st.session_state["org_input"] = cookies.get("org_input", "")
+    st.session_state["site_input"] = cookie_site
+if not st.session_state.get("admin_input"):
+    st.session_state["admin_input"] = cookie_admin
+if not st.session_state.get("access_level"):
+    st.session_state["access_level"] = cookie_access
+if not st.session_state.get("user_email"):
+    st.session_state["user_email"] = cookie_email
+
+# Derived roles
+st.session_state["is_admin"] = str(st.session_state.get("admin_input", "")).strip().lower() == "true"
+st.session_state["access"] = str(st.session_state.get("access_level", "")).strip().lower() == "true"
 
 
 
@@ -770,9 +793,8 @@ if page == "self-assess":
 
 
 elif page == "view-results":
-    org_input = cookies.get("org_input")
-    org_name = cookies.get("org_input")
-    st.session_state["org_input"] = org_name
+    if not st.session_state.get("org_input"):
+        st.session_state["org_input"] = cookies.get("org_input", "")
     # Access the value stored in session state
     org_input = st.session_state.get("org_input", "")
     st.session_state.admin_input = cookies.get("admin_level")

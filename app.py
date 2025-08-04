@@ -301,6 +301,7 @@ else:
 
                     st.session_state["access"] = oregonask_access
                     cookies["access_level"] = str(oregonask_access)
+                    cookies["org_input"] = log_org_input
                     cookies.save()
                     st.switch_page("pages/home.py")
                 else:
