@@ -1714,34 +1714,35 @@ elif page == "view-results":
 
             components.html(card_html, height=card_height)
             x = False
-            if "Standard" in label:
-                if "Indicator" in label and ((score>=3.0 and score <=4.0) or (score>=75.0)):
-                    st.markdown(defst)
-                    return
-                elif "Indicator" not in label:
-                    st.markdown(defst)
-                    return
-                else:
-                    for category in l:
-                        if "Standard" in category and category in label:
-                            if (not is_admin) and (not access_level):
-                                st.markdown(defst)
-                                return
-                            tdef = col_a_to_b[category]
-                            sl = f"""**{category}**: {tdef}"""
-                            st.markdown(sl)
-                            
-                             
-            if low_indicators!=None:
-                for cat in low_indicators:
-            #         if cat["name"] in label and score<3.0 or (score>4.0 and score<75.0):
-            #             display_recommendation(cat, sheet3_data, org_name)
-            #             return
-                    label_norm = label.lower().replace("score", "").strip()  
-                    cat_name_norm = cat["name"].lower().replace("score", "").strip()
-                    if (cat_name_norm in label_norm and score < 3.0) or (cat_name_norm in label_norm and 4.0 < score < 75.0):
-                        display_recommendation(cat, sheet2_data, org_name)
+            if access_level or is_admin:
+                if "Standard" in label:
+                    if "Indicator" in label and ((score>=3.0 and score <=4.0) or (score>=75.0)):
+                        st.markdown(defst)
                         return
+                    elif "Indicator" not in label:
+                        st.markdown(defst)
+                        return
+                    else:
+                        for category in l:
+                            if "Standard" in category and category in label:
+                                if (not is_admin) and (not access_level):
+                                    st.markdown(defst)
+                                    return
+                                tdef = col_a_to_b[category]
+                                sl = f"""**{category}**: {tdef}"""
+                                st.markdown(sl)
+                                
+                                
+                if low_indicators!=None:
+                    for cat in low_indicators:
+                #         if cat["name"] in label and score<3.0 or (score>4.0 and score<75.0):
+                #             display_recommendation(cat, sheet3_data, org_name)
+                #             return
+                        label_norm = label.lower().replace("score", "").strip()  
+                        cat_name_norm = cat["name"].lower().replace("score", "").strip()
+                        if (cat_name_norm in label_norm and score < 3.0) or (cat_name_norm in label_norm and 4.0 < score < 75.0):
+                            display_recommendation(cat, sheet2_data, org_name)
+                            return
             if not x:
                 st.markdown(defst)
 
