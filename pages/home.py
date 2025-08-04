@@ -693,7 +693,7 @@ if page == "self-assess":
         # href = f"?page=self-assess&variation={cat.replace(' ', '+').replace(',', '%2C')}"
         variation = cat.replace(" ", "+").replace(",", "%2C")
         org = st.session_state.get("org_input", "")
-        href = f"?page=view-results&variation={variation}&org={st.session_state.get("org_input", "")}&user={st.session_state["user_email"]}&admin={st.session_state["admin_input"]}&access={st.session_state["access_level"]}"
+        href = f"?page=self-assess&variation={variation}&org={st.session_state.get("org_input", "")}&user={st.session_state["user_email"]}&admin={st.session_state["admin_input"]}&access={st.session_state["access_level"]}"
         if cat == active_variation:
             class_name = "custom-button active"
         else:
@@ -812,6 +812,19 @@ if page == "self-assess":
     if "variation" in query_params:
         # Set to session state (decode + replace + capitalize if needed)
         st.session_state["variation"] = unquote(query_params["variation"])
+
+    for key in ["org", "user", "admin", "access"]:
+        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" else "user_email"):
+            st.session_state[f"{key}_input" if key != "user" else "user_email"] = query[key]
+
+    if not st.session_state.get("org_input"):
+        st.session_state["org_input"] = cookies.get("org_input", "")
+    # Access the value stored in session state
+    org_input = st.session_state.get("org_input", "")
+    # st.session_state.admin_input = cookies.get("admin_level")
+    admin_input = st.session_state.get("admin_input", "")
+    # st.session_state.access_level = cookies.get("access_level")
+    access_level = st.session_state.get("access_level", "")
 
     # Default fallback or message
     assessment = st.session_state.get("variation", None)
