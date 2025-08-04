@@ -1371,8 +1371,8 @@ elif page == "view-results":
                             standard_scores.append((column, av))
 
 
-                    elif "Indicator" in column:
-                        standard_scores.append((column, av))
+                    # elif "Indicator" in column:
+                    #     standard_scores.append((column, av))
             else:
                 standard_scores = {}
                 over_scores = {}
@@ -1591,6 +1591,7 @@ elif page == "view-results":
         
             
         low_indicators, sheet2_data = recs()
+
         def desc(sheet_data, label):
             data_rows = sheet3_data[1:]
 
@@ -1723,14 +1724,14 @@ elif page == "view-results":
                 else:
                     for category in l:
                         if "Standard" in category and category in label:
-                            if (not is_admin) or (not access_level):
+                            if (not is_admin) and (not access_level):
                                 st.markdown(defst)
                                 return
                             tdef = col_a_to_b[category]
                             sl = f"""**{category}**: {tdef}"""
                             st.markdown(sl)
                             
-                                
+                             
             if low_indicators!=None:
                 for cat in low_indicators:
             #         if cat["name"] in label and score<3.0 or (score>4.0 and score<75.0):
@@ -1738,7 +1739,6 @@ elif page == "view-results":
             #             return
                     label_norm = label.lower().replace("score", "").strip()  
                     cat_name_norm = cat["name"].lower().replace("score", "").strip()
-
                     if (cat_name_norm in label_norm and score < 3.0) or (cat_name_norm in label_norm and 4.0 < score < 75.0):
                         display_recommendation(cat, sheet2_data, org_name)
                         return
