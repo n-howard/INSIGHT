@@ -52,8 +52,7 @@ cookie_email = cookies.get("user_email", "")
 # Restore if missing or empty in session_state
 if not st.session_state.get("org_input"):
     st.session_state["org_input"] = cookie_org
-if not st.session_state.get("site_input"):if not st.session_state.get("org_input"):
-    st.session_state["org_input"] = cookies.get("org_input", "")
+if not st.session_state.get("site_input"):
     st.session_state["site_input"] = cookie_site
 if not st.session_state.get("admin_input"):
     st.session_state["admin_input"] = cookie_admin
