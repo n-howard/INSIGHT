@@ -770,6 +770,15 @@ if page == "self-assess":
 
 
 elif page == "view-results":
+    org_input = cookies.get("org_input")
+    org_name = cookies.get("org_input")
+    st.session_state["org_input"] = org_name
+    # Access the value stored in session state
+    org_input = st.session_state.get("org_input", "")
+    st.session_state.admin_input = cookies.get("admin_level")
+    admin_input = st.session_state.get("admin_input", "")
+    st.session_state.access_level = cookies.get("access_level")
+    access_level = st.session_state.get("access_level", "")
 #     st.html("""
 # <style>
 # @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
@@ -1046,10 +1055,15 @@ elif page == "view-results":
         creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
         client = gspread.authorize(creds)
         sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
-
+        org_input = cookies.get("org_input")
+        org_name = cookies.get("org_input")
+        st.session_state["org_input"] = org_name
         # Access the value stored in session state
         org_input = st.session_state.get("org_input", "")
+        st.session_state.admin_input = cookies.get("admin_level")
         admin_input = st.session_state.get("admin_input", "")
+        st.session_state.access_level = cookies.get("access_level")
+        access_level = st.session_state.get("access_level", "")
 
 
         if not org_input:
