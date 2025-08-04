@@ -525,6 +525,15 @@ if page == "self-assess":
         if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" else "user_email"):
             st.session_state[f"{key}_input" if key != "user" else "user_email"] = query[key]
 
+    if not st.session_state.get("org_input"):
+        st.session_state["org_input"] = cookies.get("org_input", "")
+    # Access the value stored in session state
+    org_input = st.session_state.get("org_input", "")
+    # st.session_state.admin_input = cookies.get("admin_level")
+    admin_input = st.session_state.get("admin_input", "")
+    # st.session_state.access_level = cookies.get("access_level")
+    access_level = st.session_state.get("access_level", "")
+
 #     st.html("""
 # <style>
 # @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
