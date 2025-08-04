@@ -311,9 +311,9 @@ html, body, [class*="css"] {{
 <div class="fixed-header">
     <div class="header-content">
         <div class="navbar">
-            <a href="?page=home" class="{ 'active' if active_page == 'home' else '' }">Home</a>
-            <a href="?page=self-assess" class="{ 'active' if active_page == 'self-assess' else '' }">Self-Assess</a>
-            <a href="?page=view-results" class="{ 'active' if active_page == 'view-results' else '' }">View Results</a>
+            <a href="?page=home&org={st.session_state.get("org_input", "")}" class="{ 'active' if active_page == 'home' else '' }">Home</a>
+            <a href="?page=self-assess&org={st.session_state.get("org_input", "")}" class="{ 'active' if active_page == 'self-assess' else '' }">Self-Assess</a>
+            <a href="?page=view-results&org={st.session_state.get("org_input", "")}" class="{ 'active' if active_page == 'view-results' else '' }">View Results</a>
         </div>
         <div class="logout-section">
             <div class="org-name-display">{st.session_state.get("org_input", "Organization")} {ad}</div>
@@ -647,12 +647,17 @@ if page == "self-assess":
 #     <img src="https://i.imgur.com/8Q3M2NU.png" class="faded-bg" alt="Background Illustration"/>
 # </div>
 #     """)
-
+    query_params = st.query_params
     if "variation" not in st.query_params:
         active_variation = ""
     else:
         active_variation = st.query_params["variation"]
 
+    org_from_url = query_params.get("org", "").replace("+", " ")
+
+    # Optionally restore it if missing from session
+    if not st.session_state.get("org_input") and org_from_url:
+        st.session_state["org_input"] = org_from_url
     # Define all your categories
     categories = [
         "Youth Development and Engagement",
@@ -807,6 +812,7 @@ elif page == "view-results":
     admin_input = st.session_state.get("admin_input", "")
     st.session_state.access_level = cookies.get("access_level")
     access_level = st.session_state.get("access_level", "")
+    
 #     st.html("""
 # <style>
 # @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
@@ -934,10 +940,17 @@ elif page == "view-results":
 # </div>
 
 #     """)
+    query_params = st.query_params
     if "variation" not in st.query_params:
         active_variation = ""
     else:
         active_variation = st.query_params["variation"]
+
+    org_from_url = query_params.get("org", "").replace("+", " ")
+
+    # Optionally restore it if missing from session
+    if not st.session_state.get("org_input") and org_from_url:
+        st.session_state["org_input"] = org_from_url
 
     # Define all your categories
     categories = [
