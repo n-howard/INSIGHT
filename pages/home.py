@@ -684,7 +684,7 @@ if page == "self-assess":
         # href = f"?page=self-assess&variation={cat.replace(' ', '+').replace(',', '%2C')}"
         variation = cat.replace(" ", "+").replace(",", "%2C")
         org = st.session_state.get("org_input", "")
-        href = f"?page=view-results&variation={variation}&org={org}&user={user_email}&admin={is_admin}&access={access}"
+        href = f"?page=view-results&variation={variation}&org={st.session_state.get("org_input", "")}&user={st.session_state["user_email"]}&admin={st.session_state["admin_input"]}&access={st.session_state["access_level"]}"
         if cat == active_variation:
             class_name = "custom-button active"
         else:
@@ -986,7 +986,7 @@ elif page == "view-results":
         # href = f"?page=view-results&variation={cat.replace(' ', '+').replace(',', '%2C')}"
         variation = cat.replace(" ", "+").replace(",", "%2C")
         org = st.session_state.get("org_input", "")
-        href = f"?page=view-results&variation={variation}&org={org}&user={user_email}&admin={is_admin}&access={access}"
+        href = f"?page=view-results&variation={variation}&org={st.session_state.get("org_input", "")}&user={st.session_state["user_email"]}&admin={st.session_state["admin_input"]}&access={st.session_state["access_level"]}"
 
         if cat == active_variation:
             class_name = "custom-button active"
