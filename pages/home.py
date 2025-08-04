@@ -77,10 +77,6 @@ st.session_state["access"] = str(st.session_state.get("access_level", "")).strip
 
 
 
-
-
-
-
 if "is_admin" not in st.session_state:
     st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
 
@@ -956,7 +952,10 @@ elif page == "view-results":
     # Create HTML for buttons
     button_html = ""
     for cat in categories:
-        href = f"?page=view-results&variation={cat.replace(' ', '+').replace(',', '%2C')}"
+        # href = f"?page=view-results&variation={cat.replace(' ', '+').replace(',', '%2C')}"
+        variation = cat.replace(" ", "+").replace(",", "%2C")
+        href = f"?page=view-results&variation={variation}&org={org}&user={user_email}&admin={is_admin}&access={access}"
+
         if cat == active_variation:
             class_name = "custom-button active"
         else:
@@ -1075,6 +1074,11 @@ elif page == "view-results":
     if "variation" in query_params:
         # Set to session state (decode + replace + capitalize if needed)
         st.session_state["variation"] = unquote(query_params["variation"])
+    query = st.query_params
+    for key in ["org", "user", "admin", "access"]:
+        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" else "user_email"):
+            st.session_state[f"{key}_input" if key != "user" else "user_email"] = query[key]
+
     assessment = st.session_state.get("variation", None)
     if assessment:
     #     title = assessment + " Results"
