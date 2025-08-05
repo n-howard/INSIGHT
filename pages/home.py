@@ -203,17 +203,17 @@ iframe {
 </style>
 """)
 
-# # Check current page
-# page = st.query_params.get("page", "home")
-# active_page = page.lower()
-# navbar = NAVBAR_HTML.format(
-#     home_class="active" if active_page == "home" else "",
-#     self_class="active" if active_page == "self-assess" else "",
-#     results_class="active" if active_page == "view-results" else "",
-# )
-# # st.html(navbar)
-# logout_container = st.container()
-# col1, _, col2 = st.columns([3,5, 2])
+# Check current page
+page = st.query_params.get("page", "home")
+active_page = page.lower()
+navbar = NAVBAR_HTML.format(
+    home_class="active" if active_page == "home" else "",
+    self_class="active" if active_page == "self-assess" else "",
+    results_class="active" if active_page == "view-results" else "",
+)
+# st.html(navbar)
+logout_container = st.container()
+col1, _, col2 = st.columns([3,5, 2])
 NAVBAR_HTML = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
@@ -324,13 +324,13 @@ html, body, [class*="css"] {{
 """
 
 # Check current page
-page = st.query_params.get("page", "home")
-active_page = page.lower()
-navbar = NAVBAR_HTML.format(
-    home_class="active" if active_page == "home" else "",
-    self_class="active" if active_page == "self-assess" else "",
-    results_class="active" if active_page == "view-results" else "",
-)
+# page = st.query_params.get("page", "home")
+# active_page = page.lower()
+# navbar = NAVBAR_HTML.format(
+#     home_class="active" if active_page == "home" else "",
+#     self_class="active" if active_page == "self-assess" else "",
+#     results_class="active" if active_page == "view-results" else "",
+# )
 # st.html(navbar)
 logout_container = st.container()
 col1, _, col2 = st.columns([3,5, 2])
