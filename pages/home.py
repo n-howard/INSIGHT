@@ -413,7 +413,7 @@ if page == "self-assess":
     # else:
     #     active_variation = st.query_params["variation"]
 
-    # org_from_url = query_params.get("org", "").replace("+", " ")
+    org_from_url = query_params.get("org", "").replace("+", " ")
     
     # query = st.query_params
     # for key in ["org", "user", "admin", "access"]:
