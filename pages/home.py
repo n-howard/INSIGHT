@@ -861,10 +861,10 @@ elif page == "view-results":
     access_level = st.session_state.get("access_level", "")
     is_admin = admin_input  # Or add your boolean logic if needed
 
-    # ⛔ Redirect early only if org is still missing after sync
-    if not org_input:
-        st.warning("Please enter your organization name on the main page.")
-        st.switch_page("app.py")
+    # # ⛔ Redirect early only if org is still missing after sync
+    # if not org_input:
+    #     st.warning("Please enter your organization name on the main page.")
+    #     st.switch_page("app.py")
 
     if "variation" in query_params:
         # Set to session state (decode + replace + capitalize if needed)
