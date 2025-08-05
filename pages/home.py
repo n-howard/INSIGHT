@@ -11,7 +11,6 @@ from streamlit_cookies_manager import EncryptedCookieManager
 import random
 import uuid
 import re
-import time
 
 st.set_page_config(page_title="INSIGHT", page_icon="./oask_short_logo.png", layout="wide")
 # st.logo("./oask_light_mode_tagline_2.png", size="large", link="https://oregonask.org/")
@@ -39,10 +38,6 @@ for key in ["org_input", "site_input", "admin_input", "access_level", "user_emai
 st.session_state["is_admin"] = str(st.session_state.get("admin_input", "")).strip().lower() == "true"
 st.session_state["access"] = str(st.session_state.get("access_level", "")).strip().lower() == "true"
 
-
-# Track if we've attempted to restore org_input yet
-if "org_checked_once" not in st.session_state:
-    st.session_state["org_checked_once"] = False
 # # Restore from cookies if needed
 # if "org_input" not in st.session_state:
 #     cookie_org = cookies.get("org_input")
@@ -111,34 +106,54 @@ if st.query_params.get("logout") == "1":
     st.success("You have been logged out.")
     st.switch_page("app.py")
 
+
+
+components.html("""
+<script>
+  (function() {
+    const keys = ["org_input", "admin_input", "user_email", "access_level", "site_input"];
+    let updated = false;
+    const params = new URLSearchParams(window.location.search);
+
+    keys.forEach(key => {
+      if (!params.get(key.replace("_input", ""))) {
+        const val = localStorage.getItem(key);
+        if (val) {
+          params.set(key.replace("_input", ""), val);
+          updated = true;
+        }
+      }
+    });
+
+    // Only reload once to apply missing values
+    if (updated) {
+      window.location.search = params.toString();
+    }
+  })();
+</script>
+""", height=0)
 query = st.query_params
 
 def sync_query_to_session_and_cookies(query, cookies, allow_logout=True):
     cookies_changed = False
-
-    if allow_logout and query.get("logout") == "1":
-        for key in [
-            "org_input", "site_input", "admin_input",
-            "access_level", "user_email", "variation"
-        ]:
-            st.session_state.pop(key, None)
-            cookies[key] = ""
-        cookies.save()
-        st.success("You have been logged out.")
-        st.markdown('<meta http-equiv="refresh" content="2;URL=app.py">', unsafe_allow_html=True)
-        st.stop()
-
-    # Only persist these — NOT variation
-    key_map = {
+    keys = {
         "org": "org_input",
         "user": "user_email",
         "admin": "admin_input",
         "access": "access_level",
         "site": "site_input"
-        # variation is intentionally excluded
     }
 
-    for qkey, skey in key_map.items():
+    if allow_logout and query.get("logout") == "1":
+        for skey in keys.values():
+            st.session_state.pop(skey, None)
+            cookies[skey] = ""
+        cookies.save()
+        st.success("You have been logged out.")
+        st.markdown('<meta http-equiv="refresh" content="2;URL=app.py">', unsafe_allow_html=True)
+        st.stop()
+
+    for qkey, skey in keys.items():
         query_val = query.get(qkey)
         session_val = st.session_state.get(skey)
         cookie_val = cookies.get(skey)
@@ -155,27 +170,14 @@ def sync_query_to_session_and_cookies(query, cookies, allow_logout=True):
     if cookies_changed:
         cookies.save()
 
-    # Handle variation ONLY from query
-    variation_val = query.get("variation")
-    if variation_val:
-        st.session_state["variation"] = variation_val
-    else:
-        st.session_state.pop("variation", None)
-    # Reset this flag so redirects can happen again if needed later
-st.session_state["org_checked_once"] = False
+    # --- Sync to localStorage ---
+    js_sync = "<script>\n"
+    for _, skey in keys.items():
+        val = st.session_state.get(skey, "")
+        js_sync += f'localStorage.setItem("{skey}", `{val}`);\n'
+    js_sync += "</script>"
+    components.html(js_sync, height=0)
 
-def build_url(page, variation=None):
-    params = {
-        "page": page,
-        "org": st.session_state.get("org_input", ""),
-        "user": st.session_state.get("user_email", ""),
-        "admin": st.session_state.get("admin_input", ""),
-        "access": st.session_state.get("access_level", "")
-    }
-    if variation:
-        params["variation"] = variation
-
-    return "?" + "&".join([f"{k}={v}" for k, v in params.items() if v])
 
 
 # --- LOGOUT BUTTON ---
@@ -287,11 +289,6 @@ active_page = page.lower()
 # st.html(navbar)
 logout_container = st.container()
 col1, _, col2 = st.columns([3,5, 2])
-
-assess = build_url("self-assess")
-home = build_url("home")
-results = build_url("view_results")
-
 NAVBAR_HTML = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
@@ -545,7 +542,6 @@ if page == "self-assess":
         variation = cat.replace(" ", "+").replace(",", "%2C")
         org = st.session_state.get("org_input", "")
         href = f"?page=self-assess&variation={variation}&org={st.session_state.get("org_input", "")}&user={st.session_state.get("user_email")}&admin={st.session_state.get("admin_input")}&access={st.session_state.get("access_level")}"
-        href = build_url("self-assess", variation=variation)
         if cat == active_variation:
             class_name = "custom-button active"
         else:
@@ -759,7 +755,7 @@ elif page == "view-results":
         variation = cat.replace(" ", "+").replace(",", "%2C")
         org = st.session_state.get("org_input", "")
         href = f"?page=view-results&variation={variation}&org={st.session_state.get("org_input", "")}&user={st.session_state.get("user_email")}&admin={st.session_state.get("admin_input")}&access={st.session_state.get("access_level")}"
-        href = build_url("view_results", variation=variation)
+
         if cat == active_variation:
             class_name = "custom-button active"
         else:
@@ -884,10 +880,11 @@ elif page == "view-results":
     admin_input = st.session_state.get("admin_input", "")
     access_level = st.session_state.get("access_level", "")
     is_admin = admin_input  # Or add your boolean logic if needed
-    time.sleep(3)
-    if not st.session_state.get("org_input"):
-            st.warning("Please enter your organization name on the main page.")
-            st.switch_page("app.py")
+
+    # ⛔ Redirect early only if org is still missing after sync
+    if not org_input:
+        st.warning("Please enter your organization name on the main page.")
+        st.switch_page("app.py")
 
     if "variation" in query_params:
         # Set to session state (decode + replace + capitalize if needed)
