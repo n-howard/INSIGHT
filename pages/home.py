@@ -327,56 +327,6 @@ html, body, [class*="css"] {{
 st.markdown("<div style='height: 90px;'></div>", unsafe_allow_html=True)
 st.html(NAVBAR_HTML)
 
-# with logout_container:
-#     with col1:
-#         st.html(navbar)
-#     with col2:
-#         st.html(f"""
-#             <style>
-#                 .logout-button-container {{
-#                     display: flex;
-#                     flex-direction: row;
-#                     justify-content: center;
-#                     margin-left: 30px;
-#                     align-items: center;
-#                 }}
-#                 .org-name-display {{
-#                     font-size: 0.9rem;
-#                     font-weight: 600;
-#                     color: #084c61;
-#                     margin-right: .6rem;
-
-#                 }}
-#                 .logout-button {{
-#                     background-color: #084C61;
-#                     color: white;
-#                     font-weight: 600;
-#                     font-size: .9rem;
-#                     padding: .6rem .8rem;
-#                     border: none;
-#                     border-radius: 2rem;
-#                     cursor: pointer;
-#                     margin-right: 2px;
-#                     transition: background-color 0.2s;
-#                     text-align: center;
-#                     text-decoration: none;
-#                     width: fit-content;
-#                 }}
-#                 .logout-button:hover{{
-#                     background-color: #d6e3e7;
-#                     color: #333;
-#                 }}
-#                 .logout-button:active{{
-#                     background-color: #d6e3e7;
-#                     color: #333;
-#                 }}
-
-#             </style>
-#             <div class="logout-button-container">
-#                 <div class="org-name-display"> {st.session_state.get("org_input", "Organization")} {ad}  </div>
-#                 <a href="?logout=1" class="logout-button">Log Out</a>
-#             </div>
-#         """)
 
         
 
@@ -390,107 +340,7 @@ html, body, [class*="css"] {
 </style>
 """, unsafe_allow_html=True)
 
-# NAVBAR_HTML = """
 
-# <style>
-# @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
-
-# html, body, [class*="css"] {{
-#     font-family: 'Poppins', sans-serif !important;
-# }}
-
-# .navbar (min-width: 740px){{
-# display: flex;
-#     justify-content: flex-end;
-#     padding: 20px 40px;
-#     font-size: 18px;
-#     flex-wrap: wrap;
-# }}
-
-# .navbar (max-width: 740px){{
-# display: flex;
-# flex-direction: column;
-# }}
-# .navbar a {{
-#     margin-left: 30px;
-#     color: black;
-#     text-decoration: none;
-# }}
-# .navbar a.active {{
-#     color: #084C61;
-#     font-weight: bold;
-#         }}
-# </style>
-
-# <div class="navbar">
-#   <a href="?page=home" class="{home_class}">Home</a>
-#   <a href="?page=self-assess" class="{self_class}">Self-Assess</a>
-#   <a href="?page=view-results" class="{results_class}">View Results</a>
-# </div>
-# """
-# st.html("""<style>
-#     /* ───── Remove header & padding on top ───── */
-#     [data-testid="stHeader"] {display: none;}
-#     [data-testid="stMainBlockContainer"] {padding-top: 1rem;}
-    
-#     /* ───── Hide overflowing navbar columns ───── */
-#     .st-emotion-cache-ocqkz7.eiemyj0 { /* Target navbar container */
-#         height: 35px; /* Adjust height for logo size */
-#         overflow: hidden;
-#     }
-    
-    
-#     /* ───── Move sidebar toggle to the right and replace SVG ───── */
-#     [data-testid="stSidebarCollapsedControl"] {
-#         position: fixed;
-#         right: 3rem;
-#     }
-#     [data-testid="stSidebarCollapsedControl"] svg {
-#         display: none;
-#     }
-    
-#     [data-testid="stSidebarCollapsedControl"]::before {
-#         content: "☰"; /* Hamburger menu icon */
-#         font-size: 24px;
-#         position: fixed;
-#         right: 3rem;
-#     }
-    
-    
-#     /* ───── Display sidebar button based on screen size ───── */
-#     @media (min-width: 640px) {
-#         [data-testid="stSidebarCollapsedControl"] {
-#             display: none;
-#         }
-#     }
-    
-#     @media (max-width: 639px) {
-#         [data-testid="stSidebarCollapsedControl"] {
-#             display: flex;
-#             justify-content: flex-end;  /* Align hamburger icon right */
-#         }
-#     }
-#     </style>""")
-
-# st.html("""
-# <style>
-# iframe {
-#     margin: 0 !important;
-#     padding: 0 !important;
-#     display: block;
-# }
-# </style>
-# """)
-
-# # Check current page
-# page = st.query_params.get("page", "home")
-# active_page = page.lower()
-# navbar = NAVBAR_HTML.format(
-#     home_class="active" if active_page == "home" else "",
-#     self_class="active" if active_page == "self-assess" else "",
-#     results_class="active" if active_page == "view-results" else "",
-# )
-# st.html(navbar)
      
 ASSESSMENTS = {
     "Environment, Health, and Safety": {
@@ -522,8 +372,8 @@ ASSESSMENTS = {
 if page == "self-assess":
     query = st.query_params
     for key in ["org", "user", "admin", "access"]:
-        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" else "user_email"):
-            st.session_state[f"{key}_input" if key != "user" else "user_email"] = query[key]
+        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
+            st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
 
     if not st.session_state.get("org_input"):
         st.session_state["org_input"] = cookies.get("org_input", "")
@@ -534,133 +384,7 @@ if page == "self-assess":
     # st.session_state.access_level = cookies.get("access_level")
     access_level = st.session_state.get("access_level", "")
 
-#     st.html("""
-# <style>
-# @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
 
-# html, body, [class*="css"] {
-#     font-family: 'Poppins', sans-serif !important;
-# }
-
-# .landing-container {
-#     padding: 3rem 4rem;
-#     display: flex;
-#     flex-direction: column;
-#     align-items: flex-start;
-#     position: relative;
-# }
-
-# .landing-title {
-#     font-size: 48px;
-#     font-weight: 800;
-#     color: #084C61;
-#     line-height: 1.1;
-# }
-
-# .landing-subtitle {
-#     margin-top: 0.5rem;
-#     font-size: 18px;
-# }
-
-# .button-grid {
-#     display: grid;
-#     grid-template-columns: repeat(3, minmax(30%, 1fr));
-#     gap: 1.2rem;
-#     margin-top: 2.5rem;
-#     z-index: 1;
-#     max-width: 100%;
-#     width: 100%;
-# }
-
-# @media (max-width: 768px) {
-#     .button-grid {
-#         grid-template-columns: 1fr;
-#     }
-
-#     .landing-title {
-#         font-size: 36px;
-#         text-align: center;
-#     }
-
-#     .landing-subtitle {
-#         text-align: center;
-#     }
-
-#     .landing-container {
-#         align-items: center;
-#         text-align: center;
-#         padding: 2rem;
-#     }
-# }
-
-
-
-# .custom-button {
-#     background-color: #084C61;
-#     color: white;
-#     font-weight: 600;
-#     font-size: .9rem;
-#     padding: 1rem 2rem;
-#     border: none;
-#     border-radius: 2rem;
-#     cursor: pointer;
-#     margin-right: 2px;
-#     transition: background-color 0.2s;
-#     text-align: center;
-#     text-decoration: none;
-#     min-width: 33.33%;
-#     max-width: 100%;
-# }
-
-
-# .custom-button:hover {
-#     background-color: #0d7084;
-# }
-
-
-# .faded-bg {
-#     position: absolute;
-#     right: 0;
-#     top: 0;
-#     opacity: 0.08;
-#     max-width: 100%;
-#     z-index: 0;
-# }
-
-# @media (max-width: 768px) {
-#     .landing-title {
-#         font-size: 36px;
-#         text-align: center;
-#     }
-#     .landing-subtitle {
-#         text-align: center;
-#     }
-#     .landing-container {
-#         align-items: center;
-#         text-align: center;
-#         padding: 2rem;
-#     }
-# }
-# </style>
-
-# <div class="landing-container">
-
-#     <h1 class="landing-title">Self-<br>Assessment</h1>
-#     <p class="landing-subtitle">Assess your organization.</p>
-
-#     <div class="button-grid">
-#         <a class="custom-button" href="?page=self-assess&variation=Youth+Development+and+Engagement">Youth Development and Engagement</a>
-#         <a class="custom-button" href="?page=self-assess&variation=Environment,+Health,+and+Safety">Environment, Health, and Safety</a>
-#         <a class="custom-button" href="?page=self-assess&variation=Families,+Schools,+and+Communities">Families, Schools, and Communities</a>
-#         <a class="custom-button" href="?page=self-assess&variation=Highly+Skilled+Personnel">Highly Skilled Personnel</a>
-#         <a class="custom-button" href="?page=self-assess&variation=Programming+and+Activities">Programming and Activities</a>
-#         <a class="custom-button" href="?page=self-assess&variation=Program+Management">Program Management</a>
-
-#     </div>
-
-#     <img src="https://i.imgur.com/8Q3M2NU.png" class="faded-bg" alt="Background Illustration"/>
-# </div>
-#     """)
     query_params = st.query_params
     if "variation" not in st.query_params:
         active_variation = ""
@@ -668,10 +392,12 @@ if page == "self-assess":
         active_variation = st.query_params["variation"]
 
     org_from_url = query_params.get("org", "").replace("+", " ")
-
+    
+    query = st.query_params
     for key in ["org", "user", "admin", "access"]:
-        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" else "user_email"):
-            st.session_state[f"{key}_input" if key != "user" else "user_email"] = query[key]
+        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
+            st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
+
 
 
     # Optionally restore it if missing from session
@@ -813,9 +539,11 @@ if page == "self-assess":
         # Set to session state (decode + replace + capitalize if needed)
         st.session_state["variation"] = unquote(query_params["variation"])
 
+    query = st.query_params
     for key in ["org", "user", "admin", "access"]:
-        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" else "user_email"):
-            st.session_state[f"{key}_input" if key != "user" else "user_email"] = query[key]
+        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
+            st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
+
 
     if not st.session_state.get("org_input"):
         st.session_state["org_input"] = cookies.get("org_input", "")
@@ -839,10 +567,12 @@ if page == "self-assess":
 
 
 elif page == "view-results":
+    
     query = st.query_params
     for key in ["org", "user", "admin", "access"]:
-        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" else "user_email"):
-            st.session_state[f"{key}_input" if key != "user" else "user_email"] = query[key]
+        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
+            st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
+
 
     if not st.session_state.get("org_input"):
         st.session_state["org_input"] = cookies.get("org_input", "")
@@ -1128,10 +858,12 @@ elif page == "view-results":
     if "variation" in query_params:
         # Set to session state (decode + replace + capitalize if needed)
         st.session_state["variation"] = unquote(query_params["variation"])
+    
     query = st.query_params
     for key in ["org", "user", "admin", "access"]:
-        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" else "user_email"):
-            st.session_state[f"{key}_input" if key != "user" else "user_email"] = query[key]
+        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
+            st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
+
 
     assessment = st.session_state.get("variation", None)
     if assessment:
