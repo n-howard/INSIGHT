@@ -605,12 +605,13 @@ if page == "self-assess":
     """)
 
     query_params = st.query_params
+    sync_query_to_session_and_cookies(query, cookies)
 
-    # if "variation" in query_params:
-    #     # Set to session state (decode + replace + capitalize if needed)
-    #     st.session_state["variation"] = unquote(query_params["variation"])
+    if "variation" in query_params:
+        # Set to session state (decode + replace + capitalize if needed)
+        st.session_state["variation"] = unquote(query_params["variation"])
 
-    #     query = st.query_params
+        query = st.query_params
     #     for key in ["org", "user", "admin", "access"]:
     #         if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
     #             st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
@@ -624,7 +625,7 @@ if page == "self-assess":
 
     #     if cookies_changed:
     #         cookies.save()
-    sync_query_to_session_and_cookies(query, cookies)
+        sync_query_to_session_and_cookies(query, cookies)
     if not st.session_state.get("org_input"):
         st.session_state["org_input"] = cookies.get("org_input", "")
     # Access the value stored in session state
@@ -637,6 +638,8 @@ if page == "self-assess":
     # Default fallback or message
     assessment = st.session_state.get("variation", None)
     if assessment:
+        query = st.query_params
+        sync_query_to_session_and_cookies(query, cookies)
         selfSes = assessment + " Self-Assessment"
         thisStyle = f"""<h3 style='text-align: center; font-size: 35px; font-weight: 600; font-family: Poppins;'>{selfSes}</h3>"""
         st.html(
