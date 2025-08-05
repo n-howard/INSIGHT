@@ -408,7 +408,7 @@ else:
                     st.session_state["access"] = oregonask_access
                     cookies["access_level"] = str(oregonask_access)
                     cookies.save()
-                    st.switch_page("pages/home.py")
+                    st.switch_page("pages/stylable_home.py")
                 else:
                     st.error("Please enter an organization.")
             else:

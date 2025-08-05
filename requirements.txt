@@ -16,3 +16,4 @@ streamlit-authenticator
 bcrypt
 supabase
 pytz
+streamlit-extras
