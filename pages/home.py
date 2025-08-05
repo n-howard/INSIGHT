@@ -111,7 +111,6 @@ query = st.query_params
 def sync_query_to_session_and_cookies(query, cookies, allow_logout=True):
     cookies_changed = False
 
-    # Logout handling
     if allow_logout and query.get("logout") == "1":
         for key in [
             "org_input",
@@ -127,7 +126,6 @@ def sync_query_to_session_and_cookies(query, cookies, allow_logout=True):
         st.success("You have been logged out.")
         st.switch_page("app.py")
 
-    # Keys to sync from query → session → cookies
     key_map = {
         "org": "org_input",
         "user": "user_email",
@@ -138,14 +136,23 @@ def sync_query_to_session_and_cookies(query, cookies, allow_logout=True):
     }
 
     for qkey, skey in key_map.items():
-        qval = query.get(qkey)
-        if qval and not st.session_state.get(skey):
-            st.session_state[skey] = qval
-            cookies[skey] = qval
+        query_val = query.get(qkey)
+        session_val = st.session_state.get(skey)
+        cookie_val = cookies.get(skey)
+
+        if query_val and not session_val:
+            # Use query value if available and session is empty
+            st.session_state[skey] = query_val
+            cookies[skey] = query_val
             cookies_changed = True
+
+        elif not session_val and cookie_val:
+            # Restore session from cookies if query param is missing
+            st.session_state[skey] = cookie_val
 
     if cookies_changed:
         cookies.save()
+
 
 
 # --- LOGOUT BUTTON ---
