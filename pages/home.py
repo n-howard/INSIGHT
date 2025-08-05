@@ -389,7 +389,11 @@ if page == "self-assess":
     for key in ["org", "user", "admin", "access"]:
         if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
             st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
-    
+    # Ensure session values from query are persisted in cookies
+    for key in ["org_input", "site_input", "admin_input", "access_level", "user_email"]:
+        if key in st.session_state:
+            cookies[key] = st.session_state[key]
+    cookies.save()
 
     if not st.session_state.get("org_input"):
         st.session_state["org_input"] = cookies.get("org_input", "")
@@ -557,7 +561,11 @@ if page == "self-assess":
         for key in ["org", "user", "admin", "access"]:
             if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
                 st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
-
+        # Ensure session values from query are persisted in cookies
+    for key in ["org_input", "site_input", "admin_input", "access_level", "user_email"]:
+        if key in st.session_state:
+            cookies[key] = st.session_state[key]
+    cookies.save()
 
     if not st.session_state.get("org_input"):
         st.session_state["org_input"] = cookies.get("org_input", "")
@@ -586,7 +594,11 @@ elif page == "view-results":
     for key in ["org", "user", "admin", "access"]:
         if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
             st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
-
+    # Ensure session values from query are persisted in cookies
+    for key in ["org_input", "site_input", "admin_input", "access_level", "user_email"]:
+        if key in st.session_state:
+            cookies[key] = st.session_state[key]
+    cookies.save()
 
     if not st.session_state.get("org_input"):
         st.session_state["org_input"] = cookies.get("org_input", "")
@@ -751,10 +763,25 @@ elif page == "view-results":
         for key in ["org", "user", "admin", "access"]:
             if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
                 st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
-
+        # Ensure session values from query are persisted in cookies
+        for key in ["org_input", "site_input", "admin_input", "access_level", "user_email"]:
+            if key in st.session_state:
+                cookies[key] = st.session_state[key]
+        cookies.save()
 
     assessment = st.session_state.get("variation", None)
     if assessment:
+        query = st.query_params
+        for key in ["org", "user", "admin", "access"]:
+            if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
+                st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
+    
+        # Ensure session values from query are persisted in cookies
+        for key in ["org_input", "site_input", "admin_input", "access_level", "user_email"]:
+            if key in st.session_state:
+                cookies[key] = st.session_state[key]
+        cookies.save()
+    
     #     title = assessment + " Results"
     #     thisStyle = f"""<h3 style='text-align: center; font-size: 35px; font-weight: 600; font-family: Poppins;'>{title}</h3>"""
     #     st.html(
