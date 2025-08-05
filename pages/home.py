@@ -825,7 +825,22 @@ elif page == "view-results":
     </div>
     """)
 
-    query_params = st.query_params
+    query = st.query_params
+
+    # ✅ Always run this first to restore session state
+    sync_query_to_session_and_cookies(query, cookies)
+
+    # Now safe to access restored values
+    variation = st.session_state.get("variation", "")
+    org_input = st.session_state.get("org_input", "")
+    admin_input = st.session_state.get("admin_input", "")
+    access_level = st.session_state.get("access_level", "")
+    is_admin = admin_input  # Or add your boolean logic if needed
+
+    # ⛔ Redirect early only if org is still missing after sync
+    if not org_input:
+        st.warning("Please enter your organization name on the main page.")
+        st.switch_page("app.py")
 
     if "variation" in query_params:
         # Set to session state (decode + replace + capitalize if needed)
@@ -886,9 +901,9 @@ elif page == "view-results":
         access_level = st.session_state.get("access_level", "")
 
 
-        if not org_input:
-            st.warning("Please enter your organization name on the main page.")
-            st.switch_page("app.py")
+        # if not org_input:
+        #     st.warning("Please enter your organization name on the main page.")
+        #     st.switch_page("app.py")
     
         # Load raw data and headers for the specific organization.
         raw_data = sheet.get_all_values()
