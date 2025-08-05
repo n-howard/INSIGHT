@@ -396,18 +396,18 @@ if page == "self-assess":
     user_email = st.session_state.get("user_email", "")
 
 
-    query_params = st.query_params
-    if "variation" not in st.query_params:
-        active_variation = ""
-    else:
-        active_variation = st.query_params["variation"]
+    # query_params = st.query_params
+    # if "variation" not in st.query_params:
+    #     active_variation = ""
+    # else:
+    #     active_variation = st.query_params["variation"]
 
-    org_from_url = query_params.get("org", "").replace("+", " ")
+    # org_from_url = query_params.get("org", "").replace("+", " ")
     
-    query = st.query_params
-    for key in ["org", "user", "admin", "access"]:
-        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
-            st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
+    # query = st.query_params
+    # for key in ["org", "user", "admin", "access"]:
+    #     if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
+    #         st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
 
 
 
@@ -550,10 +550,10 @@ if page == "self-assess":
         # Set to session state (decode + replace + capitalize if needed)
         st.session_state["variation"] = unquote(query_params["variation"])
 
-    query = st.query_params
-    for key in ["org", "user", "admin", "access"]:
-        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
-            st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
+        query = st.query_params
+        for key in ["org", "user", "admin", "access"]:
+            if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
+                st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
 
 
     if not st.session_state.get("org_input"):
@@ -601,11 +601,11 @@ elif page == "view-results":
     else:
         active_variation = st.query_params["variation"]
 
-    org_from_url = query_params.get("org", "").replace("+", " ")
+    # org_from_url = query_params.get("org", "").replace("+", " ")
 
-    # Optionally restore it if missing from session
-    if not st.session_state.get("org_input") and org_from_url:
-        st.session_state["org_input"] = org_from_url
+    # # Optionally restore it if missing from session
+    # if not st.session_state.get("org_input") and org_from_url:
+    #     st.session_state["org_input"] = org_from_url
 
     # Define all your categories
     categories = [
@@ -744,10 +744,10 @@ elif page == "view-results":
         # Set to session state (decode + replace + capitalize if needed)
         st.session_state["variation"] = unquote(query_params["variation"])
     
-    query = st.query_params
-    for key in ["org", "user", "admin", "access"]:
-        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
-            st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
+        query = st.query_params
+        for key in ["org", "user", "admin", "access"]:
+            if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
+                st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
 
 
     assessment = st.session_state.get("variation", None)
@@ -763,13 +763,14 @@ elif page == "view-results":
         client = gspread.authorize(creds)
         sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
         org_input = cookies.get("org_input")
-        org_name = cookies.get("org_input")
+        torg_namet = cookies.get("org_input")
         if not st.session_state.get("org_input"):
-            st.session_state["org_input"] = org_name
+            st.session_state["org_input"] = torg_namet
         # Access the value stored in session state
         org_input = st.session_state.get("org_input", "")
         # st.session_state.admin_input = cookies.get("admin_level")
         admin_input = st.session_state.get("admin_input", "")
+        is_admin = admin_input
         # st.session_state.access_level = cookies.get("access_level")
         access_level = st.session_state.get("access_level", "")
 
