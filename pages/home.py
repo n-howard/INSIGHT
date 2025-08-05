@@ -140,8 +140,9 @@ def sync_query_to_session_and_cookies(query, cookies, allow_logout=True):
         query_val = query.get(qkey)
         session_val = st.session_state.get(skey)
         cookie_val = cookies.get(skey)
-
-        if query_val is not None:
+        if session_val != "" and session_val!= None:
+            continue
+        elif query_val is not None:
             # Prioritize query param if provided, overwrite session and cookie
             if session_val != query_val:
                 st.session_state[skey] = query_val
