@@ -11,6 +11,7 @@ from streamlit_cookies_manager import EncryptedCookieManager
 import random
 import uuid
 import re
+import time
 
 st.set_page_config(page_title="INSIGHT", page_icon="./oask_short_logo.png", layout="wide")
 # st.logo("./oask_light_mode_tagline_2.png", size="large", link="https://oregonask.org/")
@@ -883,11 +884,8 @@ elif page == "view-results":
     admin_input = st.session_state.get("admin_input", "")
     access_level = st.session_state.get("access_level", "")
     is_admin = admin_input  # Or add your boolean logic if needed
-
+    time.sleep(3)
     if not st.session_state.get("org_input"):
-        if not st.session_state["org_checked_once"]:
-            st.session_state["org_checked_once"] = True
-        else:
             st.warning("Please enter your organization name on the main page.")
             st.switch_page("app.py")
 
