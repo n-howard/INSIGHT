@@ -206,11 +206,11 @@ iframe {
 # Check current page
 page = st.query_params.get("page", "home")
 active_page = page.lower()
-navbar = NAVBAR_HTML.format(
-    home_class="active" if active_page == "home" else "",
-    self_class="active" if active_page == "self-assess" else "",
-    results_class="active" if active_page == "view-results" else "",
-)
+# navbar = NAVBAR_HTML.format(
+#     home_class="active" if active_page == "home" else "",
+#     self_class="active" if active_page == "self-assess" else "",
+#     results_class="active" if active_page == "view-results" else "",
+# )
 # st.html(navbar)
 logout_container = st.container()
 col1, _, col2 = st.columns([3,5, 2])
