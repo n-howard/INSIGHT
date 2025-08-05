@@ -479,11 +479,11 @@ if page == "self-assess":
     # user_email = st.session_state.get("user_email", "")
 
 
-    # query_params = st.query_params
-    # if "variation" not in st.query_params:
-    #     active_variation = ""
-    # else:
-    #     active_variation = st.query_params["variation"]
+    query_params = st.query_params
+    if "variation" not in st.query_params:
+        active_variation = ""
+    else:
+        active_variation = st.query_params["variation"]
 
     org_from_url = query_params.get("org", "").replace("+", " ")
     
