@@ -407,19 +407,27 @@ if page == "self-assess":
     user_email = st.session_state.get("user_email", "")
 
 
-    # query_params = st.query_params
-    # if "variation" not in st.query_params:
-    #     active_variation = ""
-    # else:
-    #     active_variation = st.query_params["variation"]
+    query_params = st.query_params
+    if "variation" not in st.query_params:
+        active_variation = ""
+    else:
+        active_variation = st.query_params["variation"]
 
     org_from_url = query_params.get("org", "").replace("+", " ")
     
-    # query = st.query_params
-    # for key in ["org", "user", "admin", "access"]:
-    #     if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
-    #         st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
+    query = st.query_params
+    for key in ["org", "user", "admin", "access"]:
+        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
+            st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
+    # ✅ Only one save block per rerun, after all updates
+    cookies_changed = False
+    for key in ["org_input", "site_input", "admin_input", "access_level", "user_email"]:
+        if key in st.session_state and cookies.get(key) != st.session_state[key]:
+            cookies[key] = st.session_state[key]
+            cookies_changed = True
 
+    if cookies_changed:
+        cookies.save()
 
 
     # Optionally restore it if missing from session
