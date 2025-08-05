@@ -107,9 +107,9 @@ if st.query_params.get("logout") == "1":
     st.switch_page("app.py")
 
 query = st.query_params
-    for key in ["org", "user", "admin", "access"]:
-        if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
-            st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
+for key in ["org", "user", "admin", "access"]:
+    if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
+        st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
 # --- LOGOUT BUTTON ---
 
 
