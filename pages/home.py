@@ -887,7 +887,6 @@ elif page == "view-results":
     if not st.session_state.get("org_input"):
         if not st.session_state["org_checked_once"]:
             st.session_state["org_checked_once"] = True
-            st.rerun()  # Give cookies/query a chance to restore
         else:
             st.warning("Please enter your organization name on the main page.")
             st.switch_page("app.py")
