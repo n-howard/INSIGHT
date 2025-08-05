@@ -75,7 +75,8 @@ if not st.session_state.get("user_email"):
 st.session_state["is_admin"] = str(st.session_state.get("admin_input", "")).strip().lower() == "true"
 st.session_state["access"] = str(st.session_state.get("access_level", "")).strip().lower() == "true"
 
-
+if "org_checked_once" not in st.session_state:
+    st.session_state["org_checked_once"] = False
 
 if "is_admin" not in st.session_state:
     st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
@@ -466,6 +467,19 @@ if page == "self-assess":
     query = st.query_params
     sync_query_to_session_and_cookies(query, cookies)
 
+
+    org_input = st.session_state.get("org_input")
+
+    if not org_input:
+        if not st.session_state["org_checked_once"]:
+            # First run – give JS time to inject localStorage via query params
+            st.session_state["org_checked_once"] = True
+            st.stop()  # Do nothing on first run
+        else:
+            # Second run – still no org_input → time to redirect
+            st.warning("Organization not found. Redirecting to main page.")
+            st.markdown('<meta http-equiv="refresh" content="2;URL=app.py">', unsafe_allow_html=True)
+            st.stop()
     org_input = st.session_state.get("org_input", "")
     admin_input = st.session_state.get("admin_input", "")
     access_level = st.session_state.get("access_level", "")
@@ -521,6 +535,19 @@ if page == "self-assess":
     # if cookies_changed:
     #     cookies.save()
     sync_query_to_session_and_cookies(query, cookies)
+
+    org_input = st.session_state.get("org_input")
+
+    if not org_input:
+        if not st.session_state["org_checked_once"]:
+            # First run – give JS time to inject localStorage via query params
+            st.session_state["org_checked_once"] = True
+            st.stop()  # Do nothing on first run
+        else:
+            # Second run – still no org_input → time to redirect
+            st.warning("Organization not found. Redirecting to main page.")
+            st.markdown('<meta http-equiv="refresh" content="2;URL=app.py">', unsafe_allow_html=True)
+            st.stop()
 
     # Optionally restore it if missing from session
     if not st.session_state.get("org_input") and org_from_url:
@@ -658,6 +685,20 @@ if page == "self-assess":
     query_params = st.query_params
     sync_query_to_session_and_cookies(query, cookies)
 
+
+    org_input = st.session_state.get("org_input")
+
+    if not org_input:
+        if not st.session_state["org_checked_once"]:
+            # First run – give JS time to inject localStorage via query params
+            st.session_state["org_checked_once"] = True
+            st.stop()  # Do nothing on first run
+        else:
+            # Second run – still no org_input → time to redirect
+            st.warning("Organization not found. Redirecting to main page.")
+            st.markdown('<meta http-equiv="refresh" content="2;URL=app.py">', unsafe_allow_html=True)
+            st.stop()
+
     if "variation" in query_params:
         # Set to session state (decode + replace + capitalize if needed)
         st.session_state["variation"] = unquote(query_params["variation"])
@@ -677,6 +718,18 @@ if page == "self-assess":
     #     if cookies_changed:
     #         cookies.save()
         sync_query_to_session_and_cookies(query, cookies)
+    org_input = st.session_state.get("org_input")
+
+    if not org_input:
+        if not st.session_state["org_checked_once"]:
+            # First run – give JS time to inject localStorage via query params
+            st.session_state["org_checked_once"] = True
+            st.stop()  # Do nothing on first run
+        else:
+            # Second run – still no org_input → time to redirect
+            st.warning("Organization not found. Redirecting to main page.")
+            st.markdown('<meta http-equiv="refresh" content="2;URL=app.py">', unsafe_allow_html=True)
+            st.stop()
     if not st.session_state.get("org_input"):
         st.session_state["org_input"] = cookies.get("org_input", "")
     # Access the value stored in session state
@@ -691,6 +744,19 @@ if page == "self-assess":
     if assessment:
         query = st.query_params
         sync_query_to_session_and_cookies(query, cookies)
+
+        org_input = st.session_state.get("org_input")
+
+        if not org_input:
+            if not st.session_state["org_checked_once"]:
+                # First run – give JS time to inject localStorage via query params
+                st.session_state["org_checked_once"] = True
+                st.stop()  # Do nothing on first run
+            else:
+                # Second run – still no org_input → time to redirect
+                st.warning("Organization not found. Redirecting to main page.")
+                st.markdown('<meta http-equiv="refresh" content="2;URL=app.py">', unsafe_allow_html=True)
+                st.stop()
         selfSes = assessment + " Self-Assessment"
         thisStyle = f"""<h3 style='text-align: center; font-size: 35px; font-weight: 600; font-family: Poppins;'>{selfSes}</h3>"""
         st.html(
@@ -716,6 +782,18 @@ elif page == "view-results":
     # if cookies_changed:
     #     cookies.save()
     sync_query_to_session_and_cookies(query, cookies)
+    org_input = st.session_state.get("org_input")
+
+    if not org_input:
+        if not st.session_state["org_checked_once"]:
+            # First run – give JS time to inject localStorage via query params
+            st.session_state["org_checked_once"] = True
+            st.stop()  # Do nothing on first run
+        else:
+            # Second run – still no org_input → time to redirect
+            st.warning("Organization not found. Redirecting to main page.")
+            st.markdown('<meta http-equiv="refresh" content="2;URL=app.py">', unsafe_allow_html=True)
+            st.stop()
     if not st.session_state.get("org_input"):
         st.session_state["org_input"] = cookies.get("org_input", "")
     # Access the value stored in session state
@@ -871,8 +949,21 @@ elif page == "view-results":
 
     query = st.query_params
 
-    # ✅ Always run this first to restore session state
+    # Always run this first to restore session state
     sync_query_to_session_and_cookies(query, cookies)
+
+    org_input = st.session_state.get("org_input")
+
+    if not org_input:
+        if not st.session_state["org_checked_once"]:
+            # First run – give JS time to inject localStorage via query params
+            st.session_state["org_checked_once"] = True
+            st.stop()  # Do nothing on first run
+        else:
+            # Second run – still no org_input → time to redirect
+            st.warning("Organization not found. Redirecting to main page.")
+            st.markdown('<meta http-equiv="refresh" content="2;URL=app.py">', unsafe_allow_html=True)
+            st.stop()
 
     # Now safe to access restored values
     variation = st.session_state.get("variation", "")
@@ -906,6 +997,19 @@ elif page == "view-results":
         #     cookies.save()
         sync_query_to_session_and_cookies(query, cookies)
 
+        org_input = st.session_state.get("org_input")
+
+        if not org_input:
+            if not st.session_state["org_checked_once"]:
+                # First run – give JS time to inject localStorage via query params
+                st.session_state["org_checked_once"] = True
+                st.stop()  # Do nothing on first run
+            else:
+                # Second run – still no org_input → time to redirect
+                st.warning("Organization not found. Redirecting to main page.")
+                st.markdown('<meta http-equiv="refresh" content="2;URL=app.py">', unsafe_allow_html=True)
+                st.stop()
+
     assessment = st.session_state.get("variation", None)
     if assessment:
         query = st.query_params
@@ -923,12 +1027,26 @@ elif page == "view-results":
         # if cookies_changed:
         #     cookies.save()
         sync_query_to_session_and_cookies(query, cookies)
+
+        org_input = st.session_state.get("org_input")
+
+        if not org_input:
+            if not st.session_state["org_checked_once"]:
+                # First run – give JS time to inject localStorage via query params
+                st.session_state["org_checked_once"] = True
+                st.stop()  # Do nothing on first run
+            else:
+                # Second run – still no org_input → time to redirect
+                st.warning("Organization not found. Redirecting to main page.")
+                st.markdown('<meta http-equiv="refresh" content="2;URL=app.py">', unsafe_allow_html=True)
+                st.stop()
     #     title = assessment + " Results"
     #     thisStyle = f"""<h3 style='text-align: center; font-size: 35px; font-weight: 600; font-family: Poppins;'>{title}</h3>"""
     #     st.html(
     #         thisStyle
     #     )
                 # Authorize and load the sheet
+        
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
         creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
         client = gspread.authorize(creds)
@@ -945,7 +1063,7 @@ elif page == "view-results":
         # st.session_state.access_level = cookies.get("access_level")
         access_level = st.session_state.get("access_level", "")
 
-
+        
         # if not org_input:
         #     st.warning("Please enter your organization name on the main page.")
         #     st.switch_page("app.py")
@@ -1034,7 +1152,8 @@ elif page == "view-results":
             if Program_Name not in df.columns:
                 st.error("Column Program Name not found in the data.")
                 st.stop()
-
+            
+            
             # Clean both Program Name column and org_input for flexible comparison
             df["Program Name_clean"] = df[Program_Name].str.strip().str.lower()
             org_clean = org_input.strip().lower()
