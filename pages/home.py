@@ -852,7 +852,7 @@ elif page == "view-results":
 
     query = st.query_params
 
-    # ✅ Always run this first to restore session state
+    # Always run this first to restore session state
     sync_query_to_session_and_cookies(query, cookies)
 
     # Now safe to access restored values
@@ -862,10 +862,9 @@ elif page == "view-results":
     access_level = st.session_state.get("access_level", "")
     is_admin = admin_input  # Or add your boolean logic if needed
 
-    # ⛔ Redirect early only if org is still missing after sync
+
     if not org_input:
-        st.warning("Please enter your organization name on the main page.")
-        st.switch_page("app.py")
+        org_input = st.text_input("Please reenter your organization name.")
 
     if "variation" in query_params:
         # Set to session state (decode + replace + capitalize if needed)
