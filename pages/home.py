@@ -125,6 +125,7 @@ def sync_query_to_session_and_cookies(query, cookies, allow_logout=True):
         cookies.save()
         st.success("You have been logged out.")
         st.switch_page("app.py")
+        return  # Exit early to prevent additional processing
 
     key_map = {
         "org": "org_input",
@@ -140,17 +141,19 @@ def sync_query_to_session_and_cookies(query, cookies, allow_logout=True):
         session_val = st.session_state.get(skey)
         cookie_val = cookies.get(skey)
 
-        if query_val and not session_val:
-            # Use query value if available and session is empty
-            st.session_state[skey] = query_val
-            cookies[skey] = query_val
-            cookies_changed = True
+        if query_val is not None:
+            # Prioritize query param if provided, overwrite session and cookie
+            if session_val != query_val:
+                st.session_state[skey] = query_val
+            if cookie_val != query_val:
+                cookies[skey] = query_val
+                cookies_changed = True
 
-        elif not session_val and cookie_val:
-            # Restore session from cookies if query param is missing
+        elif session_val is None and cookie_val is not None:
+            # Restore session from cookie if missing in session and query
             st.session_state[skey] = cookie_val
-        elif not query_val and session_val:
-            query[skey] = session_val
+
+        # Do not clear session or cookie if neither is present
 
     if cookies_changed:
         cookies.save()
