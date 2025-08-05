@@ -800,8 +800,8 @@ elif page == "view-results":
                 cookies[key] = st.session_state[key]
                 cookies_changed = True
 
-if cookies_changed:
-    cookies.save()
+        if cookies_changed:
+            cookies.save()
     #     title = assessment + " Results"
     #     thisStyle = f"""<h3 style='text-align: center; font-size: 35px; font-weight: 600; font-family: Poppins;'>{title}</h3>"""
     #     st.html(
