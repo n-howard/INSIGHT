@@ -93,7 +93,7 @@ else:
     ad = "Staff"
 
 if st.query_params.get("logout") == "1":
-    for key in ["org_input", "site_input", "admin_input", "google_token", "user_info", "access_level"]:
+    for key in ["org_input", "site_input", "admin_input", "user_info", "access_level"]:
         st.session_state.pop(key, None)
 
     cookies["org_input"] = ""
@@ -108,47 +108,47 @@ if st.query_params.get("logout") == "1":
 # --- LOGOUT BUTTON ---
 
 
-NAVBAR_HTML = """
+# NAVBAR_HTML = """
 
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
+# <style>
+# @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
 
-html, body, [class*="css"] {{
-    font-family: 'Poppins', sans-serif !important;
-}}
-
-.navbar{{
-display: flex;
-    justify-content: center;
-    # padding: 20px 40px;
-    font-size: 18px;
-    flex-wrap: nowrap;
-    
-}}
-
-# .navbar (max-width: 740px){{
-# display: flex;
-# flex-direction: column;
+# html, body, [class*="css"] {{
+#     font-family: 'Poppins', sans-serif !important;
 # }}
-.navbar a {{
-    margin-left: 30px;
-    color: black;
-    text-decoration: none;
-}}
-.navbar a.active {{
-    color: #084C61;
-    font-weight: bold;
-        }}
+
+# .navbar{{
+# display: flex;
+#     justify-content: center;
+#     # padding: 20px 40px;
+#     font-size: 18px;
+#     flex-wrap: nowrap;
+    
+# }}
+
+# # .navbar (max-width: 740px){{
+# # display: flex;
+# # flex-direction: column;
+# # }}
+# .navbar a {{
+#     margin-left: 30px;
+#     color: black;
+#     text-decoration: none;
+# }}
+# .navbar a.active {{
+#     color: #084C61;
+#     font-weight: bold;
+#         }}
 
 
-</style>
+# </style>
 
-<div class="navbar">
-  <a href="?page=home" class="{home_class}">Home</a>
-  <a href="?page=self-assess" class="{self_class}">Self-Assess</a>
-  <a href="?page=view-results" class="{results_class}">View Results</a>
-</div>
-"""
+# <div class="navbar">
+#   <a href="?page=home" class="{home_class}">Home</a>
+#   <a href="?page=self-assess" class="{self_class}">Self-Assess</a>
+#   <a href="?page=view-results" class="{results_class}">View Results</a>
+# </div>
+# """
 st.html("""<style>
     /* ───── Remove header & padding on top ───── */
     [data-testid="stHeader"] {display: none;}
@@ -203,17 +203,17 @@ iframe {
 </style>
 """)
 
-# Check current page
-page = st.query_params.get("page", "home")
-active_page = page.lower()
-navbar = NAVBAR_HTML.format(
-    home_class="active" if active_page == "home" else "",
-    self_class="active" if active_page == "self-assess" else "",
-    results_class="active" if active_page == "view-results" else "",
-)
-# st.html(navbar)
-logout_container = st.container()
-col1, _, col2 = st.columns([3,5, 2])
+# # Check current page
+# page = st.query_params.get("page", "home")
+# active_page = page.lower()
+# navbar = NAVBAR_HTML.format(
+#     home_class="active" if active_page == "home" else "",
+#     self_class="active" if active_page == "self-assess" else "",
+#     results_class="active" if active_page == "view-results" else "",
+# )
+# # st.html(navbar)
+# logout_container = st.container()
+# col1, _, col2 = st.columns([3,5, 2])
 NAVBAR_HTML = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
@@ -311,9 +311,9 @@ html, body, [class*="css"] {{
 <div class="fixed-header">
     <div class="header-content">
         <div class="navbar">
-            <a href="?page=home&org={st.session_state.get("org_input", "")}&user={st.session_state["user_email"]}&admin={st.session_state["admin_input"]}&access={st.session_state["access_level"]}" class="{ 'active' if active_page == 'home' else '' }">Home</a>
-            <a href="?page=self-assess&org={st.session_state.get("org_input", "")}&user={st.session_state["user_email"]}&admin={st.session_state["admin_input"]}&access={st.session_state["access_level"]}" class="{ 'active' if active_page == 'self-assess' else '' }">Self-Assess</a>
-            <a href="?page=view-results&org={st.session_state.get("org_input", "")}&user={st.session_state["user_email"]}&admin={st.session_state["admin_input"]}&access={st.session_state["access_level"]}" class="{ 'active' if active_page == 'view-results' else '' }">View Results</a>
+            <a href="?page=home&org={st.session_state.get("org_input", "")}&user={st.session_state.get("user_email")}&admin={st.session_state.get("admin_input")}&access={st.session_state.get("access_level")}" class="{ 'active' if active_page == 'home' else '' }">Home</a>
+            <a href="?page=self-assess&org={st.session_state.get("org_input", "")}&user={st.session_state.get("user_email")}&admin={st.session_state.get("admin_input")}&access={st.session_state.get("access_level")}" class="{ 'active' if active_page == 'self-assess' else '' }">Self-Assess</a>
+            <a href="?page=view-results&org={st.session_state.get("org_input", "")}&user={st.session_state.get("user_email")}&admin={st.session_state.get("admin_input")}&access={st.session_state.get("access_level")}" class="{ 'active' if active_page == 'view-results' else '' }">View Results</a>
         </div>
         <div class="logout-section">
             <div class="org-name-display">{st.session_state.get("org_input", "Organization")} {ad}</div>
@@ -322,6 +322,18 @@ html, body, [class*="css"] {{
     </div>
 </div>
 """
+
+# Check current page
+page = st.query_params.get("page", "home")
+active_page = page.lower()
+navbar = NAVBAR_HTML.format(
+    home_class="active" if active_page == "home" else "",
+    self_class="active" if active_page == "self-assess" else "",
+    results_class="active" if active_page == "view-results" else "",
+)
+# st.html(navbar)
+logout_container = st.container()
+col1, _, col2 = st.columns([3,5, 2])
 
 # Add top padding so content isn't hidden
 st.markdown("<div style='height: 90px;'></div>", unsafe_allow_html=True)
@@ -374,15 +386,14 @@ if page == "self-assess":
     for key in ["org", "user", "admin", "access"]:
         if query.get(key) and not st.session_state.get(f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"):
             st.session_state[f"{key}_input" if key != "user" and key != "access" else "user_email" if key == "user" else "access_level"] = query[key]
+    
 
     if not st.session_state.get("org_input"):
         st.session_state["org_input"] = cookies.get("org_input", "")
-    # Access the value stored in session state
     org_input = st.session_state.get("org_input", "")
-    # st.session_state.admin_input = cookies.get("admin_level")
     admin_input = st.session_state.get("admin_input", "")
-    # st.session_state.access_level = cookies.get("access_level")
     access_level = st.session_state.get("access_level", "")
+    user_email = st.session_state.get("user_email", "")
 
 
     query_params = st.query_params
@@ -419,7 +430,7 @@ if page == "self-assess":
         # href = f"?page=self-assess&variation={cat.replace(' ', '+').replace(',', '%2C')}"
         variation = cat.replace(" ", "+").replace(",", "%2C")
         org = st.session_state.get("org_input", "")
-        href = f"?page=self-assess&variation={variation}&org={st.session_state.get("org_input", "")}&user={st.session_state["user_email"]}&admin={st.session_state["admin_input"]}&access={st.session_state["access_level"]}"
+        href = f"?page=self-assess&variation={variation}&org={st.session_state.get("org_input", "")}&user={st.session_state.get("user_email")}&admin={st.session_state.get("admin_input")}&access={st.session_state.get("access_level")}"
         if cat == active_variation:
             class_name = "custom-button active"
         else:
@@ -583,133 +594,7 @@ elif page == "view-results":
     # st.session_state.access_level = cookies.get("access_level")
     access_level = st.session_state.get("access_level", "")
     
-#     st.html("""
-# <style>
-# @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
 
-# html, body, [class*="css"] {
-#     font-family: 'Poppins', sans-serif !important;
-# }
-
-# .landing-container {
-#     padding: 3rem 4rem;
-#     display: flex;
-#     flex-direction: column;
-#     align-items: flex-start;
-#     position: relative;
-# }
-
-# .landing-title {
-#     font-size: 48px;
-#     font-weight: 800;
-#     color: #084C61;
-#     line-height: 1.1;
-# }
-
-# .landing-subtitle {
-#     margin-top: 0.5rem;
-#     font-size: 18px;
-# }
-
-# .button-grid {
-#     display: grid;
-#     grid-template-columns: repeat(3, minmax(30%, 1fr));
-#     gap: 1.2rem;
-#     margin-top: 2.5rem;
-#     z-index: 1;
-#     max-width: 100%;
-#     width: 100%;
-# }
-
-# @media (max-width: 768px) {
-#     .button-grid {
-#         grid-template-columns: 1fr;
-#     }
-
-#     .landing-title {
-#         font-size: 36px;
-#         text-align: center;
-#     }
-
-#     .landing-subtitle {
-#         text-align: center;
-#     }
-
-#     .landing-container {
-#         align-items: center;
-#         text-align: center;
-#         padding: 2rem;
-#     }
-# }
-
-
-
-# .custom-button {
-#     background-color: #084C61;
-#     color: white;
-#     font-weight: 600;
-#     font-size: .9rem;
-#     padding: 1rem 2rem;
-#     border: none;
-#     border-radius: 2rem;
-#     cursor: pointer;
-#     margin-right: 2px;
-#     transition: background-color 0.2s;
-#     text-align: center;
-#     text-decoration: none;
-#     min-width: 33.33%;
-#     max-width: 100%;
-# }
-
-
-# .custom-button:hover {
-#     background-color: #0d7084;
-# }
-
-
-# .faded-bg {
-#     position: absolute;
-#     right: 0;
-#     top: 0;
-#     opacity: 0.08;
-#     max-width: 100%;
-#     z-index: 0;
-# }
-
-# @media (max-width: 768px) {
-#     .landing-title {
-#         font-size: 36px;
-#         text-align: center;
-#     }
-#     .landing-subtitle {
-#         text-align: center;
-#     }
-#     .landing-container {
-#         align-items: center;
-#         text-align: center;
-#         padding: 2rem;
-#     }
-# }
-# </style>
-
-# <div class="landing-container">
-
-#     <h1 class="landing-title">Results<br>Dashboard</h1>
-#     <p class="landing-subtitle">View results.</p>
-
-#     <div class="button-grid">
-#         <a class="custom-button" href="?page=view-results&variation=Youth+Development+and+Engagement">Youth Development and Engagement</a>
-#         <a class="custom-button" href="?page=view-results&variation=Environment,+Health,+and+Safety">Environment, Health, and Safety</a>
-#         <a class="custom-button" href="?page=view-results&variation=Families,+Schools,+and+Communities">Families, Schools, and Communities</a>
-#         <a class="custom-button" href="?page=view-results&variation=Highly+Skilled+Personnel">Highly Skilled Personnel</a>
-#         <a class="custom-button" href="?page=view-results&variation=Programming+and+Activities">Programming and Activities</a>
-#         <a class="custom-button" href="?page=view-results&variation=Program+Management">Program Management</a>
-#     </div>
-
-#     <img src="https://i.imgur.com/8Q3M2NU.png" class="faded-bg" alt="Background Illustration"/>
-# </div>
-
-#     """)
     query_params = st.query_params
     if "variation" not in st.query_params:
         active_variation = ""
@@ -738,7 +623,7 @@ elif page == "view-results":
         # href = f"?page=view-results&variation={cat.replace(' ', '+').replace(',', '%2C')}"
         variation = cat.replace(" ", "+").replace(",", "%2C")
         org = st.session_state.get("org_input", "")
-        href = f"?page=view-results&variation={variation}&org={st.session_state.get("org_input", "")}&user={st.session_state["user_email"]}&admin={st.session_state["admin_input"]}&access={st.session_state["access_level"]}"
+        href = f"?page=view-results&variation={variation}&org={st.session_state.get("org_input", "")}&user={st.session_state.get("user_email")}&admin={st.session_state.get("admin_input")}&access={st.session_state.get("access_level")}"
 
         if cat == active_variation:
             class_name = "custom-button active"
