@@ -38,6 +38,10 @@ for key in ["org_input", "site_input", "admin_input", "access_level", "user_emai
 st.session_state["is_admin"] = str(st.session_state.get("admin_input", "")).strip().lower() == "true"
 st.session_state["access"] = str(st.session_state.get("access_level", "")).strip().lower() == "true"
 
+
+# Track if we've attempted to restore org_input yet
+if "org_checked_once" not in st.session_state:
+    st.session_state["org_checked_once"] = False
 # # Restore from cookies if needed
 # if "org_input" not in st.session_state:
 #     cookie_org = cookies.get("org_input")
@@ -113,52 +117,64 @@ def sync_query_to_session_and_cookies(query, cookies, allow_logout=True):
 
     if allow_logout and query.get("logout") == "1":
         for key in [
-            "org_input",
-            "site_input",
-            "admin_input",
-            "access_level",
-            "user_email",
-            "variation",
+            "org_input", "site_input", "admin_input",
+            "access_level", "user_email", "variation"
         ]:
             st.session_state.pop(key, None)
             cookies[key] = ""
         cookies.save()
         st.success("You have been logged out.")
-        st.switch_page("app.py")
-        return  # Exit early to prevent additional processing
+        st.markdown('<meta http-equiv="refresh" content="2;URL=app.py">', unsafe_allow_html=True)
+        st.stop()
 
+    # Only persist these — NOT variation
     key_map = {
         "org": "org_input",
         "user": "user_email",
         "admin": "admin_input",
         "access": "access_level",
-        "site": "site_input",
-        "variation": "variation",
+        "site": "site_input"
+        # variation is intentionally excluded
     }
 
     for qkey, skey in key_map.items():
         query_val = query.get(qkey)
         session_val = st.session_state.get(skey)
         cookie_val = cookies.get(skey)
-        if session_val != "" and session_val!= None:
-            continue
-        elif query_val is not None:
-            # Prioritize query param if provided, overwrite session and cookie
-            if session_val != query_val:
-                st.session_state[skey] = query_val
+
+        if query_val and not session_val:
+            st.session_state[skey] = query_val
             if cookie_val != query_val:
                 cookies[skey] = query_val
                 cookies_changed = True
 
-        elif session_val is None and cookie_val is not None:
-            # Restore session from cookie if missing in session and query
+        elif not session_val and cookie_val:
             st.session_state[skey] = cookie_val
-
-        # Do not clear session or cookie if neither is present
 
     if cookies_changed:
         cookies.save()
 
+    # Handle variation ONLY from query
+    variation_val = query.get("variation")
+    if variation_val:
+        st.session_state["variation"] = variation_val
+    else:
+        st.session_state.pop("variation", None)
+    # Reset this flag so redirects can happen again if needed later
+st.session_state["org_checked_once"] = False
+
+def build_url(page, variation=None):
+    params = {
+        "page": page,
+        "org": st.session_state.get("org_input", ""),
+        "user": st.session_state.get("user_email", ""),
+        "admin": st.session_state.get("admin_input", ""),
+        "access": st.session_state.get("access_level", "")
+    }
+    if variation:
+        params["variation"] = variation
+
+    return "?" + "&".join([f"{k}={v}" for k, v in params.items() if v])
 
 
 # --- LOGOUT BUTTON ---
@@ -270,6 +286,11 @@ active_page = page.lower()
 # st.html(navbar)
 logout_container = st.container()
 col1, _, col2 = st.columns([3,5, 2])
+
+assess = build_url("self-assess")
+home = build_url("home")
+results = build_url("view_results")
+
 NAVBAR_HTML = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
@@ -523,6 +544,7 @@ if page == "self-assess":
         variation = cat.replace(" ", "+").replace(",", "%2C")
         org = st.session_state.get("org_input", "")
         href = f"?page=self-assess&variation={variation}&org={st.session_state.get("org_input", "")}&user={st.session_state.get("user_email")}&admin={st.session_state.get("admin_input")}&access={st.session_state.get("access_level")}"
+        href = build_url("self-assess", variation=variation)
         if cat == active_variation:
             class_name = "custom-button active"
         else:
@@ -736,7 +758,7 @@ elif page == "view-results":
         variation = cat.replace(" ", "+").replace(",", "%2C")
         org = st.session_state.get("org_input", "")
         href = f"?page=view-results&variation={variation}&org={st.session_state.get("org_input", "")}&user={st.session_state.get("user_email")}&admin={st.session_state.get("admin_input")}&access={st.session_state.get("access_level")}"
-
+        href = build_url("view_results", variation=variation)
         if cat == active_variation:
             class_name = "custom-button active"
         else:
@@ -862,10 +884,13 @@ elif page == "view-results":
     access_level = st.session_state.get("access_level", "")
     is_admin = admin_input  # Or add your boolean logic if needed
 
-    # ⛔ Redirect early only if org is still missing after sync
-    if not org_input:
-        st.warning("Please enter your organization name on the main page.")
-        st.switch_page("app.py")
+    if not st.session_state.get("org_input"):
+        if not st.session_state["org_checked_once"]:
+            st.session_state["org_checked_once"] = True
+            st.experimental_rerun()  # Give cookies/query a chance to restore
+        else:
+            st.warning("Please enter your organization name on the main page.")
+            st.switch_page("app.py")
 
     if "variation" in query_params:
         # Set to session state (decode + replace + capitalize if needed)
