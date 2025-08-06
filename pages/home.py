@@ -488,7 +488,7 @@ def render_variation_buttons():
                         box-shadow: none;
                     }
                 """):
-                    if st.button(variation):
+                    if st.button(variation, use_container_width=True):
                         st.session_state["variation"] = variation
 
     st.markdown("""</div>""", unsafe_allow_html=True)
