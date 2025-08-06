@@ -1805,19 +1805,7 @@ elif st.session_state["active_page"] == "self-assess":
         st.html(
             thisStyle
         )
-        # components.iframe(ASSESSMENTS[assessment]["form_url"], height=800, scrolling=True)
-        components.html(
-            f"""
-            <div style="position: relative; width: 100%; height: 0; padding-bottom: 130%;">
-                <iframe src="{ASSESSMENTS[assessment]['form_url']}" 
-                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" 
-                        allowfullscreen>
-                </iframe>
-            </div>
-            """,
-            height=1000,
-            scrolling=True
-        )
+        components.iframe(ASSESSMENTS[assessment]["form_url"], height=800, scrolling=True)
 else:
         # Home Page with HTML navigation
     st.html(f"""
