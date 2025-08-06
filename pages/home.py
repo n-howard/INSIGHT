@@ -494,7 +494,7 @@ def render_variation_buttons():
 
     st.markdown("""</div>""", unsafe_allow_html=True)
 
-    st.markdown("""</div>""", unsafe_allow_html=True)
+    # st.markdown("""</div>""", unsafe_allow_html=True)
 
 # --- Main App ---
 if "active_page" not in st.session_state:
@@ -1740,40 +1740,40 @@ elif st.session_state["active_page"] == "self-assess":
         z-index: 0;
     }}
 
-        button {{
-    font-weight: 600;
-    font-size: .9rem;
-    padding: 1rem 2rem;
-    border: none;
-    border-radius: 2rem;
-    cursor: pointer;
-    text-align: center;
-    text-decoration: none;
-    min-width: 33.33%;
-    max-width: 100%;
-    width: 100%;
-    transition: background-color 0.2s;
-    background-color: #d6e3e7;
-    color: #333;
-    margin-bottom: 10%;
-    }}
+    #     button {{
+    # font-weight: 600;
+    # font-size: .9rem;
+    # padding: 1rem 2rem;
+    # border: none;
+    # border-radius: 2rem;
+    # cursor: pointer;
+    # text-align: center;
+    # text-decoration: none;
+    # min-width: 33.33%;
+    # max-width: 100%;
+    # width: 100%;
+    # transition: background-color 0.2s;
+    # background-color: #d6e3e7;
+    # color: #333;
+    # margin-bottom: 10%;
+    # }}
 
-    button:focus {{
-        background-color: #084C61;
-        color: white;
-        color: #fff;
-    }}
+    # button:focus {{
+    #     background-color: #084C61;
+    #     color: white;
+    #     color: #fff;
+    # }}
 
-    button:hover {{
-        background-color: #084C61;
-        color: white;
-        color: #fff;
-    }}
+    # button:hover {{
+    #     background-color: #084C61;
+    #     color: white;
+    #     color: #fff;
+    # }}
 
     @media (max-width: 768px) {{
-        .button-grid {{
-            grid-template-columns: 1fr;
-        }}
+        # .button-grid {{
+        #     grid-template-columns: 1fr;
+        # }}
         .landing-title {{
             font-size: 36px;
             text-align: center;
