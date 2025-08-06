@@ -1,4 +1,5 @@
 import streamlit as st
+st.set_page_config(page_title="INSIGHT", page_icon="./oask_short_logo.png", layout="wide")
 import streamlit.components.v1 as components
 from urllib.parse import unquote
 import pandas as pd
@@ -13,7 +14,7 @@ import uuid
 import re
 from streamlit_extras.stylable_container import stylable_container
 
-st.set_page_config(page_title="INSIGHT", page_icon="./oask_short_logo.png", layout="wide")
+# st.set_page_config(page_title="INSIGHT", page_icon="./oask_short_logo.png", layout="wide")
 # st.logo("./oask_light_mode_tagline_2.png", size="large", link="https://oregonask.org/")
 # hide_st_style = """
 #             <style>
