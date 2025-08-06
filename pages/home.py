@@ -15,7 +15,7 @@ import re
 from streamlit_extras.stylable_container import stylable_container
 
 # st.set_page_config(page_title="INSIGHT", page_icon="./oask_short_logo.png", layout="wide")
-# st.logo("./oask_light_mode_tagline_2.png", size="large", link="https://oregonask.org/")
+
 # hide_st_style = """
 #             <style>
 #             #MainMenu {visibility: hidden;}
@@ -349,11 +349,56 @@ ASSESSMENTS = {
 def render_navbar():
     # st.markdown("""<div style='background-color:#2c3e50; padding: 10px 20px; border-radius: 0 0 10px 10px;'>""", unsafe_allow_html=True)
 
-    _, col1, col2, col3, col4 = st.columns([6, 1, 1, 1, 1])
+    acol, _, col1, col2, col3, col4 = st.columns([1, 5, 1, 1, 1, 1])
 
+    # if is_admin:
+    #     with acol:
+    #         data_form_link = "https://docs.google.com/forms/d/e/1FAIpQLScebVl2SRuhtDmzAEag_sPn0MgaAvLIpbwbm7-Imjup8aD2uw/viewform?embedded=true"
+    #         with stylable_container("data_form", css_styles="""
+    #             button {
+    #                 background-color: white;
+    #                 color: black;
+    #                 border-radius: 6px;
+    #                 padding: 8px 16px;
+    #                 border: none;
+    #                 font-weight: 600;
+    #                 align-self: flex-end;
+    #             }
+    #             button:focus,
+    #             button:active, 
+    #             button:hover {
+    #                 background-color: white !important;
+    #                 color: #084C61 !important;
+    #                 outline: none;
+    #                 box-shadow: none;
+    #         """):
+    #             if st.button("Program Information"):
+    #                 st.session_state["active_page"] = "info"
+    #                 # components.iframe(data_form_link, width=1500, height=800, scrolling = True)
+    with acol:
+        st.markdown("<h3 style='color:#084C61; margin: 0;'>INSIGHT</h3>", unsafe_allow_html=True)
+        # with stylable_container(f"navbar_insightbtn", css_styles="""
+        #     button {
+        #         background-color: white;
+        #         color: black;
+        #         border-radius: 6px;
+        #         padding: 8px 16px;
+        #         border: none;
+        #         font-weight: 600;
+        #     }
+        #     button:focus,
+        #     button:active, 
+        #     button:hover {
+        #         background-color: white !important;
+        #         color: #084C61 !important;
+        #         outline: none;
+        #         box-shadow: none;
+        # """):
+        #     if st.button("INSIGHT", use_container_width = True):
+        #             st.session_state["active_page"] = "home"
     with col1:
         # st.markdown("<h3 style='color:white; margin: 0;'>INSIGHT</h3>", unsafe_allow_html=True)
-        with stylable_container(f"navbar_home_btn_{str(uuid.uuid4())}", css_styles="""
+        with stylable_container(f"navbar_home_btn", css_styles="""
             button {
                 background-color: white;
                 color: black;
@@ -372,9 +417,10 @@ def render_navbar():
         """):
             if st.button("Home", use_container_width = True):
                     st.session_state["active_page"] = "home"
+                    
 
     with col2:
-        with stylable_container(f"navbar_self_btn_{str(uuid.uuid4())}", css_styles="""
+        with stylable_container(f"navbar_self_btn", css_styles="""
             button {
                 background-color: white;
                 color: black;
@@ -395,7 +441,7 @@ def render_navbar():
                 st.session_state["active_page"] = "self-assess"
 
     with col3:
-        with stylable_container(f"navbar_view_btn_{str(uuid.uuid4())}", css_styles="""
+        with stylable_container(f"navbar_view_btn", css_styles="""
             button {
                 background-color: white;
                 color: black;
@@ -1700,6 +1746,72 @@ if st.session_state["active_page"] == "view-results":
                                     if pd.isna(score):
                                         continue
                                     render_score_card(sheet3_data, sheet2_data, score, label)
+elif st.session_state["active_page"] == "info":
+    st.html(f"""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
+
+    html, body, [class*="css"] {{
+        font-family: 'Poppins', sans-serif !important;
+    }}
+
+    .landing-container {{
+        padding: 3rem 4rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        position: relative;
+    }}
+
+    .landing-title {{
+        font-size: 48px;
+        font-weight: 800;
+        color: #084C61;
+        line-height: 1.1;
+    }}
+
+    .landing-subtitle {{
+        margin-top: 0.5rem;
+        font-size: 18px;
+    }}
+
+
+    .faded-bg {{
+        position: absolute;
+        right: 0;
+        top: 0;
+        opacity: 0.08;
+        max-width: 100%;
+        z-index: 0;
+    }}
+
+
+    @media (max-width: 768px) {{
+        # .button-grid {{
+        #     grid-template-columns: 1fr;
+        # }}
+        .landing-title {{
+            font-size: 36px;
+            text-align: center;
+        }}
+        .landing-subtitle {{
+            text-align: center;
+        }}
+        .landing-container {{
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+        }}
+    }}
+    </style>
+
+    <div class="landing-container">
+
+        <img src="https://i.imgur.com/8Q3M2NU.png" class="faded-bg" alt="Background Illustration"/>
+    </div>
+    """)
+    data_form_link = "https://docs.google.com/forms/d/e/1FAIpQLScebVl2SRuhtDmzAEag_sPn0MgaAvLIpbwbm7-Imjup8aD2uw/viewform?embedded=true"
+    components.iframe(data_form_link, width=1500, height=800, scrolling = True)
 elif st.session_state["active_page"] == "self-assess":
     st.session_state.pop("variation", None)
     st.html(f"""
@@ -1807,7 +1919,69 @@ elif st.session_state["active_page"] == "self-assess":
         )
         components.iframe(ASSESSMENTS[assessment]["form_url"], width = 1500, height=800, scrolling=True)
 else:
-        # Home Page with HTML navigation
+
+    #     # Home Page with HTML navigation
+    # if is_admin:
+    #     with col1:
+    #         data_form_link = "https://docs.google.com/forms/d/e/1FAIpQLScebVl2SRuhtDmzAEag_sPn0MgaAvLIpbwbm7-Imjup8aD2uw/viewform?embedded=true"
+    #         with stylable_container("data_form", css_styles="""
+    #             button {
+    #                 background-color: white;
+    #                 color: black;
+    #                 border-radius: 6px;
+    #                 # padding: 8px 16px;
+    #                 border: none;
+    #                 font-weight: 600;
+    #                 margin-top: 0px;
+    #                 margin: 0px 0px 0px 0px;
+    #                 padding: 0px 0px;
+    #             }
+    #             button:focus,
+    #             button:active, 
+    #             button:hover {
+    #                 background-color: white !important;
+    #                 color: #084C61 !important;
+    #                 outline: none;
+    #                 box-shadow: none;
+    #         """):
+    #             if st.button("Program Information", use_container_width=True):
+    #                 st.session_state["active_page"] = "info"
+    #                 st.rerun()
+    #                 # components.iframe(data_form_link, width=1500, height=800, scrolling = True)
+    if is_admin:
+        data_form_link = "https://docs.google.com/forms/d/e/1FAIpQLScebVl2SRuhtDmzAEag_sPn0MgaAvLIpbwbm7-Imjup8aD2uw/viewform?embedded=true"
+        _, acol1 = st.columns([6,4])
+        with acol1:
+            with stylable_container("data_form", css_styles="""
+                button {
+                    font-weight: 600;
+                    font-size: .9rem;
+                    padding: 1rem 2rem;
+                    border: none;
+                    border-radius: 2rem;
+                    cursor: pointer;
+                    text-align: center;
+                    text-decoration: none;
+                    transition: background-color 0.2s;
+                    background-color: #d6e3e7;
+                    color: #333;
+                    max-width: 100%
+                    
+                }
+
+                button:focus,
+                button:active, 
+                button:hover {
+                    background-color: #084C61 !important;
+                    color: white !important;
+                    outline: none;
+                    box-shadow: none;
+                }
+            """):
+                if st.button("Program Information", use_container_width=True):
+                    st.session_state["active_page"] = "info"
+                    st.rerun()
+                    # components.iframe(data_form_link, width=1500, height=800, scrolling = True)
     st.html(f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -1818,6 +1992,7 @@ else:
         html, body {{
           margin: 0;
           font-family: 'Poppins', sans-serif !important;
+          
         }}
         .main-container {{
           display: flex;
@@ -1839,6 +2014,7 @@ else:
         .subtitle {{
           font-size: 18px;
           margin-top: 10px;
+          margin-bottom: 50%
         }}
         .image-content {{
           flex: 1 1 300px;
@@ -1853,7 +2029,7 @@ else:
           .main-container {{
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px;
+            # padding: 40px 20px;
           }}
         #   .navbar {{
         #     justify-content: center;
@@ -1872,6 +2048,10 @@ else:
             margin-top: 0px;
             padding: 0px;
             text-align: center;
+            position: absolute;
+            right: 0;
+            top: 200;
+            max-width: 100%;
           }}
           .image-content img{{
             max-width: 90vw;
@@ -1893,6 +2073,38 @@ else:
     </body>
     </html>
     """)
+    # if is_admin:
+    #     data_form_link = "https://docs.google.com/forms/d/e/1FAIpQLScebVl2SRuhtDmzAEag_sPn0MgaAvLIpbwbm7-Imjup8aD2uw/viewform?embedded=true"
+    #     with stylable_container("data_form", css_styles="""
+    #         button {
+    #             font-weight: 600;
+    #             font-size: .9rem;
+    #             padding: 1rem 2rem;
+    #             border: none;
+    #             border-radius: 2rem;
+    #             cursor: pointer;
+    #             text-align: center;
+    #             text-decoration: none;
+    #             width: 100%;
+    #             transition: background-color 0.2s;
+    #             background-color: #d6e3e7;
+    #             color: #333;
+    #             max-width: 20vw;
+    #         }
+
+    #         button:focus,
+    #         button:active, 
+    #         button:hover {
+    #             background-color: #084C61 !important;
+    #             color: white !important;
+    #             outline: none;
+    #             box-shadow: none;
+    #         }
+    #     """):
+    #         if st.button("Program Information"):
+    #             st.session_state["active_page"] = "info"
+    #             st.rerun()
+    #             # components.iframe(data_form_link, width=1500, height=800, scrolling = True)
 
 # Add top padding so content isn't hidden
 st.markdown("<div style='height: 90px;'></div>", unsafe_allow_html=True)
