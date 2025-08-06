@@ -2048,10 +2048,6 @@ else:
             margin-top: 0px;
             padding: 0px;
             text-align: center;
-            position: absolute;
-            right: 0;
-            top: 200;
-            max-width: 100%;
           }}
           .image-content img{{
             max-width: 90vw;
