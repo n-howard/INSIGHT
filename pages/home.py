@@ -917,12 +917,35 @@ if st.session_state["active_page"] == "view-results":
                     score_series = pd.to_numeric(org_df[score_col], errors="coerce")
                     
                     # Optional: Add label (e.g., "Submission 1", "Submission 2", or use timestamps)
+                    # for i, score in enumerate(score_series):
+                    #     if not pd.isna(score):
+                    #         label = f"Submission {i+1}"
+                    #         submissions[label] = score
+                    #         score_over_time.append(score)
+                    timestamp_col = next((col for col in org_df.columns if "timestamp" in col.lower()), None)
+
+                    # Only if timestamp column is found
+                    if timestamp_col and timestamp_col in org_df.columns:
+                        try:
+                            # Convert timestamp strings to datetime objects
+                            timestamp_series = pd.to_datetime(org_df[timestamp_col], errors='coerce')
+                        except Exception:
+                            timestamp_series = pd.Series([pd.NaT] * len(org_df))
+                    else:
+                        timestamp_series = pd.Series([pd.NaT] * len(org_df))
+
                     for i, score in enumerate(score_series):
                         if not pd.isna(score):
-                            label = f"Submission {i+1}"
+                            ts = timestamp_series.iloc[i]
+                            if pd.notna(ts):
+                                # label = ts.strftime("%B %Y")
+                                label = ts.strftime("%B %d, %Y").replace(" 0", " ")
+                                if label in submissions.keys():
+                                    label = label + f", Submission {i+1}"
+                            else:
+                                label = f"Submission {i+1}"
                             submissions[label] = score
                             score_over_time.append(score)
-
             if "Contact Name" in org_df.columns:
                 # Normalize the Contact Name column
                 org_df["__normalized_contact__"] = org_df["Contact Name"].astype(str).str.strip().str.lower()
@@ -1020,12 +1043,37 @@ if st.session_state["active_page"] == "view-results":
                     if overall_score_cols:
                         score_col = overall_score_cols[0] 
                         score_series = pd.to_numeric(torg_df[score_col], errors="coerce")
-                        for k, score in enumerate(score_series):
+                        # for k, score in enumerate(score_series):
+                        #     if not pd.isna(score):
+                        #         label = f"Submission {j+1}: {display_org}"
+                        #         submissions[label] = score
+                        #         score_over_time.append(score)
+                        #     j+=1
+                        timestamp_col = next((col for col in org_df.columns if "timestamp" in col.lower()), None)
+
+                        # Only if timestamp column is found
+                        if timestamp_col and timestamp_col in org_df.columns:
+                            try:
+                                # Convert timestamp strings to datetime objects
+                                timestamp_series = pd.to_datetime(org_df[timestamp_col], errors='coerce')
+                            except Exception:
+                                timestamp_series = pd.Series([pd.NaT] * len(org_df))
+                        else:
+                            timestamp_series = pd.Series([pd.NaT] * len(org_df))
+
+                        for i, score in enumerate(score_series):
                             if not pd.isna(score):
-                                label = f"Submission {j+1}: {display_org}"
+                                ts = timestamp_series.iloc[i]
+                                if pd.notna(ts):
+                                    # label = ts.strftime("%B %Y")
+                                    label = ts.strftime("%B %d, %Y").replace(" 0", " ")
+                                    if label in submissions.keys():
+                                        label = label + f", Submission {i+1}"
+                                else:
+                                    label = f"Submission {i+1}"
+                                label = label + f": {display_org}"
                                 submissions[label] = score
                                 score_over_time.append(score)
-                            j+=1
                     # Standards/Indicators
                     standard_scores[display_org] = []
                     for column in torg_df.columns:
@@ -1078,9 +1126,33 @@ if st.session_state["active_page"] == "view-results":
                 score_series = pd.to_numeric(edf[score_col], errors="coerce")
                 
                 # Optional: Add label (e.g., "Submission 1", "Submission 2", or use timestamps)
-                for k, score in enumerate(score_series):
+                # for k, score in enumerate(score_series):
+                #     if not pd.isna(score):
+                #         label = f"Submission {k+1}"
+                #         submissions[label] = score
+                #         score_over_time.append(score)
+                timestamp_col = next((col for col in org_df.columns if "timestamp" in col.lower()), None)
+
+                # Only if timestamp column is found
+                if timestamp_col and timestamp_col in org_df.columns:
+                    try:
+                        # Convert timestamp strings to datetime objects
+                        timestamp_series = pd.to_datetime(org_df[timestamp_col], errors='coerce')
+                    except Exception:
+                        timestamp_series = pd.Series([pd.NaT] * len(org_df))
+                else:
+                    timestamp_series = pd.Series([pd.NaT] * len(org_df))
+
+                for i, score in enumerate(score_series):
                     if not pd.isna(score):
-                        label = f"Submission {k+1}"
+                        ts = timestamp_series.iloc[i]
+                        if pd.notna(ts):
+                            # label = ts.strftime("%B %Y")
+                            label = ts.strftime("%B %d, %Y").replace(" 0", " ")
+                            if label in submissions.keys():
+                                label = label + f", Submission {i+1}"
+                        else:
+                            label = f"Submission {i+1}"
                         submissions[label] = score
                         score_over_time.append(score)
             for column in edf.columns:
@@ -1362,19 +1434,123 @@ if st.session_state["active_page"] == "view-results":
 
 
 
-        def score_trend(scores):
-            df = pd.DataFrame({
-                "Submission": list(range(1, len(scores)+1)),
-                "Overall Score": scores
-            })
-            fig = px.line(df, x="Submission", y="Overall Score", markers=True)
-            fig.update_traces(line_color="#56A3A6", marker=dict(color="#084C61", size=10))
-            fig.update_layout(height=300, margin=dict(l=40, r=40, t=40, b=40), paper_bgcolor="rgba(0,0,0,0)", title=dict(
-                text="Score over Time", 
-                font=dict(size=24)))
+        # def score_trend(scores):
+        #     df = pd.DataFrame({
+        #         "Submission": list(range(1, len(scores)+1)),
+        #         "Overall Score": scores
+        #     })
+        #     fig = px.line(df, x="Submission", y="Overall Score", markers=True)
+        #     fig.update_traces(line_color="#56A3A6", marker=dict(color="#084C61", size=10))
+        #     fig.update_layout(height=300, margin=dict(l=40, r=40, t=40, b=40), paper_bgcolor="rgba(0,0,0,0)", title=dict(
+        #         text="Score over Time", 
+        #         font=dict(size=24)))
+        #     return fig
+        # def score_trend(timestamp_score_pairs):
+        #     # Convert to DataFrame
+        #     df = pd.DataFrame(timestamp_score_pairs, columns=["Timestamp", "Overall Score"])
+
+        #     # Convert timestamps to datetime and format as "Month Year"
+        #     df["Month"] = pd.to_datetime(df["Timestamp"], errors="coerce").dt.strftime("%B %Y")
+
+        #     # Drop rows with invalid timestamps
+        #     df = df.dropna(subset=["Month"])
+
+        #     # Plot
+        #     fig = px.line(df, x="Month", y="Overall Score", markers=True)
+        #     fig.update_traces(line_color="#56A3A6", marker=dict(color="#084C61", size=10))
+        #     fig.update_layout(
+        #         height=300,
+        #         margin=dict(l=40, r=40, t=40, b=40),
+        #         paper_bgcolor="rgba(0,0,0,0)",
+        #         title=dict(text="Score over Time", font=dict(size=24))
+        #     )
+        #     return fig
+        # def score_trend(timestamp_score_pairs):
+        #     import plotly.express as px
+        #     import pandas as pd
+
+            # # Convert to DataFrame
+            # df = pd.DataFrame(timestamp_score_pairs, columns=["Timestamp", "Overall Score"])
+
+            # # Ensure datetime format
+            # df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+            # df = df.dropna(subset=["Timestamp"])
+            # df = df.sort_values("Timestamp")
+
+            # if df.shape[0] == 1:
+            #     # Only one point: use formatted label as category
+            #     df["Label"] = df["Timestamp"].dt.strftime("%B %d, %Y")
+            #     fig = px.line(df, x="Label", y="Overall Score", markers=True)
+            #     fig.update_layout(
+            #         xaxis_title="Date",
+            #         height=300,
+            #         margin=dict(l=40, r=40, t=40, b=40),
+            #         paper_bgcolor="rgba(0,0,0,0)",
+            #         title=dict(text="Score Over Time", font=dict(size=24))
+            #     )
+            # else:
+            #     # Multiple points: use real time axis
+            #     fig = px.line(df, x="Timestamp", y="Overall Score", markers=True)
+            #     fig.update_layout(
+            #         xaxis_title="Date",
+            #         xaxis=dict(
+            #             tickformat="%b %d, %Y",  # e.g. "Aug 07, 2025"
+            #             # tickangle=45,
+            #         ),
+            #         height=300,
+            #         margin=dict(l=40, r=40, t=40, b=40),
+            #         paper_bgcolor="rgba(0,0,0,0)",
+            #         title=dict(text="Score Over Time", font=dict(size=24))
+            #     )
+
+            # fig.update_traces(line_color="#56A3A6", marker=dict(color="#084C61", size=10))
+            # return fig
+
+        def score_trend(timestamp_score_triples):
+            import pandas as pd
+            import plotly.express as px
+
+            df = pd.DataFrame(timestamp_score_triples, columns=["Timestamp", "Overall Score", "Org Name"])
+            df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+            df = df.dropna(subset=["Timestamp", "Overall Score", "Org Name"])
+
+            if df.shape[0] == 1:
+                # Only one point: use formatted label as category
+                df["Label"] = df["Timestamp"].dt.strftime("%B %d, %Y")
+                fig = px.line(df, x="Label", y="Overall Score", markers=True, color_discrete_sequence=[
+                        "#084C61", "#0F6B75", "#138D90", "#56A3A6", "#A7D4D5", "#CBE8E8", "#E6F5F5"
+                    ])
+                fig.update_layout(
+                    xaxis_title="Date",
+                    height=300,
+                    margin=dict(l=40, r=40, t=40, b=40),
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    title=dict(text="Score Over Time", font=dict(size=24)))
+            else:
+                fig = px.line(
+                    df,
+                    x="Timestamp",
+                    y="Overall Score",
+                    color="Org Name" if access_level else None,
+                    markers=True,
+                    color_discrete_sequence=[
+                        "#084C61", "#0F6B75", "#138D90", "#56A3A6", "#A7D4D5", "#CBE8E8", "#E6F5F5"
+                    ]
+                )
+
+                fig.update_traces(marker=dict(size=10))
+                fig.update_layout(
+                    xaxis_title="Date",
+                    yaxis_title="Overall Score",
+                    xaxis=dict(tickformat="%b %d, %Y"),
+                    height=300,
+                    margin=dict(l=40, r=40, t=40, b=40),
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    title=dict(text="Score Over Time", font=dict(size=24))
+                )
+
             return fig
 
-        # Staff Bar Chart
         def staff_bar(scores):
             df = pd.DataFrame(scores.items(), columns=["Staff", "Score"])
             fig = px.bar(df, y="Staff", x="Score", orientation="h", color="Score", color_continuous_scale=["#56A3A6", "#084C61"])
@@ -1658,12 +1834,64 @@ if st.session_state["active_page"] == "view-results":
 
                     with col2:
                         with st.container(key ="white_container_2"):
-                            st.plotly_chart(score_trend(score_over_time), use_container_width=True)
+                            # st.plotly_chart(score_trend(score_over_time), use_container_width=True)
+                            # Example construction of the input list:
+                            # timestamp_col = next((col for col in org_df.columns if "timestamp" in col.lower()), None)
+
+                            # timestamp_score_pairs = []
+                            # if timestamp_col:
+                            #     timestamps = pd.to_datetime(org_df[timestamp_col], errors='coerce')
+                            #     for i, score in enumerate(score_series):
+                            #         if not pd.isna(score) and pd.notna(timestamps.iloc[i]):
+                            #             timestamp_score_pairs.append((timestamps.iloc[i], score))
+
+                            # # Then pass to the function
+                            # fig = score_trend(timestamp_score_pairs)
+                            # st.plotly_chart(fig, use_container_width=True)
+                            # with st.expander("**Overall Score by Submission**"):
+                            #     for label, score in submissions.items():
+                            #         if pd.isna(score):
+                            #             continue
+                            #         render_score_card(sheet3_data, sheet2_data, score, label)
+                            timestamp_col = next((col for col in org_df.columns if "timestamp" in col.lower()), None)
+                            timestamp_score_pairs = []
+
+                            if timestamp_col:
+                                timestamps = pd.to_datetime(org_df[timestamp_col], errors='coerce')
+
+                                # Normalize Extracted Orgs first (if not done already)
+                                if "Extracted Orgs" in org_df.columns:
+                                    org_df["__normalized_extracted_orgs__"] = org_df["Extracted Orgs"].apply(
+                                        lambda x: x[0] if isinstance(x, list) and x else str(x)
+                                    )
+                                else:
+                                    org_df["__normalized_extracted_orgs__"] = st.session_state.get("org_input", "Unknown Org")
+
+                                timestamp_score_triples = []  # (timestamp, score, org_name)
+
+                                # for i, row in org_df.iterrows():
+                                    # ts = timestamps.iloc[i]
+                                for idx, row in org_df.iterrows():
+                                    ts = timestamps.loc[idx]
+                                    if pd.isna(ts):
+                                        continue
+                                    org_name = row["__normalized_extracted_orgs__"]
+                                    for col in org_df.columns:
+                                        if "Overall Score" in col:
+                                            score = pd.to_numeric(row[col], errors="coerce")
+                                            if pd.notna(score):
+                                                timestamp_score_triples.append((ts, score, org_name))
+
+                            # fig = score_trend(timestamp_score_pairs)
+                            # st.plotly_chart(fig, use_container_width=True)
+                            fig = score_trend(timestamp_score_triples)
+                            st.plotly_chart(fig, use_container_width=True)
                             with st.expander("**Overall Score by Submission**"):
                                 for label, score in submissions.items():
                                     if pd.isna(score):
                                         continue
                                     render_score_card(sheet3_data, sheet2_data, score, label)
+
 
                     with col3:
                         with st.container(key ="white_container_3"):
@@ -1740,8 +1968,17 @@ if st.session_state["active_page"] == "view-results":
                             
                     with col3:
                         with st.container(key ="white_container_2"):
-                            st.plotly_chart(score_trend(score_over_time), use_container_width=True)
-                            with st.expander("**Score by Submission**"):
+                            timestamp_score_triples = []
+                            org_name = st.session_state.get("org_input", "Unknown Org")
+                            subms = {}
+                            for i, score in enumerate(score_series):
+                                if not pd.isna(score):
+                                    ts = timestamp_series.iloc[i]
+                                    if pd.notna(ts):
+                                        timestamp_score_triples.append((ts, score, org_name))
+                                    fig = score_trend(timestamp_score_triples)
+                                st.plotly_chart(fig, use_container_width=True)
+                            with st.expander("**Overall Score by Submission**"):
                                 for label, score in submissions.items():
                                     if pd.isna(score):
                                         continue
