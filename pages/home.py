@@ -1131,17 +1131,17 @@ if st.session_state["active_page"] == "view-results":
                 #         label = f"Submission {k+1}"
                 #         submissions[label] = score
                 #         score_over_time.append(score)
-                timestamp_col = next((col for col in org_df.columns if "timestamp" in col.lower()), None)
+                timestamp_col = next((col for col in edf.columns if "timestamp" in col.lower()), None)
 
                 # Only if timestamp column is found
-                if timestamp_col and timestamp_col in org_df.columns:
+                if timestamp_col and timestamp_col in edf.columns:
                     try:
                         # Convert timestamp strings to datetime objects
-                        timestamp_series = pd.to_datetime(org_df[timestamp_col], errors='coerce')
+                        timestamp_series = pd.to_datetime(edf[timestamp_col], errors='coerce')
                     except Exception:
-                        timestamp_series = pd.Series([pd.NaT] * len(org_df))
+                        timestamp_series = pd.Series([pd.NaT] * len(edf))
                 else:
-                    timestamp_series = pd.Series([pd.NaT] * len(org_df))
+                    timestamp_series = pd.Series([pd.NaT] * len(edf))
 
                 for i, score in enumerate(score_series):
                     if not pd.isna(score):
