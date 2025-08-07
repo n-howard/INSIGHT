@@ -1872,7 +1872,8 @@ if st.session_state["active_page"] == "view-results":
                                 # for i, row in org_df.iterrows():
                                     # ts = timestamps.iloc[i]
                                 for idx, row in org_df.iterrows():
-                                    ts = timestamps.loc[idx]
+                                    # ts = timestamps.loc[idx]
+                                    ts = pd.to_datetime(row[timestamp_col], errors="coerce")
                                     if pd.isna(ts):
                                         continue
                                     org_name = row["__normalized_extracted_orgs__"]
