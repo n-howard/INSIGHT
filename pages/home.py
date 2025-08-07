@@ -1049,17 +1049,17 @@ if st.session_state["active_page"] == "view-results":
                         #         submissions[label] = score
                         #         score_over_time.append(score)
                         #     j+=1
-                        timestamp_col = next((col for col in org_df.columns if "timestamp" in col.lower()), None)
+                        timestamp_col = next((col for col in torg_df.columns if "timestamp" in col.lower()), None)
 
                         # Only if timestamp column is found
-                        if timestamp_col and timestamp_col in org_df.columns:
+                        if timestamp_col and timestamp_col in torg_df.columns:
                             try:
                                 # Convert timestamp strings to datetime objects
-                                timestamp_series = pd.to_datetime(org_df[timestamp_col], errors='coerce')
+                                timestamp_series = pd.to_datetime(torg_df[timestamp_col], errors='coerce')
                             except Exception:
-                                timestamp_series = pd.Series([pd.NaT] * len(org_df))
+                                timestamp_series = pd.Series([pd.NaT] * len(torg_df))
                         else:
-                            timestamp_series = pd.Series([pd.NaT] * len(org_df))
+                            timestamp_series = pd.Series([pd.NaT] * len(torg_df))
 
                         for i, score in enumerate(score_series):
                             if not pd.isna(score):
