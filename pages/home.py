@@ -1887,6 +1887,10 @@ if st.session_state["active_page"] == "view-results":
                             # st.plotly_chart(fig, use_container_width=True)
                             fig = score_trend(timestamp_score_triples)
                             st.plotly_chart(fig, use_container_width=True)
+                            if access_level:
+                                st.write(f"This chart shows the overall scores for {assessment} by organization over time.")
+                            else:
+                                st.write(f"This chart shows the overall scores for {assessment} for {org_input} over time.")
                             with st.expander("**Overall Score by Submission**"):
                                 for label, score in submissions.items():
                                     if pd.isna(score):
@@ -1897,7 +1901,7 @@ if st.session_state["active_page"] == "view-results":
                     with col3:
                         with st.container(key ="white_container_3"):
                             st.plotly_chart(staff_bar(staff_scores_num), use_container_width=True)
-                            
+                            st.write(f"This chart shows the overall score for {assessment} for each staff member.")
                             for name, score in staff_scores.items():
                                 that_prefix = str(uuid.uuid4())
                                 tname = name.rstrip()
@@ -1962,6 +1966,7 @@ if st.session_state["active_page"] == "view-results":
                     with col2:
                         with st.container(key = "white_container_3"):
                             st.plotly_chart(reg_staff_bar(standard_scores), use_container_width=True)
+                            st.write(f"This chart shows your score for {assessment} for each Standard and Indicator.")
                             with st.expander("**Category Descriptions**"):
                                 for label in standard_scores:
                                     desc(sheet3_data, label)
@@ -1977,8 +1982,9 @@ if st.session_state["active_page"] == "view-results":
                                     ts = timestamp_series.iloc[i]
                                     if pd.notna(ts):
                                         timestamp_score_triples.append((ts, score, org_name))
-                                    fig = score_trend(timestamp_score_triples)
-                                st.plotly_chart(fig, use_container_width=True)
+                            fig = score_trend(timestamp_score_triples)
+                            st.plotly_chart(fig, use_container_width=True)
+                            st.write(f"This chart shows your overall score(s) for {assessment} over time.")
                             with st.expander("**Overall Score by Submission**"):
                                 for label, score in submissions.items():
                                     if pd.isna(score):
