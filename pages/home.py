@@ -1966,7 +1966,7 @@ if st.session_state["active_page"] == "view-results":
                     with col2:
                         with st.container(key = "white_container_3"):
                             st.plotly_chart(reg_staff_bar(standard_scores), use_container_width=True)
-                            st.write(f"This chart shows your score for {assessment} for each Standard and Indicator.")
+                            st.write(f"This chart shows your score for each Standard and Indicator in {assessment}.")
                             with st.expander("**Category Descriptions**"):
                                 for label in standard_scores:
                                     desc(sheet3_data, label)
