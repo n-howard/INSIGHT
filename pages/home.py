@@ -13,6 +13,7 @@ import random
 import uuid
 import re
 from streamlit_extras.stylable_container import stylable_container
+import numpy as np
 
 # st.set_page_config(page_title="INSIGHT", page_icon="./oask_short_logo.png", layout="wide")
 
@@ -1179,8 +1180,8 @@ if st.session_state["active_page"] == "view-results":
             fig = go.Figure(go.Pie(
                 values=[score, 4 - score],
                 labels=["", ""],
-                marker_colors=["#FFFFFF", "#56A3A6"],
-                hole=0.7,
+                marker_colors=["#D3F3FD", "#013747"],
+                hole=0.78,
                 sort=False,
                 direction='clockwise',
                 textinfo='none',
@@ -1198,6 +1199,10 @@ if st.session_state["active_page"] == "view-results":
                 paper_bgcolor="rgba(0,0,0,0)",
             )
             return fig
+
+
+        
+
 
 
 
@@ -1324,8 +1329,8 @@ if st.session_state["active_page"] == "view-results":
             fig = go.Figure(go.Pie(
                 values=[percent, 1 - percent],
                 labels=["", ""],
-                marker_colors=["#FFFFFF", "#56A3A6"],  # Teal fill, white background
-                hole=0.7,
+                marker_colors=["#D3F3FD", "#013747"],  
+                hole=0.8,
                 sort=False,
                 direction="clockwise",
                 textinfo="none"
