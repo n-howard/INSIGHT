@@ -1343,7 +1343,7 @@ if st.session_state["active_page"] == "view-results":
                 paper_bgcolor="rgba(0,0,0,0)",
             )
             buffer = io.StringIO()
-            fig.write_html(buffer, include_plotlyjs='cdn')  # or include_plotlyjs=True if you want to bundle it
+            fig.write_html(buffer, config= {'displaylogo': False, 'modeBarButtonsToRemove': ['toImage']}, include_plotlyjs='cdn')  # or include_plotlyjs=True if you want to bundle it
             html_string = buffer.getvalue()
             if "Percent" in label:
                 s = f"{score:.0f}%"
