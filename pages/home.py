@@ -767,10 +767,10 @@ if st.session_state["active_page"] == "view-results":
             # Drop the temporary clean column
             df = df.drop(columns=["Program Name_clean"])
             
-        site_name = "Please enter the name of the site and/or program you work at."
+        site_name = "Are you filling out this form for a specific site? If yes, what is the site’s name?"
 
         if site_name not in org_df.columns:
-            site_keywords = ["name of the site", "site", "the site", "which site", "Please enter the name of the site and/or program you work at."]
+            site_keywords = ["name of the site", "site", "the site", "which site", "site's name", "Please enter the name of the site and/or program you work at."]
             for col in df.columns:
                 col_lower = col.strip().lower()
                 if any(keyword in col_lower for keyword in site_keywords):
