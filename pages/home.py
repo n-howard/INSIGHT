@@ -1896,7 +1896,7 @@ if st.session_state["active_page"] == "view-results":
                                 st.write(f"This chart shows the overall scores for {assessment} by organization over time.")
                             else:
                                 st.write(f"This chart shows {org_input}'s overall scores for {assessment} over time.")
-                            with st.expander("**Overall Score by Submission**"):
+                            with st.expander("**Overall Score Over Time**"):
                                 for label, score in submissions.items():
                                     if pd.isna(score):
                                         continue
