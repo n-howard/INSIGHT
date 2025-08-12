@@ -1079,12 +1079,13 @@ if st.session_state["active_page"] == "view-results":
         admin_input = bool(st.session_state.get("is_admin", ""))
     access_level = bool(st.session_state.get("access_level"))
     if access_level is None:
-        admin_input = bool(st.session_state.get("access", ""))
+        access_level = bool(st.session_state.get("access", ""))
     is_admin = admin_input
     assessment = st.session_state.get("variation", None)
     if assessment == "all":
         render_all_scores(ASSESSMENTS)
     elif assessment:
+        
     #     title = assessment + " Results"
     #     thisStyle = f"""<h3 style='text-align: center; font-size: 35px; font-weight: 600; font-family: Poppins;'>{title}</h3>"""
     #     st.html(
@@ -1103,7 +1104,7 @@ if st.session_state["active_page"] == "view-results":
             admin_input = bool(st.session_state.get("is_admin", ""))
         access_level = bool(st.session_state.get("access_level"))
         if access_level is None:
-            admin_input = bool(st.session_state.get("access", ""))
+            access_level = bool(st.session_state.get("access", ""))
         is_admin = admin_input
 
         if not org_input:
@@ -1138,7 +1139,7 @@ if st.session_state["active_page"] == "view-results":
 
         for col in df.columns:
             col_lower = col.strip().lower()
-            if any(keyword in col_lower for keyword in candidate_keywords):
+            if any(keyword.strip().lower() in col_lower for keyword in candidate_keywords):
                 Program_Name = col
                 break
 
@@ -1153,14 +1154,26 @@ if st.session_state["active_page"] == "view-results":
             
             if Program_Name in org_df.columns:
 
-                org_df["Extracted Orgs"] = org_df[Program_Name].fillna("").astype(str).str.strip()
+                # org_df["Extracted Orgs"] = org_df[Program_Name].fillna("").astype(str).str.strip()
+                def normalize_orgs(val):
+                    if pd.isna(val):
+                        return []
+                    parts = re.split(r"[;,/\n]+", str(val))
+                    return [p.strip() for p in parts if p and p.strip()]
+
+                org_df["Extracted Orgs"] = org_df[Program_Name].apply(normalize_orgs)
 
                 # Fallback: if all lists are empty, just use raw org names
                 if org_df["Extracted Orgs"].apply(len).sum() == 0:
                     org_df["Extracted Orgs"] = org_df[Program_Name].apply(lambda x: [x.strip()] if x else [])
 
 
-                all_orgs = sorted(set(org for org in org_df["Extracted Orgs"] if org))
+                all_orgs = sorted({
+                    o
+                    for sublist in org_df["Extracted Orgs"]
+                    for o in sublist
+                    if o
+                })
                 over_scores = {}
                 if all_orgs:
                     # Step 1: Get all columns that include "Overall Score"
@@ -1472,6 +1485,11 @@ if st.session_state["active_page"] == "view-results":
                     
                     # Match rows where normalized org is in normalized extracted list
                     torg_df = org_df[org_df["__normalized_extracted_orgs__"].apply(lambda x: norm_org in x)]
+                    # def row_has_org(org_list, target):
+                    #     target = target.strip().lower()
+                    #     return any(str(o).strip().lower() == target for o in (org_list or []))
+
+                    # torg_df = org_df[org_df["Extracted Orgs"].apply(lambda xs: row_has_org(xs, corg))]
 
                     # Overall Score
                     all_scores = []
@@ -2190,10 +2208,14 @@ if st.session_state["active_page"] == "view-results":
                                 for org in all_orgs:
                                     corg = org.rstrip()
                                     # Filter rows for this org
-                                    torg_df = org_df[org_df["Extracted Orgs"].apply(
-                                        lambda x: corg.lower() in x if isinstance(x, list) else corg.lower() == x.strip().lower()
-                                    )]
+                                    # torg_df = org_df[org_df["Extracted Orgs"].apply(
+                                    #     lambda x: corg.lower() in x if isinstance(x, list) else corg.lower() == x.strip().lower()
+                                    # )]
+                                    def row_has_org(org_list, target):
+                                        target = target.strip().lower()
+                                        return any(str(o).strip().lower() == target for o in (org_list or []))
 
+                                    torg_df = org_df[org_df["Extracted Orgs"].apply(lambda xs: row_has_org(xs, corg))]
                                     if torg_df.empty:
                                         continue
 
