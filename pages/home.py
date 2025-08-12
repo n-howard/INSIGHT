@@ -801,6 +801,8 @@ def render_all_scores(ASSESSMENTS):
 
 
 render_navbar()
+if "active_page" not in st.session_state:
+    st.session_state["active_page"] = "home"
 # --- Main App ---
 
 
