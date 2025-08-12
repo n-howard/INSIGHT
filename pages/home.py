@@ -880,17 +880,20 @@ def render_all_scores(ASSESSMENTS):
                     continue
 
                 avg = sum(vals) / len(vals)
-                st.html(f"""<style>.st-key-white_container_small_{assessment}_{i}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;}}</style>""")
-                with st.container(key=f"white_container_small_{assessment}_{i}"):
+                w_prefix = str(uuid.uuid4())
+                wa = f"white_container_{w_prefix}"
+                st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
+                st.html(f"""<style>.st-key-teal_container_{w_prefix}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
+                with st.container(key=wa):
                     render_overall_score(f"Average Overall Score for {assessment}", avg, key_suffix=f"{assessment}_{i}")
-                    st.html(f"""
-                        <style>
-                        .st-key-teal_container_{i} {{
-                            background-color: #084C61; border-radius: 20px; padding: 5%;
-                        }}
-                        </style>
-                    """)
-                    with st.container(key=f"teal_container_{i}"):
+                    # st.html(f"""
+                    #     <style>
+                    #     .st-key-teal_container_{i} {{
+                    #         background-color: #084C61; border-radius: 20px; padding: 5%;
+                    #     }}
+                    #     </style>
+                    # """)
+                    with st.container(key=f"teal_container_{w_prefix}"):
                         st.plotly_chart(draw_score_dial(avg), use_container_width=True)
                 # # Regular org view: filter to the user's org and show a single average
                 # df["__org_clean__"] = df[Program_Name].astype(str).apply(norm)
