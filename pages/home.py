@@ -1126,12 +1126,8 @@ if st.session_state["active_page"] == "view-results":
             access_level = cookies.get("access_level", "").strip().lower() == "true"
 
         if not org_input:
-            try: 
-                st.session_state["org_input"] = cookies.get("org_input")
-                org_input = st.session_state.get("org_input")
-            except:
-                st.warning("Please enter your organization name on the main page.")
-                st.stop()
+            st.warning("Please enter your organization name on the main page.")
+            st.stop()
     
         # Load raw data and headers for the specific organization.
         raw_data = sheet.get_all_values()
