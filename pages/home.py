@@ -1101,10 +1101,31 @@ if st.session_state["active_page"] == "view-results":
     if access_level is None:
         access_level = cookies.get("access_level", "").strip().lower() == "true"
     assessment = st.session_state.get("variation", None)
+    is_admin = st.session_state.get("is_admin")
+    if is_admin is None:
+        is_admin = cookies.get("admin_input", "").strip().lower() == "true"
+
+    access_level = st.session_state.get("access")
+    if access_level is None:
+        access_level = cookies.get("access_level", "").strip().lower() == "true"
+
+    org_input = st.session_state.get("org_input")
+    if org_input is None:
+        org_input = cookies.get("org_input", "").strip().lower()
     if assessment == "all":
         render_all_scores(ASSESSMENTS)
     elif assessment:
-        
+        is_admin = st.session_state.get("is_admin")
+        if is_admin is None:
+            is_admin = cookies.get("admin_input", "").strip().lower() == "true"
+
+        access_level = st.session_state.get("access")
+        if access_level is None:
+            access_level = cookies.get("access_level", "").strip().lower() == "true"
+
+        org_input = st.session_state.get("org_input")
+        if org_input is None:
+            org_input = cookies.get("org_input", "").strip().lower()
     #     title = assessment + " Results"
     #     thisStyle = f"""<h3 style='text-align: center; font-size: 35px; font-weight: 600; font-family: Poppins;'>{title}</h3>"""
     #     st.html(
