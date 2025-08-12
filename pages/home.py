@@ -100,47 +100,7 @@ if st.query_params.get("logout") == "1":
 # --- LOGOUT BUTTON ---
 
 
-NAVBAR_HTML = """
 
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
-
-html, body, [class*="css"] {{
-    font-family: 'Poppins', sans-serif !important;
-}}
-
-.navbar{{
-display: flex;
-    justify-content: center;
-    # padding: 20px 40px;
-    font-size: 18px;
-    flex-wrap: nowrap;
-    
-}}
-
-# .navbar (max-width: 740px){{
-# display: flex;
-# flex-direction: column;
-# }}
-.navbar a {{
-    margin-left: 30px;
-    color: black;
-    text-decoration: none;
-}}
-.navbar a.active {{
-    color: #084C61;
-    font-weight: bold;
-        }}
-
-
-</style>
-
-<div class="navbar">
-  <a href="?page=home" class="{home_class}">Home</a>
-  <a href="?page=self-assess" class="{self_class}">Self-Assess</a>
-  <a href="?page=view-results" class="{results_class}">View Results</a>
-</div>
-"""
 
 
 st.html("""<style>
@@ -199,125 +159,7 @@ iframe {
 
 
 
-# Check current page
-page = st.query_params.get("page", "home")
-active_page = page.lower()
-navbar = NAVBAR_HTML.format(
-    home_class="active" if active_page == "home" else "",
-    self_class="active" if active_page == "self-assess" else "",
-    results_class="active" if active_page == "view-results" else "",
-)
-# st.html(navbar)
-logout_container = st.container()
-col1, _, col2 = st.columns([3,5, 2])
-NAVBAR_HTML = f"""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
 
-html, body, [class*="css"] {{
-    font-family: 'Poppins', sans-serif !important;
-}}
-
-.fixed-header {{
-    position: fixed;
-    top: 2%;
-    width: 98%;
-    border-radius: 20px;
-    left: 1%;
-    right: 1%;
-    background-color: white;
-    z-index: 10000;
-    padding: 10px 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}}
-
-.header-content {{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-}}
-
-.navbar {{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 30px;
-    font-size: 18px;
-    justify-content: flex-start;
-}}
-
-.navbar a {{
-    color: black;
-    text-decoration: none;
-}}
-
-.navbar a.active {{
-    color: #084C61;
-    font-weight: bold;
-}}
-
-.logout-section {{
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-}}
-
-.logout-button {{
-    background-color: #084C61;
-    color: white;
-    font-weight: 600;
-    font-size: .9rem;
-    padding: .4rem .8rem;
-    border: none;
-    border-radius: 2rem;
-    cursor: pointer;
-    text-align: center;
-    text-decoration: none;
-    margin-left: 10px;
-}}
-
-.logout-button:hover {{
-    background-color: #d6e3e7;
-    color: #333;
-}}
-
-.org-name-display {{
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #084c61;
-}}
-
-/* Mobile layout: center everything vertically */
-@media (max-width: 640px) {{
-    .header-content {{
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }}
-    .navbar {{
-        justify-content: center;
-    }}
-    .logout-section {{
-        justify-content: center;
-        margin-top: 10px;
-    }}
-}}
-</style>
-
-<div class="fixed-header">
-    <div class="header-content">
-        <div class="navbar">
-            <a href="?page=home" class="{ 'active' if active_page == 'home' else '' }">Home</a>
-            <a href="?page=self-assess" class="{ 'active' if active_page == 'self-assess' else '' }">Self-Assess</a>
-            <a href="?page=view-results" class="{ 'active' if active_page == 'view-results' else '' }">View Results</a>
-        </div>
-        <div class="logout-section">
-            <div class="org-name-display">{st.session_state.get("org_input", "Organization")} {ad}</div>
-            <a href="?logout=1" class="logout-button">Log Out</a>
-        </div>
-    </div>
-</div>
-"""
 
 
 st.markdown("""
@@ -437,7 +279,6 @@ def render_navbar():
             if st.button("Home", use_container_width = True):
                 cookies["active_page"] = "home"
                 st.session_state["active_page"] = "home"
-                cookies.save()
                     
 
     with col2:
@@ -461,7 +302,6 @@ def render_navbar():
             if st.button("Self-Assess", use_container_width = True):
                 cookies["active_page"] = "self-assess"
                 st.session_state["active_page"] = "self-assess"
-                cookies.save()
 
     with col3:
         with stylable_container(f"navbar_view_btn", css_styles="""
@@ -484,7 +324,6 @@ def render_navbar():
             if st.button("View Results", use_container_width = True):
                 cookies["active_page"] = "view-results"
                 st.session_state["active_page"] = "view-results"
-                cookies.save()
 
     with col4:
         with stylable_container(f"navbar_logout_btn_{str(uuid.uuid4())}", css_styles="""
@@ -509,9 +348,9 @@ def render_navbar():
                 for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page"]:
                     st.session_state.pop(key, None)
                     cookies[key] = ""
-                    cookies.save()
                 st.switch_page("app.py")
     st.markdown("""</div>""", unsafe_allow_html=True)
+    cookies.save()
 
 # --- Variation Buttons ---
 def render_variation_buttons():
@@ -966,14 +805,14 @@ def render_all_scores(ASSESSMENTS):
                 #         st.plotly_chart(draw_score_dial(avg), use_container_width=True)
 
 
-
+render_navbar()
 # --- Main App ---
 if "active_page" not in st.session_state:
     st.session_state["active_page"] = cookies.get("active_page", "")
 if st.session_state.get("active_page") == "":
     st.session_state["active_page"] = "home"
 
-render_navbar()
+
 # render_variation_buttons()
 
 st.write("\n")
