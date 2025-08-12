@@ -101,8 +101,6 @@ if st.query_params.get("logout") == "1":
 
 
 
-
-
 st.html("""<style>
     /* ───── Remove header & padding on top ───── */
     [data-testid="stHeader"] {display: none;}
@@ -277,7 +275,6 @@ def render_navbar():
                 box-shadow: none;
         """):
             if st.button("Home", use_container_width = True):
-                cookies["active_page"] = "home"
                 st.session_state["active_page"] = "home"
                     
 
@@ -300,7 +297,6 @@ def render_navbar():
                 box-shadow: none;
         """):
             if st.button("Self-Assess", use_container_width = True):
-                cookies["active_page"] = "self-assess"
                 st.session_state["active_page"] = "self-assess"
 
     with col3:
@@ -322,7 +318,6 @@ def render_navbar():
                 box-shadow: none;
         """):
             if st.button("View Results", use_container_width = True):
-                cookies["active_page"] = "view-results"
                 st.session_state["active_page"] = "view-results"
 
     with col4:
@@ -807,18 +802,14 @@ def render_all_scores(ASSESSMENTS):
 
 render_navbar()
 # --- Main App ---
-if "active_page" not in st.session_state:
-    st.session_state["active_page"] = cookies.get("active_page", "")
-if st.session_state.get("active_page") == "":
-    st.session_state["active_page"] = "home"
+
 
 
 # render_variation_buttons()
 
 st.write("\n")
 
-if st.session_state["active_page"] == "view-results":
-    # remove this code if you want to retain the variation
+if st.session_state.get("active_page") == "view-results":
     st.html(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
