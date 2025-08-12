@@ -30,26 +30,6 @@ cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SEC
 if not cookies.ready():
     st.stop()
 
-def _rehydrate_text(key, cookie_key):
-    val = st.session_state.get(key, "")
-    if not val:
-        cv = cookies.get(cookie_key)
-        if cv:
-            st.session_state[key] = cv
-
-def _rehydrate_bool(key, cookie_key):
-    if st.session_state.get(key) is None:
-        raw = (cookies.get(cookie_key) or "").strip().lower()
-        st.session_state[key] = (raw == "true")
-
-_rehydrate_text("org_input", "org_input")
-_rehydrate_text("site_input", "site_input")
-_rehydrate_text("user_email", "user_email")
-_rehydrate_text("active_page", "active_page")
-_rehydrate_text("variation", "variation")
-
-_rehydrate_bool("is_admin", "admin_input")
-_rehydrate_bool("access", "access_level")
 # Restore from cookies if needed
 if "org_input" not in st.session_state:
     cookie_org = cookies.get("org_input")
@@ -206,148 +186,148 @@ ASSESSMENTS = {
 }
 # --- Navbar with buttons using real Streamlit interactivity ---
 
-def render_navbar():
+# def render_navbar():
     
-    # st.markdown("""<div style='background-color:#2c3e50; padding: 10px 20px; border-radius: 0 0 10px 10px;'>""", unsafe_allow_html=True)
+    # # st.markdown("""<div style='background-color:#2c3e50; padding: 10px 20px; border-radius: 0 0 10px 10px;'>""", unsafe_allow_html=True)
 
-    acol, _, col1, col2, col3, col4 = st.columns([1, 5, 1, 1, 1, 1])
+    # acol, _, col1, col2, col3, col4 = st.columns([1, 5, 1, 1, 1, 1])
 
-    # if is_admin:
-    #     with acol:
-    #         data_form_link = "https://docs.google.com/forms/d/e/1FAIpQLScebVl2SRuhtDmzAEag_sPn0MgaAvLIpbwbm7-Imjup8aD2uw/viewform?embedded=true"
-    #         with stylable_container("data_form", css_styles="""
-    #             button {
-    #                 background-color: white;
-    #                 color: black;
-    #                 border-radius: 6px;
-    #                 padding: 8px 16px;
-    #                 border: none;
-    #                 font-weight: 600;
-    #                 align-self: flex-end;
-    #             }
-    #             button:focus,
-    #             button:active, 
-    #             button:hover {
-    #                 background-color: white !important;
-    #                 color: #084C61 !important;
-    #                 outline: none;
-    #                 box-shadow: none;
-    #         """):
-    #             if st.button("Program Information"):
-    #                 st.session_state["active_page"] = "info"
-    #                 # components.iframe(data_form_link, width=1500, height=800, scrolling = True)
-    with acol:
-        st.markdown("<h3 style='color:#084C61; margin: 0;'>INSIGHT</h3>", unsafe_allow_html=True)
-        # with stylable_container(f"navbar_insightbtn", css_styles="""
-        #     button {
-        #         background-color: white;
-        #         color: black;
-        #         border-radius: 6px;
-        #         padding: 8px 16px;
-        #         border: none;
-        #         font-weight: 600;
-        #     }
-        #     button:focus,
-        #     button:active, 
-        #     button:hover {
-        #         background-color: white !important;
-        #         color: #084C61 !important;
-        #         outline: none;
-        #         box-shadow: none;
-        # """):
-        #     if st.button("INSIGHT", use_container_width = True):
-        #             st.session_state["active_page"] = "home"
-    with col1:
-        # st.markdown("<h3 style='color:white; margin: 0;'>INSIGHT</h3>", unsafe_allow_html=True)
-        with stylable_container(f"navbar_home_btn", css_styles="""
-            button {
-                background-color: white;
-                color: black;
-                border-radius: 6px;
-                padding: 8px 16px;
-                border: none;
-                font-weight: 600;
-            }
-            button:focus,
-            button:active, 
-            button:hover {
-                background-color: white !important;
-                color: #084C61 !important;
-                outline: none;
-                box-shadow: none;
-        """):
-            if st.button("Home", use_container_width = True):
-                st.session_state["active_page"] = "home"
+    # # if is_admin:
+    # #     with acol:
+    # #         data_form_link = "https://docs.google.com/forms/d/e/1FAIpQLScebVl2SRuhtDmzAEag_sPn0MgaAvLIpbwbm7-Imjup8aD2uw/viewform?embedded=true"
+    # #         with stylable_container("data_form", css_styles="""
+    # #             button {
+    # #                 background-color: white;
+    # #                 color: black;
+    # #                 border-radius: 6px;
+    # #                 padding: 8px 16px;
+    # #                 border: none;
+    # #                 font-weight: 600;
+    # #                 align-self: flex-end;
+    # #             }
+    # #             button:focus,
+    # #             button:active, 
+    # #             button:hover {
+    # #                 background-color: white !important;
+    # #                 color: #084C61 !important;
+    # #                 outline: none;
+    # #                 box-shadow: none;
+    # #         """):
+    # #             if st.button("Program Information"):
+    # #                 st.session_state["active_page"] = "info"
+    # #                 # components.iframe(data_form_link, width=1500, height=800, scrolling = True)
+    # with acol:
+    #     st.markdown("<h3 style='color:#084C61; margin: 0;'>INSIGHT</h3>", unsafe_allow_html=True)
+    #     # with stylable_container(f"navbar_insightbtn", css_styles="""
+    #     #     button {
+    #     #         background-color: white;
+    #     #         color: black;
+    #     #         border-radius: 6px;
+    #     #         padding: 8px 16px;
+    #     #         border: none;
+    #     #         font-weight: 600;
+    #     #     }
+    #     #     button:focus,
+    #     #     button:active, 
+    #     #     button:hover {
+    #     #         background-color: white !important;
+    #     #         color: #084C61 !important;
+    #     #         outline: none;
+    #     #         box-shadow: none;
+    #     # """):
+    #     #     if st.button("INSIGHT", use_container_width = True):
+    #     #             st.session_state["active_page"] = "home"
+    # with col1:
+    #     # st.markdown("<h3 style='color:white; margin: 0;'>INSIGHT</h3>", unsafe_allow_html=True)
+    #     with stylable_container(f"navbar_home_btn", css_styles="""
+    #         button {
+    #             background-color: white;
+    #             color: black;
+    #             border-radius: 6px;
+    #             padding: 8px 16px;
+    #             border: none;
+    #             font-weight: 600;
+    #         }
+    #         button:focus,
+    #         button:active, 
+    #         button:hover {
+    #             background-color: white !important;
+    #             color: #084C61 !important;
+    #             outline: none;
+    #             box-shadow: none;
+    #     """):
+    #         if st.button("Home", use_container_width = True):
+    #             st.session_state["active_page"] = "home"
                     
 
-    with col2:
-        with stylable_container(f"navbar_self_btn", css_styles="""
-            button {
-                background-color: white;
-                color: black;
-                border-radius: 6px;
-                padding: 8px 16px;
-                border: none;
-                font-weight: 600;
-            }
-            button:focus,
-            button:active, 
-            button:hover {
-                background-color: white !important;
-                color: #084C61 !important;
-                outline: none;
-                box-shadow: none;
-        """):
-            if st.button("Self-Assess", use_container_width = True):
-                st.session_state["active_page"] = "self-assess"
+    # with col2:
+    #     with stylable_container(f"navbar_self_btn", css_styles="""
+    #         button {
+    #             background-color: white;
+    #             color: black;
+    #             border-radius: 6px;
+    #             padding: 8px 16px;
+    #             border: none;
+    #             font-weight: 600;
+    #         }
+    #         button:focus,
+    #         button:active, 
+    #         button:hover {
+    #             background-color: white !important;
+    #             color: #084C61 !important;
+    #             outline: none;
+    #             box-shadow: none;
+    #     """):
+    #         if st.button("Self-Assess", use_container_width = True):
+    #             st.session_state["active_page"] = "self-assess"
 
-    with col3:
-        with stylable_container(f"navbar_view_btn", css_styles="""
-            button {
-                background-color: white;
-                color: black;
-                border-radius: 6px;
-                padding: 8px 16px;
-                border: none;
-                font-weight: 600;
-            }
-            button:focus,
-            button:active, 
-            button:hover {
-                background-color: white !important;
-                color: #084C61 !important;
-                outline: none;
-                box-shadow: none;
-        """):
-            if st.button("View Results", use_container_width = True):
-                st.session_state["active_page"] = "view-results"
+    # with col3:
+    #     with stylable_container(f"navbar_view_btn", css_styles="""
+    #         button {
+    #             background-color: white;
+    #             color: black;
+    #             border-radius: 6px;
+    #             padding: 8px 16px;
+    #             border: none;
+    #             font-weight: 600;
+    #         }
+    #         button:focus,
+    #         button:active, 
+    #         button:hover {
+    #             background-color: white !important;
+    #             color: #084C61 !important;
+    #             outline: none;
+    #             box-shadow: none;
+    #     """):
+    #         if st.button("View Results", use_container_width = True):
+    #             st.session_state["active_page"] = "view-results"
 
-    with col4:
-        with stylable_container(f"navbar_logout_btn_{str(uuid.uuid4())}", css_styles="""
-            button {
-                background-color: #084C61;
-                color: white;
-                border-radius: 6px;
-                padding: 8px 16px;
-                border: none;
-                font-weight: 600;
-            }
-            button:focus,
-            button:active, 
-            button:hover {
-            background-color: white !important;
-            color: black !important;
-            outline: none;
-            box-shadow: none;
-        }
-        """):
-            if st.button("Logout", use_container_width = True):
-                for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page"]:
-                    st.session_state.pop(key, None)
-                    cookies[key] = ""
-                st.switch_page("app.py")
-    st.markdown("""</div>""", unsafe_allow_html=True)
-    cookies.save()
+    # with col4:
+    #     with stylable_container(f"navbar_logout_btn_{str(uuid.uuid4())}", css_styles="""
+    #         button {
+    #             background-color: #084C61;
+    #             color: white;
+    #             border-radius: 6px;
+    #             padding: 8px 16px;
+    #             border: none;
+    #             font-weight: 600;
+    #         }
+    #         button:focus,
+    #         button:active, 
+    #         button:hover {
+    #         background-color: white !important;
+    #         color: black !important;
+    #         outline: none;
+    #         box-shadow: none;
+    #     }
+    #     """):
+    #         if st.button("Logout", use_container_width = True):
+    #             for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page"]:
+    #                 st.session_state.pop(key, None)
+    #                 cookies[key] = ""
+    #             st.switch_page("app.py")
+    # st.markdown("""</div>""", unsafe_allow_html=True)
+    # cookies.save()
 
 # --- Variation Buttons ---
 def render_variation_buttons():
@@ -802,9 +782,131 @@ def render_all_scores(ASSESSMENTS):
                 #         st.plotly_chart(draw_score_dial(avg), use_container_width=True)
 
 
-render_navbar()
-# --- Main App ---
+# st.markdown("""<div style='background-color:#2c3e50; padding: 10px 20px; border-radius: 0 0 10px 10px;'>""", unsafe_allow_html=True)
 
+acol, _, col1, col2, col3, col4 = st.columns([1, 5, 1, 1, 1, 1])
+
+# if is_admin:
+#     with acol:
+#         data_form_link = "https://docs.google.com/forms/d/e/1FAIpQLScebVl2SRuhtDmzAEag_sPn0MgaAvLIpbwbm7-Imjup8aD2uw/viewform?embedded=true"
+#         with stylable_container("data_form", css_styles="""
+#             button {
+#                 background-color: white;
+#                 color: black;
+#                 border-radius: 6px;
+#                 padding: 8px 16px;
+#                 border: none;
+#                 font-weight: 600;
+#                 align-self: flex-end;
+#             }
+#             button:focus,
+#             button:active, 
+#             button:hover {
+#                 background-color: white !important;
+#                 color: #084C61 !important;
+#                 outline: none;
+#                 box-shadow: none;
+#         """):
+#             if st.button("Program Information"):
+#                 st.session_state["active_page"] = "info"
+#                 # components.iframe(data_form_link, width=1500, height=800, scrolling = True)
+with acol:
+    st.markdown("<h3 style='color:#084C61; margin: 0;'>INSIGHT</h3>", unsafe_allow_html=True)
+
+with col1:
+    # st.markdown("<h3 style='color:white; margin: 0;'>INSIGHT</h3>", unsafe_allow_html=True)
+    with stylable_container(f"navbar_home_btn", css_styles="""
+        button {
+            background-color: white;
+            color: black;
+            border-radius: 6px;
+            padding: 8px 16px;
+            border: none;
+            font-weight: 600;
+        }
+        button:focus,
+        button:active, 
+        button:hover {
+            background-color: white !important;
+            color: #084C61 !important;
+            outline: none;
+            box-shadow: none;
+    """):
+        if st.button("Home", use_container_width = True):
+            st.session_state["active_page"] = "home"
+                
+
+with col2:
+    with stylable_container(f"navbar_self_btn", css_styles="""
+        button {
+            background-color: white;
+            color: black;
+            border-radius: 6px;
+            padding: 8px 16px;
+            border: none;
+            font-weight: 600;
+        }
+        button:focus,
+        button:active, 
+        button:hover {
+            background-color: white !important;
+            color: #084C61 !important;
+            outline: none;
+            box-shadow: none;
+    """):
+        if st.button("Self-Assess", use_container_width = True):
+            st.session_state["active_page"] = "self-assess"
+
+with col3:
+    with stylable_container(f"navbar_view_btn", css_styles="""
+        button {
+            background-color: white;
+            color: black;
+            border-radius: 6px;
+            padding: 8px 16px;
+            border: none;
+            font-weight: 600;
+        }
+        button:focus,
+        button:active, 
+        button:hover {
+            background-color: white !important;
+            color: #084C61 !important;
+            outline: none;
+            box-shadow: none;
+    """):
+        if st.button("View Results", use_container_width = True):
+            st.session_state["active_page"] = "view-results"
+
+with col4:
+    with stylable_container(f"navbar_logout_btn_{str(uuid.uuid4())}", css_styles="""
+        button {
+            background-color: #084C61;
+            color: white;
+            border-radius: 6px;
+            padding: 8px 16px;
+            border: none;
+            font-weight: 600;
+        }
+        button:focus,
+        button:active, 
+        button:hover {
+        background-color: white !important;
+        color: black !important;
+        outline: none;
+        box-shadow: none;
+    }
+    """):
+        if st.button("Logout", use_container_width = True):
+            for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page"]:
+                st.session_state.pop(key, None)
+                cookies[key] = ""
+            st.switch_page("app.py")
+st.markdown("""</div>""", unsafe_allow_html=True)
+cookies.save()
+
+if "active_page" not in st.session_state:
+    st.session_state["active_page"] = "home"
 
 
 # render_variation_buttons()
