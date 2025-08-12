@@ -629,7 +629,7 @@ def render_all_scores(ASSESSMENTS):
             return []
         parts = re.split(r"[;,/\n]+", str(val))
         return [p.strip() for p in parts if p and p.strip()]
-
+    org_input = st.session_state.get("org_input")
     # Derive access flag (accepts bool or stringy truthy)
     access_level = bool(st.session_state.get("access"))
     if access_level is None:
@@ -638,9 +638,9 @@ def render_all_scores(ASSESSMENTS):
     if is_admin is None:
         is_admin = bool(st.session_state.get("admin_input"))
     org_input = st.session_state.get("org_input", "")
-    if not access_level and not org_input:
+    if not org_input:
         st.warning("Please enter your organization name on the main page.")
-        st.switch_page("app.py")
+        st.stop()
 
     cols = st.columns(6)
 
@@ -1108,8 +1108,12 @@ if st.session_state["active_page"] == "view-results":
         is_admin = admin_input
 
         if not org_input:
-            st.warning("Please enter your organization name on the main page.")
-            st.switch_page("app.py")
+            try: 
+                st.session_state["org_input"] = cookies.get("org_input")
+                org_input = st.session_state.get("org_input")
+            except:
+                st.warning("Please enter your organization name on the main page.")
+                st.stop()
     
         # Load raw data and headers for the specific organization.
         raw_data = sheet.get_all_values()
