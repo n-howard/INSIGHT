@@ -596,9 +596,6 @@ st.html("""
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-@media (max-width: 768px) {
-  .score-card__title { min-height: 64px; }  /* a bit taller on mobile */
-}
 .score-card__dial {
   display: flex;
   justify-content: center;
@@ -1075,7 +1072,15 @@ if st.session_state["active_page"] == "view-results":
         
     render_variation_buttons()
 
-    
+    # Access the value stored in session state
+    org_input = st.session_state.get("org_input", "")
+    admin_input = bool(st.session_state.get("admin_input"))
+    if admin_input is None:
+        admin_input = bool(st.session_state.get("is_admin", ""))
+    access_level = bool(st.session_state.get("access_level"))
+    if access_level is None:
+        admin_input = bool(st.session_state.get("access", ""))
+    is_admin = admin_input
     assessment = st.session_state.get("variation", None)
     if assessment == "all":
         render_all_scores(ASSESSMENTS)
