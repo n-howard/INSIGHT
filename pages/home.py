@@ -1060,12 +1060,12 @@ if st.session_state["active_page"] == "view-results":
 
         # Access the value stored in session state
         org_input = st.session_state.get("org_input", "")
-        admin_input = st.session_state.get("admin_input")
+        admin_input = bool(st.session_state.get("admin_input"))
         if admin_input is None:
-            admin_input = st.session_state.get("is_admin", "")
-        access_level = st.session_state.get("access_level")
+            admin_input = bool(st.session_state.get("is_admin", ""))
+        access_level = bool(st.session_state.get("access_level"))
         if access_level is None:
-            admin_input = st.session_state.get("access", "")
+            admin_input = bool(st.session_state.get("access", ""))
 
 
         if not org_input:
