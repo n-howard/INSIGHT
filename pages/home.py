@@ -50,11 +50,6 @@ _rehydrate_text("variation", "variation")
 
 _rehydrate_bool("is_admin", "admin_input")
 _rehydrate_bool("access", "access_level")
-
-def set_and_persist(key, value):
-    st.session_state[key] = value
-    cookies[key] = str(value)
-
 # Restore from cookies if needed
 if "org_input" not in st.session_state:
     cookie_org = cookies.get("org_input")
@@ -212,41 +207,147 @@ ASSESSMENTS = {
 # --- Navbar with buttons using real Streamlit interactivity ---
 
 def render_navbar():
-    # DEFAULT only; don't clobber on every rerun
-    if "active_page" not in st.session_state:
-        st.session_state["active_page"] = cookies.get("active_page") or "home"
+    
+    # st.markdown("""<div style='background-color:#2c3e50; padding: 10px 20px; border-radius: 0 0 10px 10px;'>""", unsafe_allow_html=True)
 
     acol, _, col1, col2, col3, col4 = st.columns([1, 5, 1, 1, 1, 1])
 
+    # if is_admin:
+    #     with acol:
+    #         data_form_link = "https://docs.google.com/forms/d/e/1FAIpQLScebVl2SRuhtDmzAEag_sPn0MgaAvLIpbwbm7-Imjup8aD2uw/viewform?embedded=true"
+    #         with stylable_container("data_form", css_styles="""
+    #             button {
+    #                 background-color: white;
+    #                 color: black;
+    #                 border-radius: 6px;
+    #                 padding: 8px 16px;
+    #                 border: none;
+    #                 font-weight: 600;
+    #                 align-self: flex-end;
+    #             }
+    #             button:focus,
+    #             button:active, 
+    #             button:hover {
+    #                 background-color: white !important;
+    #                 color: #084C61 !important;
+    #                 outline: none;
+    #                 box-shadow: none;
+    #         """):
+    #             if st.button("Program Information"):
+    #                 st.session_state["active_page"] = "info"
+    #                 # components.iframe(data_form_link, width=1500, height=800, scrolling = True)
     with acol:
         st.markdown("<h3 style='color:#084C61; margin: 0;'>INSIGHT</h3>", unsafe_allow_html=True)
-
+        # with stylable_container(f"navbar_insightbtn", css_styles="""
+        #     button {
+        #         background-color: white;
+        #         color: black;
+        #         border-radius: 6px;
+        #         padding: 8px 16px;
+        #         border: none;
+        #         font-weight: 600;
+        #     }
+        #     button:focus,
+        #     button:active, 
+        #     button:hover {
+        #         background-color: white !important;
+        #         color: #084C61 !important;
+        #         outline: none;
+        #         box-shadow: none;
+        # """):
+        #     if st.button("INSIGHT", use_container_width = True):
+        #             st.session_state["active_page"] = "home"
     with col1:
-        with stylable_container("navbar_home_btn", css_styles="""...your styles..."""):
-            if st.button("Home", use_container_width=True, key="btn_home"):
-                set_and_persist("active_page", "home")
+        # st.markdown("<h3 style='color:white; margin: 0;'>INSIGHT</h3>", unsafe_allow_html=True)
+        with stylable_container(f"navbar_home_btn", css_styles="""
+            button {
+                background-color: white;
+                color: black;
+                border-radius: 6px;
+                padding: 8px 16px;
+                border: none;
+                font-weight: 600;
+            }
+            button:focus,
+            button:active, 
+            button:hover {
+                background-color: white !important;
+                color: #084C61 !important;
+                outline: none;
+                box-shadow: none;
+        """):
+            if st.button("Home", use_container_width = True):
+                st.session_state["active_page"] = "home"
+                    
 
     with col2:
-        with stylable_container("navbar_self_btn", css_styles="""...your styles..."""):
-            if st.button("Self-Assess", use_container_width=True, key="btn_self"):
-                set_and_persist("active_page", "self-assess")
+        with stylable_container(f"navbar_self_btn", css_styles="""
+            button {
+                background-color: white;
+                color: black;
+                border-radius: 6px;
+                padding: 8px 16px;
+                border: none;
+                font-weight: 600;
+            }
+            button:focus,
+            button:active, 
+            button:hover {
+                background-color: white !important;
+                color: #084C61 !important;
+                outline: none;
+                box-shadow: none;
+        """):
+            if st.button("Self-Assess", use_container_width = True):
+                st.session_state["active_page"] = "self-assess"
 
     with col3:
-        with stylable_container("navbar_view_btn", css_styles="""...your styles..."""):
-            if st.button("View Results", use_container_width=True, key="btn_view"):
-                set_and_persist("active_page", "view-results")
+        with stylable_container(f"navbar_view_btn", css_styles="""
+            button {
+                background-color: white;
+                color: black;
+                border-radius: 6px;
+                padding: 8px 16px;
+                border: none;
+                font-weight: 600;
+            }
+            button:focus,
+            button:active, 
+            button:hover {
+                background-color: white !important;
+                color: #084C61 !important;
+                outline: none;
+                box-shadow: none;
+        """):
+            if st.button("View Results", use_container_width = True):
+                st.session_state["active_page"] = "view-results"
 
     with col4:
-        with stylable_container(f"navbar_logout_btn_{str(uuid.uuid4())}", css_styles="""...your styles..."""):
-            if st.button("Logout", use_container_width=True, key="btn_logout"):
-                for key in ["org_input","user_email","access_level","admin_input","site_input","variation","active_page"]:
+        with stylable_container(f"navbar_logout_btn_{str(uuid.uuid4())}", css_styles="""
+            button {
+                background-color: #084C61;
+                color: white;
+                border-radius: 6px;
+                padding: 8px 16px;
+                border: none;
+                font-weight: 600;
+            }
+            button:focus,
+            button:active, 
+            button:hover {
+            background-color: white !important;
+            color: black !important;
+            outline: none;
+            box-shadow: none;
+        }
+        """):
+            if st.button("Logout", use_container_width = True):
+                for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page"]:
                     st.session_state.pop(key, None)
                     cookies[key] = ""
-                    cookies.save()
                 st.switch_page("app.py")
-
-    # keep this, but don't overwrite cookies blindly elsewhere
-    
+    st.markdown("""</div>""", unsafe_allow_html=True)
+    cookies.save()
 
 # --- Variation Buttons ---
 def render_variation_buttons():
@@ -295,10 +396,8 @@ def render_variation_buttons():
                         box-shadow: none;
                     }
                 """):
-                    if st.button(variation, use_container_width=True, key=f"variation_btn_{i+j}"):
-                        set_and_persist("variation", variation)
-                        # make sure we're on the right page if user came from elsewhere
-                        set_and_persist("active_page", "view-results")
+                    if st.button(variation, use_container_width=True):
+                        st.session_state["variation"] = variation
 
     st.markdown("""</div>""", unsafe_allow_html=True)
 # Donut Dial Function
@@ -808,39 +907,37 @@ if st.session_state.get("active_page") == "view-results":
     """)
     
     with stylable_container(f"all_assessment", css_styles="""
-        button {
-            font-weight: 600;
-            font-size: .9rem;
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 2rem;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
-            min-width: 33.33%;
-            max-width: 100%;
-            width: 100%;
-            transition: background-color 0.2s;
-            background-color: #d6e3e7;
-            color: #333;
-            margin-bottom: 0%;
-        }
+    button {
+        font-weight: 600;
+        font-size: .9rem;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 2rem;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        min-width: 33.33%;
+        max-width: 100%;
+        width: 100%;
+        transition: background-color 0.2s;
+        background-color: #d6e3e7;
+        color: #333;
+        margin-bottom: 0%;
+    }
 
-        button:focus,
-        button:active, 
-        button:hover {
-            background-color: #084C61 !important;
-            color: white !important;
-            outline: none;
-            box-shadow: none;
-        }
-    """):
-        if st.button("All Assessments", use_container_width=True, key="btn_all_assess"):
-            set_and_persist("variation", "all")
-            set_and_persist("active_page", "view-results")
+    button:focus,
+    button:active, 
+    button:hover {
+        background-color: #084C61 !important;
+        color: white !important;
+        outline: none;
+        box-shadow: none;
+    }
+"""):
+        if st.button("All Assessments", use_container_width=True):
+            st.session_state["variation"] = "all"
         
     render_variation_buttons()
-    cookies.save()
 
     # # Access the value stored in session state
     org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
