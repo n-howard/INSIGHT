@@ -1046,6 +1046,7 @@ if st.session_state["active_page"] == "view-results":
     assessment = st.session_state.get("variation", None)
     if assessment is None:
         render_all_scores(ASSESSMENTS)
+    assessment = st.session_state.get("variation", None)
     if assessment:
     #     title = assessment + " Results"
     #     thisStyle = f"""<h3 style='text-align: center; font-size: 35px; font-weight: 600; font-family: Poppins;'>{title}</h3>"""
@@ -1066,7 +1067,7 @@ if st.session_state["active_page"] == "view-results":
         access_level = bool(st.session_state.get("access_level"))
         if access_level is None:
             admin_input = bool(st.session_state.get("access", ""))
-
+        is_admin = admin_input
 
         if not org_input:
             st.warning("Please enter your organization name on the main page.")
