@@ -1075,10 +1075,11 @@ if st.session_state["active_page"] == "view-results":
         
     render_variation_buttons()
 
-    if st.session_state.variation == "all":
-        render_all_scores(ASSESSMENTS)
+    
     assessment = st.session_state.get("variation", None)
-    if assessment:
+    if assessment == "all":
+        render_all_scores(ASSESSMENTS)
+    elif assessment:
     #     title = assessment + " Results"
     #     thisStyle = f"""<h3 style='text-align: center; font-size: 35px; font-weight: 600; font-family: Poppins;'>{title}</h3>"""
     #     st.html(
