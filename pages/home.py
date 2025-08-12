@@ -1061,6 +1061,7 @@ if st.session_state["active_page"] == "view-results":
         # Access the value stored in session state
         org_input = st.session_state.get("org_input", "")
         admin_input = st.session_state.get("admin_input", "")
+        access_level = st.session_state.get("access_level", "")
 
 
         if not org_input:
