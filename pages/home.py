@@ -947,7 +947,7 @@ render_navbar()
 st.write("\n")
 
 if st.session_state["active_page"] == "view-results":
-    st.session_state.pop("variation", None) # remove this code if you want to retain the variation
+    # remove this code if you want to retain the variation
     st.html(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
@@ -1041,10 +1041,41 @@ if st.session_state["active_page"] == "view-results":
         <img src="https://i.imgur.com/8Q3M2NU.png" class="faded-bg" alt="Background Illustration"/>
     </div>
     """)
+    
+    with stylable_container(f"all_assessment", css_styles="""
+    button {
+        font-weight: 600;
+        font-size: .9rem;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 2rem;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        min-width: 33.33%;
+        max-width: 100%;
+        width: 100%;
+        transition: background-color 0.2s;
+        background-color: #d6e3e7;
+        color: #333;
+        margin-bottom: 0%;
+    }
 
+    button:focus,
+    button:active, 
+    button:hover {
+        background-color: #084C61 !important;
+        color: white !important;
+        outline: none;
+        box-shadow: none;
+    }
+"""):
+        if st.button("All Assessments", use_container_width=True):
+                st.session_state["variation"] = "all"
+        
     render_variation_buttons()
-    assessment = st.session_state.get("variation", None)
-    if assessment is None:
+
+    if st.session_state.variation == "all":
         render_all_scores(ASSESSMENTS)
     assessment = st.session_state.get("variation", None)
     if assessment:
