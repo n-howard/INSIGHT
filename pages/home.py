@@ -295,7 +295,7 @@ def render_variation_buttons():
                         box-shadow: none;
                     }
                 """):
-                    if st.button(variation, use_container_width=True, key=f"btn_var_{i+j}"):
+                    if st.button(variation, use_container_width=True, key=f"variation_btn_{i+j}"):
                         set_and_persist("variation", variation)
                         # make sure we're on the right page if user came from elsewhere
                         set_and_persist("active_page", "view-results")
