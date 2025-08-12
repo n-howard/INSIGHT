@@ -30,7 +30,26 @@ cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SEC
 if not cookies.ready():
     st.stop()
 
+def _rehydrate_text(key, cookie_key):
+    val = st.session_state.get(key, "")
+    if not val:
+        cv = cookies.get(cookie_key)
+        if cv:
+            st.session_state[key] = cv
 
+def _rehydrate_bool(key, cookie_key):
+    if st.session_state.get(key) is None:
+        raw = (cookies.get(cookie_key) or "").strip().lower()
+        st.session_state[key] = (raw == "true")
+
+_rehydrate_text("org_input", "org_input")
+_rehydrate_text("site_input", "site_input")
+_rehydrate_text("user_email", "user_email")
+_rehydrate_text("active_page", "active_page")
+_rehydrate_text("variation", "variation")
+
+_rehydrate_bool("is_admin", "admin_input")
+_rehydrate_bool("access", "access_level")
 # Restore from cookies if needed
 if "org_input" not in st.session_state:
     cookie_org = cookies.get("org_input")
@@ -462,7 +481,7 @@ def render_navbar():
                 box-shadow: none;
         """):
             if st.button("View Results", use_container_width = True):
-                cookies["active_page"] = "view_results"
+                cookies["active_page"] = "view-results"
                 st.session_state["active_page"] = "view-results"
 
     with col4:
@@ -648,12 +667,11 @@ def render_all_scores(ASSESSMENTS):
     if access_level is None:
         access_level = cookies.get("access_level", "").strip().lower() == "true"
 
-    org_input = st.session_state.get("org_input")
-    if org_input is None:
-        org_input = cookies.get("org_input", "").strip().lower()
-    if org_input == "":
+    org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
+    if not org_input.strip():
         st.warning("Please enter your organization name on the main page.")
         st.stop()
+    org_clean = org_input.strip().lower()
 
     cols = st.columns(6)
 
@@ -1088,9 +1106,11 @@ if st.session_state["active_page"] == "view-results":
     render_variation_buttons()
 
     # # Access the value stored in session state
-    org_input = st.session_state.get("org_input", "")
-    if org_input is None:
-        org_input = cookies.get("org_input","")
+    org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
+    if not org_input.strip():
+        st.warning("Please enter your organization name on the main page.")
+        st.stop()
+    org_clean = org_input.strip().lower()
     # admin_input = st.session_state.get("admin_input")
     # if admin_input is None:
     #     admin_input = st.session_state.get("is_admin", "")
@@ -1114,9 +1134,11 @@ if st.session_state["active_page"] == "view-results":
     if access_level is None:
         access_level = cookies.get("access_level", "").strip().lower() == "true"
 
-    org_input = st.session_state.get("org_input")
-    if org_input is None:
-        org_input = cookies.get("org_input", "").strip().lower()
+    org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
+    if not org_input.strip():
+        st.warning("Please enter your organization name on the main page.")
+        st.stop()
+    org_clean = org_input.strip().lower()
     if assessment == "all":
         render_all_scores(ASSESSMENTS)
     elif assessment:
@@ -1128,9 +1150,11 @@ if st.session_state["active_page"] == "view-results":
         if access_level is None:
             access_level = cookies.get("access_level", "").strip().lower() == "true"
 
-        org_input = st.session_state.get("org_input")
-        if org_input is None:
-            org_input = cookies.get("org_input", "").strip().lower()
+        org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
+        if not org_input.strip():
+            st.warning("Please enter your organization name on the main page.")
+            st.stop()
+        org_clean = org_input.strip().lower()
     #     title = assessment + " Results"
     #     thisStyle = f"""<h3 style='text-align: center; font-size: 35px; font-weight: 600; font-family: Poppins;'>{title}</h3>"""
     #     st.html(
@@ -1150,12 +1174,12 @@ if st.session_state["active_page"] == "view-results":
         if access_level is None:
             access_level = cookies.get("access_level", "").strip().lower() == "true"
 
-        org_input = st.session_state.get("org_input")
-        if org_input is None:
-            org_input = cookies.get("org_input", "").strip().lower()
-        if org_input == "":
+        org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
+        if not org_input.strip():
             st.warning("Please enter your organization name on the main page.")
             st.stop()
+        org_clean = org_input.strip().lower()
+
     
         # Load raw data and headers for the specific organization.
         raw_data = sheet.get_all_values()
