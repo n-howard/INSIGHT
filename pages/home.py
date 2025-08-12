@@ -54,7 +54,7 @@ _rehydrate_bool("access", "access_level")
 def set_and_persist(key, value):
     st.session_state[key] = value
     cookies[key] = str(value)
-    cookies.save()
+
 # Restore from cookies if needed
 if "org_input" not in st.session_state:
     cookie_org = cookies.get("org_input")
@@ -840,6 +840,7 @@ if st.session_state.get("active_page") == "view-results":
             set_and_persist("active_page", "view-results")
         
     render_variation_buttons()
+    cookies.save()
 
     # # Access the value stored in session state
     org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
