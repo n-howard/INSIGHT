@@ -540,8 +540,399 @@ def render_variation_buttons():
                         st.session_state["variation"] = variation
 
     st.markdown("""</div>""", unsafe_allow_html=True)
-
+# Donut Dial Function
+def draw_score_dial(score, label="Overall Score"):
+    unique_prefix = str(uuid.uuid4()) 
+    fig = go.Figure(go.Pie(
+        values=[score, 4 - score],
+        labels=["", ""],
+        marker_colors=["#D3F3FD", "#013747"],
+        hole=0.78,
+        sort=False,
+        direction='clockwise',
+        textinfo='none',
+        ids=[f"{unique_prefix}-score", f"{unique_prefix}-remaining"], 
+    ))
+    fig.update_layout(
+        showlegend=False,
+        margin=dict(t=20, b=20, l=0, r=0),
+        annotations=[dict(
+            text=f"<b style='color:white;'>{score:.2f}</b><br><span style='font-size:13px; color:white;'>{label}</span>",
+            x=0.5, y=0.5, showarrow=False, align="center", font=dict(size=24, family="Poppins")
+        )],
+        height=200,
+        width=200,
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
     # st.markdown("""</div>""", unsafe_allow_html=True)
+# --- Put this near the top of your file (once) ---
+st.html("""
+<style>
+.score-card {
+  background-color: white;
+  filter:drop-shadow(2px 2px 2px grey);
+  border-radius: 20px;
+  padding: 14px 12px;
+}
+.score-card__title {
+  /* Make the title area a fixed height so cards align */
+  min-height: 70px;          /* desktop */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #084C61;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.2;
+  margin-bottom: 6px;
+  padding: 0 8px;
+  word-break: break-word;    /* avoid overflow on very long words */
+}
+.score-card__title .clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;     /* show up to 2 lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@media (max-width: 768px) {
+  .score-card__title { min-height: 64px; }  /* a bit taller on mobile */
+}
+.score-card__dial {
+  display: flex;
+  justify-content: center;
+}
+</style>
+""")
+def render_overall_score(title: str, score: float, key_suffix: str = ""):
+    """Renders a fixed-height title + dial so cards align across the row."""
+    # Unique container key per card
+    k = f"score_card_{key_suffix or uuid.uuid4()}"
+    st.html(f"""
+        <div class="score-card">
+            <div class="score-card__title">
+            <span class="clamp">{title}</span>
+            </div>
+        </div>
+    """)
+def render_all_scores(ASSESSMENTS):
+    # --- Auth ---
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
+    client = gspread.authorize(creds)
+
+    # --- Helpers ---
+    def norm(s):
+        return str(s).strip().lower()
+
+    def split_orgs(val):
+        # handle single or multi-org entries (comma/semicolon/newline separated)
+        if pd.isna(val): 
+            return []
+        parts = re.split(r"[;,/\n]+", str(val))
+        return [p.strip() for p in parts if p and p.strip()]
+
+    # Derive access flag (accepts bool or stringy truthy)
+    access_level = bool(st.session_state.get("access"))
+    if access_level is None:
+        access_level = bool(st.session_state.get("access_level"))
+    is_admin = bool(st.session_state.get("is_admin"))
+    if is_admin is None:
+        is_admin = bool(st.session_state.get("admin_input"))
+    org_input = st.session_state.get("org_input", "")
+    if not access_level and not org_input:
+        st.warning("Please enter your organization name on the main page.")
+        st.switch_page("app.py")
+
+    cols = st.columns(6)
+
+    for i, (assessment, cfg) in enumerate(ASSESSMENTS.items()):
+        with cols[i % 6]:
+            # --- Load sheet ---
+            try:
+                sheet = client.open(cfg["sheet_name"]).sheet1
+                raw_data = sheet.get_all_values()
+            except Exception as e:
+                st.error(f"Could not open sheet for {assessment}: {e}")
+                continue
+            
+            if not raw_data or len(raw_data) < 2:
+                st.html(f"""<style>.st-key-white_container_small_{assessment}_{i}_{i}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;}}</style>""")
+                with st.container(key=f"white_container_small_{assessment}_{i}_{i}"):
+                    st.write(f"**No {assessment} results were found.**")
+                continue
+
+            headers = raw_data[0]
+
+            # Make headers unique
+            seen, unique_headers = {}, []
+            for h in headers:
+                c = seen.get(h, 0)
+                unique_headers.append(h if c == 0 else f"{h} ({c})")
+                seen[h] = c + 1
+
+            df = pd.DataFrame(raw_data[1:], columns=unique_headers)
+
+            # --- Detect Program/Org Name column ---
+            candidate_keywords = [
+                "organization name",
+                "program name",
+                "your org",
+                "site or organization",
+                "please enter the organization name you logged in with",
+            ]
+            Program_Name = None
+            for col in df.columns:
+                if any(k in col.strip().lower() for k in candidate_keywords):
+                    Program_Name = col
+                    break
+
+            if not Program_Name:
+                st.error("Could not find the column with organization/program name. Please check your form question titles.")
+                continue
+
+            # --- Find Overall Score columns (case-insensitive) ---
+            overall_score_cols = [c for c in df.columns if "overall score" in c.strip().lower()]
+            if not overall_score_cols:
+                st.write(f"**No Overall Score columns found for {assessment}.**")
+                continue
+
+            # Convert candidate columns to numeric now (avoid repetition)
+            for c in overall_score_cols:
+                df[c] = pd.to_numeric(df[c], errors="coerce")
+
+            if access_level:
+                org_df = df.copy()
+
+            
+                if Program_Name in org_df.columns:
+
+                    org_df["Extracted Orgs"] = org_df[Program_Name].fillna("").astype(str).str.strip()
+
+                    # Fallback: if all lists are empty, just use raw org names
+                    if org_df["Extracted Orgs"].apply(len).sum() == 0:
+                        org_df["Extracted Orgs"] = org_df[Program_Name].apply(lambda x: [x.strip()] if x else [])
+
+
+                    all_orgs = sorted(set(org for org in org_df["Extracted Orgs"] if org))
+                    over_scores = {}
+                    if all_orgs:
+                        # Step 1: Get all columns that include "Overall Score"
+                        over_score_col = [col for col in org_df.columns if "Overall Score" in col]
+
+                        # Step 2: Collect all numeric values from these columns
+                        for org in all_orgs:
+                            these_all_scores = []
+
+                            for col in over_score_col:
+                                series = pd.to_numeric(org_df[col], errors="coerce")  # convert to numbers, NaN if invalid
+                                scores = series.dropna().tolist()  # drop non-numeric
+                                these_all_scores.extend(scores)
+
+                            # Step 3: Calculate the average
+                            if these_all_scores:
+                                over_scores[org] = sum(these_all_scores) / len(these_all_scores)
+                            else:
+                                over_scores[org] = 0
+                    else:
+                        selected_orgs = []
+                    for org in all_orgs:
+                        corg = org.rstrip()
+                        # Filter rows for this org
+                        torg_df = org_df[org_df["Extracted Orgs"].apply(
+                            lambda x: corg.lower() in x if isinstance(x, list) else corg.lower() == x.strip().lower()
+                        )]
+
+                        if torg_df.empty:
+                            continue
+
+                        # --- Compute Org-Level Scores ---
+                        all_scores = []
+                        for col in overall_score_cols:
+                            all_scores.extend(pd.to_numeric(torg_df[col], errors="coerce").dropna().tolist())
+                        org_avg_score = sum(all_scores) / len(all_scores) if all_scores else None
+
+                        # --- Compute Standards/Indicators ---
+                        standard_scores_org = []
+                        for col in torg_df.columns:
+                            if "Overall Score" in col and (("Standard" not in col) or ("-" in col)):
+                                continue
+                            series = pd.to_numeric(torg_df[col].replace('%', '', regex=True), errors="coerce")
+                            avg = series.mean()
+                            if pd.notna(avg) and ("Standard" in col or "Indicator" in col):
+                                standard_scores_org.append((col, avg))
+
+                        # --- Display White Container per Org ---
+                        w_prefix = str(uuid.uuid4())
+                        wa = f"white_container_{w_prefix}"
+                        st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
+                        st.html(f"""<style>.st-key-teal_container_{w_prefix}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
+                        if org_avg_score is not None:
+                            with st.container(key=wa):
+                                render_overall_score(f"{org} — {assessment}", org_avg_score, key_suffix=f"{assessment}_{org}_{i}")
+                                with st.container(key=f"teal_container_{w_prefix}"):
+                                    st.plotly_chart(draw_score_dial(org_avg_score, "Overall Score"), use_container_width=True)
+                # # Admin/access view: show averages for every org present
+                # org_series = df[Program_Name].fillna("").apply(split_orgs)
+                # # Build exploded frame to map each row to each of its orgs
+                # exploded = df.copy()
+                # exploded["__orgs__"] = org_series
+                # exploded = exploded.explode("__orgs__")
+                # exploded["__orgs__"] = exploded["__orgs__"].fillna("").astype(str).str.strip()
+                # exploded = exploded[exploded["__orgs__"] != ""]
+
+                # if exploded.empty:
+                #     st.write(f"**No {assessment} results were found.**")
+                #     continue
+
+                # # Compute org-level averages across all “Overall Score” columns
+                # def row_scores(row):
+                #     vals = []
+                #     for c in overall_score_cols:
+                #         v = row[c]
+                #         if pd.notna(v):
+                #             vals.append(float(v))
+                #     return vals
+
+                # exploded["__scores__"] = exploded.apply(row_scores, axis=1)
+                # # Flatten per org
+                # org_scores = {}
+                # for org, group in exploded.groupby("__orgs__"):
+                #     flat = [v for lst in group["__scores__"] for v in lst]
+                #     if flat:
+                #         org_scores[org] = sum(flat) / len(flat)
+
+                # if not org_scores:
+                #     st.write(f"**No {assessment} results were found.**")
+                #     continue
+
+                # # Render each org dial
+                # for org, avg in sorted(org_scores.items(), key=lambda x: x[0].lower()):
+                #     w_prefix = str(uuid.uuid4())
+                #     st.html(f"""
+                #         <style>
+                #         .st-key-teal_container_{w_prefix} {{
+                #             background-color: #084C61; border-radius: 20px; padding: 5%;
+                #         }}
+                #         </style>
+                #     """)
+                #     render_overall_score(f"{org} — {assessment}", org_avg_score, key_suffix=f"{assessment}_{org}_{i}")
+                #     with st.container(key=f"teal_container_{w_prefix}"):
+                #         st.plotly_chart(draw_score_dial(avg, "Overall Score"), use_container_width=True)
+
+            else:
+                # Regular view for non-admins
+                if not is_admin:
+                    # Determine the email to match from session
+                    user_email = norm(st.session_state.get("user_email", ""))
+
+                    # Ensure the "Contact Email" column exists
+                    contact_email_col = None
+                    for col in df.columns:
+                        if "contact email" in col.strip().lower():
+                            contact_email_col = col
+                            break
+
+                    if not contact_email_col:
+                        st.error("Could not find the Contact Email column in the sheet.")
+                        continue
+
+                    # Clean and filter based on Contact Email
+                    df["__email_clean__"] = df[contact_email_col].astype(str).apply(norm)
+                    matched = df[df["__email_clean__"] == user_email].copy()
+
+                else:
+                    # Regular org view: filter to the user's org and show a single average
+                    df["__org_clean__"] = df[Program_Name].astype(str).apply(norm)
+                    org_clean = norm(org_input)
+                    matched = df[df["__org_clean__"] == org_clean].copy()
+
+                    # Also try multi-org rows if direct match yielded nothing
+                    if matched.empty:
+                        df["__orgs__"] = df[Program_Name].apply(split_orgs)
+                        matched = df[df["__orgs__"].apply(lambda lst: any(norm(x) == org_clean for x in lst))]
+
+                # Show no-results message if still no match
+                if matched.empty:
+                    st.html(f"""
+                        <div class="score-card">
+                            <div class="score-card__title">
+                                <span class="clamp">No {assessment} results were found.</span>
+                            </div>
+                        </div>
+                    """)
+                    continue
+
+                # Gather all numeric overall scores across all rows/cols
+                vals = []
+                for c in overall_score_cols:
+                    vals.extend(pd.to_numeric(matched[c], errors="coerce").dropna().astype(float).tolist())
+
+                if not vals:
+                    st.html(f"""
+                        <div class="score-card">
+                            <div class="score-card__title">
+                                <span class="clamp">No {assessment} results were found.</span>
+                            </div>
+                        </div>
+                    """)
+                    continue
+
+                avg = sum(vals) / len(vals)
+                st.html(f"""<style>.st-key-white_container_small_{assessment}_{i}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;}}</style>""")
+                with st.container(key=f"white_container_small_{assessment}_{i}"):
+                    render_overall_score(f"Average Overall Score for {assessment}", avg, key_suffix=f"{assessment}_{i}")
+                    st.html(f"""
+                        <style>
+                        .st-key-teal_container_{i} {{
+                            background-color: #084C61; border-radius: 20px; padding: 5%;
+                        }}
+                        </style>
+                    """)
+                    with st.container(key=f"teal_container_{i}"):
+                        st.plotly_chart(draw_score_dial(avg), use_container_width=True)
+                # # Regular org view: filter to the user's org and show a single average
+                # df["__org_clean__"] = df[Program_Name].astype(str).apply(norm)
+                # org_clean = norm(org_input)
+                # matched = df[df["__org_clean__"] == org_clean].copy()
+
+                # # Also try multi-org rows if direct match yielded nothing
+                # if matched.empty:
+                #     df["__orgs__"] = df[Program_Name].apply(split_orgs)
+                #     matched = df[df["__orgs__"].apply(lambda lst: any(norm(x) == org_clean for x in lst))]
+
+                # if matched.empty:
+                #     st.html(f"""<style>.st-key-white_container_small_{assessment}_{i}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;}}</style>""")
+                #     with st.container(key=f"white_container_small_{assessment}_{i}"):
+                #         st.write(f"**No {assessment} results were found.**")
+                #     continue
+
+                # # Gather all numeric overall scores across all rows/cols
+                # vals = []
+                # for c in overall_score_cols:
+                #     vals.extend(pd.to_numeric(matched[c], errors="coerce").dropna().astype(float).tolist())
+
+                # if not vals:
+                #     st.html(f"""<style>.st-key-white_container_small_{assessment}_{i}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;}}</style>""")
+                #     with st.container(key=f"white_container_small_{assessment}_{i}"):
+                #         st.write(f"**No {assessment} results were found.**")
+                #     continue
+                # st.html(f"""<style>.st-key-white_container_small_{assessment}_{i}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;}}</style>""")
+                # avg = sum(vals) / len(vals)
+                # with st.container(key=f"white_container_small_{assessment}_{i}"):
+                #     render_overall_score(f"Average Overall Score for {assessment}", avg, key_suffix=f"{assessment}_{i}")
+                #     st.html(f"""
+                #         <style>
+                #         .st-key-teal_container_{i} {{
+                #             background-color: #084C61; border-radius: 20px; padding: 5%;
+                #         }}
+                #         </style>
+                #     """)
+                #     with st.container(key=f"teal_container_{i}"):
+                #         st.plotly_chart(draw_score_dial(avg), use_container_width=True)
+
+
 
 # --- Main App ---
 if "active_page" not in st.session_state:
@@ -553,6 +944,7 @@ render_navbar()
 st.write("\n")
 
 if st.session_state["active_page"] == "view-results":
+    st.session_state.pop("variation", None) # remove this code if you want to retain the variation
     st.html(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
@@ -649,6 +1041,8 @@ if st.session_state["active_page"] == "view-results":
 
     render_variation_buttons()
     assessment = st.session_state.get("variation", None)
+    if assessment is None:
+        render_all_scores(ASSESSMENTS)
     if assessment:
     #     title = assessment + " Results"
     #     thisStyle = f"""<h3 style='text-align: center; font-size: 35px; font-weight: 600; font-family: Poppins;'>{title}</h3>"""
@@ -1174,31 +1568,31 @@ if st.session_state["active_page"] == "view-results":
                 elif "Indicator" in column:
                     standard_scores[column] = av
 
-        # Donut Dial Function
-        def draw_score_dial(score, label="Overall Score"):
-            unique_prefix = str(uuid.uuid4()) 
-            fig = go.Figure(go.Pie(
-                values=[score, 4 - score],
-                labels=["", ""],
-                marker_colors=["#D3F3FD", "#013747"],
-                hole=0.78,
-                sort=False,
-                direction='clockwise',
-                textinfo='none',
-                ids=[f"{unique_prefix}-score", f"{unique_prefix}-remaining"], 
-            ))
-            fig.update_layout(
-                showlegend=False,
-                margin=dict(t=20, b=20, l=0, r=0),
-                annotations=[dict(
-                    text=f"<b style='color:white;'>{score:.2f}</b><br><span style='font-size:13px; color:white;'>{label}</span>",
-                    x=0.5, y=0.5, showarrow=False, align="center", font=dict(size=24, family="Poppins")
-                )],
-                height=200,
-                width=200,
-                paper_bgcolor="rgba(0,0,0,0)",
-            )
-            return fig
+        # # Donut Dial Function
+        # def draw_score_dial(score, label="Overall Score"):
+        #     unique_prefix = str(uuid.uuid4()) 
+        #     fig = go.Figure(go.Pie(
+        #         values=[score, 4 - score],
+        #         labels=["", ""],
+        #         marker_colors=["#D3F3FD", "#013747"],
+        #         hole=0.78,
+        #         sort=False,
+        #         direction='clockwise',
+        #         textinfo='none',
+        #         ids=[f"{unique_prefix}-score", f"{unique_prefix}-remaining"], 
+        #     ))
+        #     fig.update_layout(
+        #         showlegend=False,
+        #         margin=dict(t=20, b=20, l=0, r=0),
+        #         annotations=[dict(
+        #             text=f"<b style='color:white;'>{score:.2f}</b><br><span style='font-size:13px; color:white;'>{label}</span>",
+        #             x=0.5, y=0.5, showarrow=False, align="center", font=dict(size=24, family="Poppins")
+        #         )],
+        #         height=200,
+        #         width=200,
+        #         paper_bgcolor="rgba(0,0,0,0)",
+        #     )
+        #     return fig
 
 
         
