@@ -417,7 +417,8 @@ def render_navbar():
                 box-shadow: none;
         """):
             if st.button("Home", use_container_width = True):
-                    st.session_state["active_page"] = "home"
+                cookies["active_page"] = "home"
+                st.session_state["active_page"] = "home"
                     
 
     with col2:
@@ -439,6 +440,7 @@ def render_navbar():
                 box-shadow: none;
         """):
             if st.button("Self-Assess", use_container_width = True):
+                cookies["active_page"] = "self-assess"
                 st.session_state["active_page"] = "self-assess"
 
     with col3:
@@ -460,6 +462,7 @@ def render_navbar():
                 box-shadow: none;
         """):
             if st.button("View Results", use_container_width = True):
+                cookies["active_page"] = "view_results"
                 st.session_state["active_page"] = "view-results"
 
     with col4:
@@ -486,7 +489,7 @@ def render_navbar():
                     st.session_state.pop(key, None)
                     cookies[key] = ""
                 st.switch_page("app.py")
-
+    cookies.save()
     st.markdown("""</div>""", unsafe_allow_html=True)
 
 # --- Variation Buttons ---
@@ -946,6 +949,8 @@ def render_all_scores(ASSESSMENTS):
 
 # --- Main App ---
 if "active_page" not in st.session_state:
+    st.session_state["active_page"] = cookies.get("active_page", "")
+if st.session_state.get("active_page") == "":
     st.session_state["active_page"] = "home"
 
 render_navbar()
