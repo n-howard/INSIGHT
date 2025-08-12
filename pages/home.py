@@ -69,7 +69,6 @@ if "org_input" not in st.session_state:
 
 
 
-
 if "is_admin" not in st.session_state:
     st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
 
@@ -438,6 +437,7 @@ def render_navbar():
             if st.button("Home", use_container_width = True):
                 cookies["active_page"] = "home"
                 st.session_state["active_page"] = "home"
+                cookies.save()
                     
 
     with col2:
@@ -461,6 +461,7 @@ def render_navbar():
             if st.button("Self-Assess", use_container_width = True):
                 cookies["active_page"] = "self-assess"
                 st.session_state["active_page"] = "self-assess"
+                cookies.save()
 
     with col3:
         with stylable_container(f"navbar_view_btn", css_styles="""
@@ -483,6 +484,7 @@ def render_navbar():
             if st.button("View Results", use_container_width = True):
                 cookies["active_page"] = "view-results"
                 st.session_state["active_page"] = "view-results"
+                cookies.save()
 
     with col4:
         with stylable_container(f"navbar_logout_btn_{str(uuid.uuid4())}", css_styles="""
@@ -507,8 +509,8 @@ def render_navbar():
                 for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page"]:
                     st.session_state.pop(key, None)
                     cookies[key] = ""
+                    cookies.save()
                 st.switch_page("app.py")
-    cookies.save()
     st.markdown("""</div>""", unsafe_allow_html=True)
 
 # --- Variation Buttons ---
@@ -976,7 +978,7 @@ render_navbar()
 
 st.write("\n")
 
-if st.session_state["active_page"] == "view-results":
+if st.session_state.get("active_page") == "view-results" or cookies.get("active_page")=="view-results":
     # remove this code if you want to retain the variation
     st.html(f"""
     <style>
@@ -1101,7 +1103,7 @@ if st.session_state["active_page"] == "view-results":
     }
 """):
         if st.button("All Assessments", use_container_width=True):
-                st.session_state["variation"] = "all"
+            st.session_state["variation"] = "all"
         
     render_variation_buttons()
 
@@ -1125,7 +1127,13 @@ if st.session_state["active_page"] == "view-results":
     access_level = st.session_state.get("access")
     if access_level is None:
         access_level = cookies.get("access_level", "").strip().lower() == "true"
+
     assessment = st.session_state.get("variation", None)
+
+    if cookies.get("variation")!=assessment:
+        cookies["variation"] = assessment
+        cookies.save()
+
     is_admin = st.session_state.get("is_admin")
     if is_admin is None:
         is_admin = cookies.get("admin_input", "").strip().lower() == "true"
@@ -1139,6 +1147,7 @@ if st.session_state["active_page"] == "view-results":
         st.warning("Please enter your organization name on the main page.")
         st.stop()
     org_clean = org_input.strip().lower()
+
     if assessment == "all":
         render_all_scores(ASSESSMENTS)
     elif assessment:
