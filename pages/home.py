@@ -645,8 +645,10 @@ def render_all_scores(ASSESSMENTS):
     if access_level is None:
         access_level = cookies.get("access_level", "").strip().lower() == "true"
 
-    org_input = st.session_state.get("org_input", "")
-    if not org_input:
+    org_input = st.session_state.get("org_input")
+    if org_input is None:
+        org_input = cookies.get("org_input", "").strip().lower()
+    if org_input == "":
         st.warning("Please enter your organization name on the main page.")
         st.stop()
 
@@ -1114,20 +1116,20 @@ if st.session_state["active_page"] == "view-results":
         client = gspread.authorize(creds)
         sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
 
-        org_input = st.session_state.get("org_input", "")
-        if org_input is None:
-            org_input = cookies.get("org_input","")
-        is_admin = st.session_state.get("is_admin")
-        if is_admin is None:
-            is_admin = cookies.get("admin_input", "").strip().lower() == "true"
+    is_admin = st.session_state.get("is_admin")
+    if is_admin is None:
+        is_admin = cookies.get("admin_input", "").strip().lower() == "true"
 
-        access_level = st.session_state.get("access")
-        if access_level is None:
-            access_level = cookies.get("access_level", "").strip().lower() == "true"
+    access_level = st.session_state.get("access")
+    if access_level is None:
+        access_level = cookies.get("access_level", "").strip().lower() == "true"
 
-        if not org_input:
-            st.warning("Please enter your organization name on the main page.")
-            st.stop()
+    org_input = st.session_state.get("org_input")
+    if org_input is None:
+        org_input = cookies.get("org_input", "").strip().lower()
+    if org_input == "":
+        st.warning("Please enter your organization name on the main page.")
+        st.stop()
     
         # Load raw data and headers for the specific organization.
         raw_data = sheet.get_all_values()
