@@ -631,12 +631,20 @@ def render_all_scores(ASSESSMENTS):
         return [p.strip() for p in parts if p and p.strip()]
     org_input = st.session_state.get("org_input")
     # Derive access flag (accepts bool or stringy truthy)
-    access_level = bool(st.session_state.get("access"))
-    if access_level is None:
-        access_level = bool(st.session_state.get("access_level"))
-    is_admin = bool(st.session_state.get("is_admin"))
+    # access_level = st.session_state.get("access")
+    # if access_level is None:
+    #     access_level = st.session_state.get("access_level")
+    # is_admin = st.session_state.get("is_admin")
+    # if is_admin is None:
+    #     is_admin = st.session_state.get("admin_input")
+    is_admin = st.session_state.get("is_admin")
     if is_admin is None:
-        is_admin = bool(st.session_state.get("admin_input"))
+        is_admin = cookies.get("admin_input", "").strip().lower() == "true"
+
+    access_level = st.session_state.get("access")
+    if access_level is None:
+        access_level = cookies.get("access_level", "").strip().lower() == "true"
+
     org_input = st.session_state.get("org_input", "")
     if not org_input:
         st.warning("Please enter your organization name on the main page.")
@@ -1072,15 +1080,24 @@ if st.session_state["active_page"] == "view-results":
         
     render_variation_buttons()
 
-    # Access the value stored in session state
+    # # Access the value stored in session state
     org_input = st.session_state.get("org_input", "")
-    admin_input = bool(st.session_state.get("admin_input"))
-    if admin_input is None:
-        admin_input = bool(st.session_state.get("is_admin", ""))
-    access_level = bool(st.session_state.get("access_level"))
+    if org_input is None:
+        org_input = cookies.get("org_input","")
+    # admin_input = st.session_state.get("admin_input")
+    # if admin_input is None:
+    #     admin_input = st.session_state.get("is_admin", "")
+    # access_level = st.session_state.get("access_level")
+    # if access_level is None:
+    #     access_level = st.session_state.get("access", "")
+    # is_admin = admin_input
+    is_admin = st.session_state.get("is_admin")
+    if is_admin is None:
+        is_admin = cookies.get("admin_input", "").strip().lower() == "true"
+
+    access_level = st.session_state.get("access")
     if access_level is None:
-        access_level = bool(st.session_state.get("access", ""))
-    is_admin = admin_input
+        access_level = cookies.get("access_level", "").strip().lower() == "true"
     assessment = st.session_state.get("variation", None)
     if assessment == "all":
         render_all_scores(ASSESSMENTS)
@@ -1097,15 +1114,16 @@ if st.session_state["active_page"] == "view-results":
         client = gspread.authorize(creds)
         sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
 
-        # Access the value stored in session state
         org_input = st.session_state.get("org_input", "")
-        admin_input = bool(st.session_state.get("admin_input"))
-        if admin_input is None:
-            admin_input = bool(st.session_state.get("is_admin", ""))
-        access_level = bool(st.session_state.get("access_level"))
+        if org_input is None:
+            org_input = cookies.get("org_input","")
+        is_admin = st.session_state.get("is_admin")
+        if is_admin is None:
+            is_admin = cookies.get("admin_input", "").strip().lower() == "true"
+
+        access_level = st.session_state.get("access")
         if access_level is None:
-            access_level = bool(st.session_state.get("access", ""))
-        is_admin = admin_input
+            access_level = cookies.get("access_level", "").strip().lower() == "true"
 
         if not org_input:
             try: 
