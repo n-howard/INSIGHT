@@ -437,7 +437,6 @@ def render_navbar():
             if st.button("Home", use_container_width = True):
                 cookies["active_page"] = "home"
                 st.session_state["active_page"] = "home"
-                cookies.save()
                     
 
     with col2:
@@ -461,7 +460,6 @@ def render_navbar():
             if st.button("Self-Assess", use_container_width = True):
                 cookies["active_page"] = "self-assess"
                 st.session_state["active_page"] = "self-assess"
-                cookies.save()
 
     with col3:
         with stylable_container(f"navbar_view_btn", css_styles="""
@@ -484,7 +482,7 @@ def render_navbar():
             if st.button("View Results", use_container_width = True):
                 cookies["active_page"] = "view-results"
                 st.session_state["active_page"] = "view-results"
-                cookies.save()
+    
 
     with col4:
         with stylable_container(f"navbar_logout_btn_{str(uuid.uuid4())}", css_styles="""
@@ -512,6 +510,7 @@ def render_navbar():
                     cookies.save()
                 st.switch_page("app.py")
     st.markdown("""</div>""", unsafe_allow_html=True)
+    cookies.save()
 
 # --- Variation Buttons ---
 def render_variation_buttons():
