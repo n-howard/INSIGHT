@@ -1274,7 +1274,8 @@ if st.session_state.get("active_page") == "view-results":
         if is_admin:
             chart_df = org_df.copy()
         else:
-            chart_df = reg_df[reg_df["Contact Email"].str.lower().str.strip() == email.strip().lower()]
+            if email is not None:
+                chart_df = reg_df[reg_df["Contact Email"].str.lower().str.strip() == email.strip().lower()]
 
         # if selected_contacts:
         #     chart_df = chart_df[chart_df["Contact Name"].isin(selected_contacts)]
