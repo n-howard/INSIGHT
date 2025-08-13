@@ -549,10 +549,10 @@ def render_all_scores(ASSESSMENTS):
             for c in overall_score_cols:
                 df[c] = pd.to_numeric(df[c], errors="coerce")
 
-            if access_level is None:
-                access_level = st.session_state.get("access", False)
-            if access_level is None:
-                access_level = cookies.get("access_level", "").strip().lower() == "true"
+            # if access_level is None:
+            #     access_level = st.session_state.get("access", False)
+            # if access_level is None:
+            #     access_level = cookies.get("access_level", "").strip().lower() == "true"
 
             if access_level:
                 org_df = df.copy()
@@ -1270,7 +1270,7 @@ if st.session_state.get("active_page") == "view-results":
         else:
             email = None
 
-        is_admin = st.session_state.get("is_admin", False)
+        # is_admin = st.session_state.get("is_admin", False)
         if is_admin:
             chart_df = org_df.copy()
         else:
