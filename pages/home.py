@@ -870,7 +870,7 @@ with col4:
             for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page"]:
                 st.session_state.pop(key, None)
                 cookies[key] = ""
-                cookies.save()
+            cookies.save()
             st.switch_page("app.py")
 st.markdown("""</div>""", unsafe_allow_html=True)
 
