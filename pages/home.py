@@ -55,9 +55,9 @@ if "is_admin" not in st.session_state:
 if "access" not in st.session_state:
     st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
 
-# access_level = st.session_state["access"]
+access_level = st.session_state["access"]
 
-# is_admin = st.session_state["is_admin"]
+is_admin = st.session_state["is_admin"]
 
 if st.session_state["is_admin"]:
     ad = "Admin"
@@ -559,6 +559,7 @@ def render_all_scores(ASSESSMENTS):
                 access_level = cookies.get("access_level", "").strip().lower() == "true"
 
             if access_level:
+                org_input = st.session_state.get("org_input", "")
                 org_df = df.copy()
 
             
@@ -1125,8 +1126,6 @@ if st.session_state.get("active_page") == "view-results":
             st.stop()
         # if access_level is None:
         #     access_level = st.session_state.get("access", False)
-        access_level = st.session_state.get("access", False)
-
         if access_level:
             org_df = df.copy()
 
@@ -1277,7 +1276,7 @@ if st.session_state.get("active_page") == "view-results":
         else:
             email = None
 
-        is_admin = st.session_state.get("is_admin", False)
+        # is_admin = st.session_state.get("is_admin", False)
         if is_admin:
             chart_df = org_df.copy()
         else:
@@ -2638,7 +2637,7 @@ else:
     #                 st.session_state["active_page"] = "info"
     #                 st.rerun()
     #                 # components.iframe(data_form_link, width=1500, height=800, scrolling = True)
-    if st.session_state.get("is_admin"):
+    if is_admin:
         data_form_link = "https://docs.google.com/forms/d/e/1FAIpQLScebVl2SRuhtDmzAEag_sPn0MgaAvLIpbwbm7-Imjup8aD2uw/viewform?embedded=true"
         _, acol1 = st.columns([6,4])
         with acol1:
