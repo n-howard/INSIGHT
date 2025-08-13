@@ -31,53 +31,29 @@ if not cookies.ready():
     st.stop()
 
 # Restore from cookies if needed
-# if "org_input" not in st.session_state:
-#     cookie_org = cookies.get("org_input")
-#     cookie_site = cookies.get("site_input")
-#     cookie_admin = cookies.get("admin_input")
-#     cookie_access = cookies.get("access_level")
-#     email = cookies.get("user_email")
+if "org_input" not in st.session_state:
+    cookie_org = cookies.get("org_input")
+    cookie_site = cookies.get("site_input")
+    cookie_admin = cookies.get("admin_input")
+    cookie_access = cookies.get("access_level")
+    email = cookies.get("user_email")
 
-#     if cookie_org:
-#         st.session_state["org_input"] = cookie_org
-#         st.session_state["site_input"] = cookie_site or ""
-#         st.session_state["admin_input"] = cookie_admin or ""
-#         st.session_state["access_level"] = cookie_access or ""
-#         st.session_state["user_email"] = email or ""
+    if cookie_org:
+        st.session_state["org_input"] = cookie_org
+        st.session_state["site_input"] = cookie_site or ""
+        st.session_state["admin_input"] = cookie_admin or ""
+        st.session_state["access_level"] = cookie_access or ""
+        st.session_state["user_email"] = email or ""
 
 
-# --- Robust restore from cookies ---
-SESSION_KEYS = [
-    "org_input", "site_input", "admin_input", "access_level",
-    "user_email", "variation", "active_page"
-]
 
-for k in SESSION_KEYS:
-    if not str(st.session_state.get(k, "")).strip():
-        v = cookies.get(k)
-        if v:
-            st.session_state[k] = v
 
-# --- Derived, set once and keep in session ---
+
 if "is_admin" not in st.session_state:
-    st.session_state["is_admin"] = (
-        str(st.session_state.get("admin_input", "")).strip().lower() == "true"
-    )
+    st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
 
 if "access" not in st.session_state:
-    v = st.session_state.get("access_level") or cookies.get("access_level")
-    st.session_state["access"] = str(v).strip().lower() == "true"
-
-# Convenience vars (read from session only; do NOT recompute from cookies later)
-is_admin = bool(st.session_state["is_admin"])
-access_level = bool(st.session_state["access"])
-
-
-# if "is_admin" not in st.session_state:
-#     st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
-
-# if "access" not in st.session_state:
-#     st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
+    st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
 
 # access_level = st.session_state["access"]
 
@@ -578,6 +554,10 @@ def render_all_scores(ASSESSMENTS):
             # if access_level is None:
             #     access_level = cookies.get("access_level", "").strip().lower() == "true"
 
+            access_level = st.session_state.get("access", False)
+            if access_level is None:
+                access_level = cookies.get("access_level", "").strip().lower() == "true"
+
             if access_level:
                 org_df = df.copy()
 
@@ -890,7 +870,7 @@ with col4:
             for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page"]:
                 st.session_state.pop(key, None)
                 cookies[key] = ""
-            # cookies.save()
+                cookies.save()
             st.switch_page("app.py")
 st.markdown("""</div>""", unsafe_allow_html=True)
 
@@ -1145,6 +1125,8 @@ if st.session_state.get("active_page") == "view-results":
             st.stop()
         # if access_level is None:
         #     access_level = st.session_state.get("access", False)
+        access_level = st.session_state.get("access", False)
+
         if access_level:
             org_df = df.copy()
 
@@ -1295,7 +1277,7 @@ if st.session_state.get("active_page") == "view-results":
         else:
             email = None
 
-        # is_admin = st.session_state.get("is_admin", False)
+        is_admin = st.session_state.get("is_admin", False)
         if is_admin:
             chart_df = org_df.copy()
         else:
@@ -2656,7 +2638,7 @@ else:
     #                 st.session_state["active_page"] = "info"
     #                 st.rerun()
     #                 # components.iframe(data_form_link, width=1500, height=800, scrolling = True)
-    if is_admin:
+    if st.session_state.get("is_admin"):
         data_form_link = "https://docs.google.com/forms/d/e/1FAIpQLScebVl2SRuhtDmzAEag_sPn0MgaAvLIpbwbm7-Imjup8aD2uw/viewform?embedded=true"
         _, acol1 = st.columns([6,4])
         with acol1:
@@ -2876,23 +2858,6 @@ html, body, [class*="css"] {
 }
 </style>
 """, unsafe_allow_html=True)
-
-# --- Persist session → cookies exactly once per run ---
-def _persist_cookies():
-    # Raw values (strings)
-    cookies["org_input"]   = st.session_state.get("org_input", "") or ""
-    cookies["site_input"]  = st.session_state.get("site_input", "") or ""
-    cookies["user_email"]  = st.session_state.get("user_email", "") or ""
-    cookies["variation"]   = st.session_state.get("variation", "") or ""
-    cookies["active_page"] = st.session_state.get("active_page", "") or ""
-
-    # Canonical flags (store as strings "true"/"false")
-    cookies["admin_input"]  = "true" if st.session_state.get("is_admin", False) else "false"
-    cookies["access_level"] = "true" if st.session_state.get("access", False) else "false"
-
-    cookies.save()
-
-_persist_cookies()
 
 # NAVBAR_HTML = """
 
