@@ -550,7 +550,7 @@ def render_all_scores(ASSESSMENTS):
                 df[c] = pd.to_numeric(df[c], errors="coerce")
 
 
-            access_level = st.session_state.get("access_level", False)
+            access_level = st.session_state.get("access", False)
             if access_level is None:
                 access_level = cookies.get("access_level", "").strip().lower() == "true"
 
@@ -632,9 +632,6 @@ def render_all_scores(ASSESSMENTS):
                 if is_admin is None:
                     is_admin = cookies.get("admin_input", "").strip().lower() == "true"
                 # org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
-                if not org_input.strip():
-                    st.warning("Please enter your organization name on the main page.")
-                    st.stop()
                 org_clean = org_input.strip().lower()
                 # Regular view for non-admins
                 if not is_admin:
@@ -1121,7 +1118,7 @@ if st.session_state.get("active_page") == "view-results":
         if not Program_Name:
             st.error("Could not find the column with organization/program name. Please check your form question titles.")
             st.stop()
-        access_level = st.session_state.get("access_level", False)
+        access_level = st.session_state.get("access", False)
         if access_level:
             org_df = df.copy()
 
