@@ -611,14 +611,14 @@ def render_all_scores(ASSESSMENTS):
                         org_avg_score = sum(all_scores) / len(all_scores) if all_scores else None
 
                         # --- Compute Standards/Indicators ---
-                        standard_scores_org = []
+                        standard_scores_org = {}
                         for col in torg_df.columns:
                             if "Overall Score" in col and (("Standard" not in col) or ("-" in col)):
                                 continue
                             series = pd.to_numeric(torg_df[col].replace('%', '', regex=True), errors="coerce")
                             avg = series.mean()
                             if pd.notna(avg) and ("Standard" in col or "Indicator" in col):
-                                standard_scores_org.append((col, avg))
+                                standard_scores_org[col] = avg
 
                         # --- Display White Container per Org ---
                         w_prefix = str(uuid.uuid4())
@@ -2187,7 +2187,7 @@ if st.session_state.get("active_page") == "view-results":
                                 for org in all_orgs:
                                     corg = org.rstrip()
                                     # Filter rows for this org
-                                    # torg_df = org_df[org_df["Extracted Orgs"].apply(
+                                    # porg_df = org_df[org_df["Extracted Orgs"].apply(
                                     #     lambda x: corg.lower() in x if isinstance(x, list) else corg.lower() == x.strip().lower()
                                     # )]
                                     def row_has_org(org_list, target):
@@ -2198,21 +2198,21 @@ if st.session_state.get("active_page") == "view-results":
                                     if porg_df.empty:
                                         continue
 
-                                    # --- Compute Org-Level Scores ---
-                                    all_scores = []
-                                    for col in overall_score_cols:
-                                        all_scores.extend(pd.to_numeric(porg_df[col], errors="coerce").dropna().tolist())
-                                    org_avg_score = sum(all_scores) / len(all_scores) if all_scores else None
+                                    # # --- Compute Org-Level Scores ---
+                                    # all_scores = []
+                                    # for col in overall_score_cols:
+                                    #     all_scores.extend(pd.to_numeric(porg_df[col], errors="coerce").dropna().tolist())
+                                    # org_avg_score = sum(all_scores) / len(all_scores) if all_scores else None
 
                                     # # --- Compute Standards/Indicators ---
-                                    standard_scores_org = []
-                                    for col in porg_df.columns:
-                                        if "Overall Score" in col and (("Standard" not in col) or ("-" in col)):
-                                            continue
-                                        series = pd.to_numeric(porg_df[col].replace('%', '', regex=True), errors="coerce")
-                                        avg = series.mean()
-                                        if pd.notna(avg) and ("Standard" in col or "Indicator" in col):
-                                            standard_scores_org.append((col, avg))
+                                    # standard_scores_org = {}
+                                    # for col in porg_df.columns:
+                                    #     if "Overall Score" in col and (("Standard" not in col) or ("-" in col)):
+                                    #         continue
+                                    #     series = pd.to_numeric(porg_df[col].replace('%', '', regex=True), errors="coerce")
+                                    #     avg = series.mean()
+                                    #     if pd.notna(avg) and ("Standard" in col or "Indicator" in col):
+                                    #         standard_scores_org[col] = avg
 
                                     # --- Display White Container per Org ---
                                     w_prefix = str(uuid.uuid4())
@@ -2222,13 +2222,13 @@ if st.session_state.get("active_page") == "view-results":
                                     with st.container(key=wa):
                                         st.write(f"#### {corg}'s Scores")
 
-                                        if org_avg_score is not None:
+                                        if over_scores[org] is not None:
                                             with st.container(key=f"teal_container_{w_prefix}"):
-                                                st.plotly_chart(draw_score_dial(org_avg_score, "Overall Score"), use_container_width=True)
+                                                st.plotly_chart(draw_score_dial(over_scores[org], "Overall Score"), use_container_width=True)
 
-                                        if standard_scores_org:
+                                        if standard_scores[org]:
                                             with st.expander("**Scores by Standards and Indicators**"):
-                                                for label, score in standard_scores_org:
+                                                for label, score in standard_scores[org]:
                                                     if pd.isna(score):
                                                         continue 
                                                     render_score_card(sheet3_data, sheet2_data, score, label, org_name=corg)
