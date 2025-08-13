@@ -549,8 +549,8 @@ def render_all_scores(ASSESSMENTS):
             for c in overall_score_cols:
                 df[c] = pd.to_numeric(df[c], errors="coerce")
 
-
-            access_level = st.session_state.get("access", False)
+            if access_level is None:
+                access_level = st.session_state.get("access", False)
             if access_level is None:
                 access_level = cookies.get("access_level", "").strip().lower() == "true"
 
@@ -1118,7 +1118,8 @@ if st.session_state.get("active_page") == "view-results":
         if not Program_Name:
             st.error("Could not find the column with organization/program name. Please check your form question titles.")
             st.stop()
-        access_level = st.session_state.get("access", False)
+        if access_level is None:
+            access_level = st.session_state.get("access", False)
         if access_level:
             org_df = df.copy()
 
