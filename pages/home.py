@@ -31,52 +31,76 @@ if not cookies.ready():
     st.stop()
 
 # Restore from cookies if needed
-if "org_input" not in st.session_state:
-    cookie_org = cookies.get("org_input")
-    cookie_site = cookies.get("site_input")
-    cookie_admin = cookies.get("admin_input")
-    cookie_access = cookies.get("access_level")
-    email = cookies.get("user_email")
+# if "org_input" not in st.session_state:
+#     cookie_org = cookies.get("org_input")
+#     cookie_site = cookies.get("site_input")
+#     cookie_admin = cookies.get("admin_input")
+#     cookie_access = cookies.get("access_level")
+#     email = cookies.get("user_email")
 
-    if cookie_org:
-        st.session_state["org_input"] = cookie_org
-        st.session_state["site_input"] = cookie_site or ""
-        st.session_state["admin_input"] = cookie_admin or ""
-        st.session_state["access_level"] = cookie_access or ""
-        st.session_state["user_email"] = email or ""
-
-
+#     if cookie_org:
+#         st.session_state["org_input"] = cookie_org
+#         st.session_state["site_input"] = cookie_site or ""
+#         st.session_state["admin_input"] = cookie_admin or ""
+#         st.session_state["access_level"] = cookie_access or ""
+#         st.session_state["user_email"] = email or ""
 
 
+# --- Robust restore from cookies ---
+SESSION_KEYS = [
+    "org_input", "site_input", "admin_input", "access_level",
+    "user_email", "variation", "active_page"
+]
 
+for k in SESSION_KEYS:
+    if not str(st.session_state.get(k, "")).strip():
+        v = cookies.get(k)
+        if v:
+            st.session_state[k] = v
+
+# --- Derived, set once and keep in session ---
 if "is_admin" not in st.session_state:
-    st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
+    st.session_state["is_admin"] = (
+        str(st.session_state.get("admin_input", "")).strip().lower() == "true"
+    )
 
 if "access" not in st.session_state:
-    st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
+    v = st.session_state.get("access_level") or cookies.get("access_level")
+    st.session_state["access"] = str(v).strip().lower() == "true"
 
-access_level = st.session_state["access"]
+# Convenience vars (read from session only; do NOT recompute from cookies later)
+is_admin = bool(st.session_state["is_admin"])
+access_level = bool(st.session_state["access"])
 
-is_admin = st.session_state["is_admin"]
+
+# if "is_admin" not in st.session_state:
+#     st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
+
+# if "access" not in st.session_state:
+#     st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
+
+# access_level = st.session_state["access"]
+
+# is_admin = st.session_state["is_admin"]
 
 if st.session_state["is_admin"]:
     ad = "Admin"
 else:
     ad = "Staff"
 
-if st.query_params.get("logout") == "1":
-    for key in ["org_input", "site_input", "admin_input", "google_token", "user_info", "access_level"]:
-        st.session_state.pop(key, None)
+# if st.query_params.get("logout") == "1":
+#     for key in ["org_input", "site_input", "admin_input", "google_token", "user_info", "access_level"]:
+#         st.session_state.pop(key, None)
 
-    cookies["org_input"] = ""
-    cookies["site_input"] = ""
-    cookies["admin_input"] = ""
-    cookies["access_level"] = ""
-    cookies.save()
+#     cookies["org_input"] = ""
+#     cookies["site_input"] = ""
+#     cookies["admin_input"] = ""
+#     cookies["access_level"] = ""
+#     cookies.save()
 
 
-    st.success("You have been logged out.")
-    st.switch_page("app.py")
+#     st.success("You have been logged out.")
+#     st.switch_page("app.py")
 # --- LOGOUT BUTTON ---
 
 
@@ -866,9 +890,10 @@ with col4:
             for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page"]:
                 st.session_state.pop(key, None)
                 cookies[key] = ""
+            # cookies.save()
             st.switch_page("app.py")
 st.markdown("""</div>""", unsafe_allow_html=True)
-cookies.save()
+
 
 if "active_page" not in st.session_state:
     st.session_state["active_page"] = "home"
@@ -2187,22 +2212,22 @@ if st.session_state.get("active_page") == "view-results":
                                         target = target.strip().lower()
                                         return any(str(o).strip().lower() == target for o in (org_list or []))
 
-                                    torg_df = org_df[org_df["Extracted Orgs"].apply(lambda xs: row_has_org(xs, corg))]
-                                    if torg_df.empty:
+                                    porg_df = org_df[org_df["Extracted Orgs"].apply(lambda xs: row_has_org(xs, corg))]
+                                    if porg_df.empty:
                                         continue
 
                                     # --- Compute Org-Level Scores ---
                                     all_scores = []
                                     for col in overall_score_cols:
-                                        all_scores.extend(pd.to_numeric(torg_df[col], errors="coerce").dropna().tolist())
+                                        all_scores.extend(pd.to_numeric(porg_df[col], errors="coerce").dropna().tolist())
                                     org_avg_score = sum(all_scores) / len(all_scores) if all_scores else None
 
-                                    # --- Compute Standards/Indicators ---
+                                    # # --- Compute Standards/Indicators ---
                                     standard_scores_org = []
-                                    for col in torg_df.columns:
+                                    for col in porg_df.columns:
                                         if "Overall Score" in col and (("Standard" not in col) or ("-" in col)):
                                             continue
-                                        series = pd.to_numeric(torg_df[col].replace('%', '', regex=True), errors="coerce")
+                                        series = pd.to_numeric(porg_df[col].replace('%', '', regex=True), errors="coerce")
                                         avg = series.mean()
                                         if pd.notna(avg) and ("Standard" in col or "Indicator" in col):
                                             standard_scores_org.append((col, avg))
@@ -2229,8 +2254,8 @@ if st.session_state.get("active_page") == "view-results":
                                         # --- Show Site Scores if Available ---
                                         site_col = None
                                         for col in ["Extracted Sites", "Site Name"]:
-                                            if col in torg_df.columns and torg_df[col].dropna().apply(lambda x: isinstance(x, str)).any():
-                                                site_col = torg_df[col]
+                                            if col in porg_df.columns and porg_df[col].dropna().apply(lambda x: isinstance(x, str)).any():
+                                                site_col = porg_df[col]
                                                 break
 
                                         if site_col is not None:
@@ -2245,7 +2270,7 @@ if st.session_state.get("active_page") == "view-results":
                                             if site_display_map:
                                                 st.markdown("##### Site-Level Results")
                                                 for norm_site, display_site in site_display_map.items():
-                                                    site_df = torg_df[site_col.astype(str).str.strip().str.lower() == norm_site]
+                                                    site_df = porg_df[site_col.astype(str).str.strip().str.lower() == norm_site]
                                                     if site_df.empty:
                                                         continue
 
@@ -2851,6 +2876,23 @@ html, body, [class*="css"] {
 }
 </style>
 """, unsafe_allow_html=True)
+
+# --- Persist session → cookies exactly once per run ---
+def _persist_cookies():
+    # Raw values (strings)
+    cookies["org_input"]   = st.session_state.get("org_input", "") or ""
+    cookies["site_input"]  = st.session_state.get("site_input", "") or ""
+    cookies["user_email"]  = st.session_state.get("user_email", "") or ""
+    cookies["variation"]   = st.session_state.get("variation", "") or ""
+    cookies["active_page"] = st.session_state.get("active_page", "") or ""
+
+    # Canonical flags (store as strings "true"/"false")
+    cookies["admin_input"]  = "true" if st.session_state.get("is_admin", False) else "false"
+    cookies["access_level"] = "true" if st.session_state.get("access", False) else "false"
+
+    cookies.save()
+
+_persist_cookies()
 
 # NAVBAR_HTML = """
 
