@@ -1186,9 +1186,9 @@ if st.session_state.get("active_page") == "view-results":
             df["Program Name_clean"] = df[Program_Name].str.strip().str.lower()
             org_input = st.session_state.get("org_input", "")
             # org_clean = org_input.strip().lower()
-            if not org_input.strip():
-                st.warning("Please enter your organization name on the main page.")
-                st.stop()
+            # if not org_input.strip():
+            #     st.warning("Please enter your organization name on the main page.")
+            #     st.stop()
             org_clean = org_input.strip().lower()
 
             # Filter the DataFrame to just this org
@@ -1309,12 +1309,6 @@ if st.session_state.get("active_page") == "view-results":
         filtered_df = converted_df[numeric_cols].dropna(axis=1, how="all")
 
 
-
-        # overall_score = 3.40
-        # standard_scores = [("Standard 1", 3.40), ("Standard 2", 3.70)]
-        # score_over_time = [2.1, 2.4, 2.2, 2.5, 2.8, 2.6, 2.3, 2.6, 3.0, 3.2, 3.4, 3.6]
-        # submissions = {"Submission 1": 2.90, "Submission 2": 3.1231}
-        # staff_scores = {"Nat Howard": 3.50, "Bob Kaplan": 3.00, "Jake Goodman": 2.10}
 
 
         if is_admin or access_level:
