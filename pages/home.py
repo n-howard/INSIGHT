@@ -469,7 +469,7 @@ def render_all_scores(ASSESSMENTS):
             return []
         parts = re.split(r"[;,/\n]+", str(val))
         return [p.strip() for p in parts if p and p.strip()]
-    org_input = st.session_state.get("org_input")
+    
     # Derive access flag (accepts bool or stringy truthy)
     # access_level = st.session_state.get("access")
     # if access_level is None:
@@ -477,19 +477,20 @@ def render_all_scores(ASSESSMENTS):
     # is_admin = st.session_state.get("is_admin")
     # if is_admin is None:
     #     is_admin = st.session_state.get("admin_input")
-    is_admin = st.session_state.get("is_admin")
-    if is_admin is None:
-        is_admin = cookies.get("admin_input", "").strip().lower() == "true"
+    # org_input = st.session_state.get("org_input", "")
+    # is_admin = st.session_state.get("is_admin", False)
+    # if is_admin is None:
+    #     is_admin = cookies.get("admin_input", "").strip().lower() == "true"
 
-    access_level = st.session_state.get("access")
-    if access_level is None:
-        access_level = cookies.get("access_level", "").strip().lower() == "true"
+    # access_level = st.session_state.get("access", False)
+    # if access_level is None:
+    #     access_level = cookies.get("access_level", "").strip().lower() == "true"
 
-    org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
-    if not org_input.strip():
-        st.warning("Please enter your organization name on the main page.")
-        st.stop()
-    org_clean = org_input.strip().lower()
+    # # org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
+    # if not org_input.strip():
+    #     st.warning("Please enter your organization name on the main page.")
+    #     st.stop()
+    # org_clean = org_input.strip().lower()
 
     cols = st.columns(6)
 
@@ -547,6 +548,11 @@ def render_all_scores(ASSESSMENTS):
             # Convert candidate columns to numeric now (avoid repetition)
             for c in overall_score_cols:
                 df[c] = pd.to_numeric(df[c], errors="coerce")
+
+
+            access_level = st.session_state.get("access", False)
+            if access_level is None:
+                access_level = cookies.get("access_level", "").strip().lower() == "true"
 
             if access_level:
                 org_df = df.copy()
@@ -619,55 +625,17 @@ def render_all_scores(ASSESSMENTS):
                                 render_overall_score(f"{org} — {assessment}", org_avg_score, key_suffix=f"{assessment}_{org}_{i}")
                                 with st.container(key=f"teal_container_{w_prefix}"):
                                     st.plotly_chart(draw_score_dial(org_avg_score, "Overall Score"), use_container_width=True)
-                # # Admin/access view: show averages for every org present
-                # org_series = df[Program_Name].fillna("").apply(split_orgs)
-                # # Build exploded frame to map each row to each of its orgs
-                # exploded = df.copy()
-                # exploded["__orgs__"] = org_series
-                # exploded = exploded.explode("__orgs__")
-                # exploded["__orgs__"] = exploded["__orgs__"].fillna("").astype(str).str.strip()
-                # exploded = exploded[exploded["__orgs__"] != ""]
-
-                # if exploded.empty:
-                #     st.write(f"**No {assessment} results were found.**")
-                #     continue
-
-                # # Compute org-level averages across all “Overall Score” columns
-                # def row_scores(row):
-                #     vals = []
-                #     for c in overall_score_cols:
-                #         v = row[c]
-                #         if pd.notna(v):
-                #             vals.append(float(v))
-                #     return vals
-
-                # exploded["__scores__"] = exploded.apply(row_scores, axis=1)
-                # # Flatten per org
-                # org_scores = {}
-                # for org, group in exploded.groupby("__orgs__"):
-                #     flat = [v for lst in group["__scores__"] for v in lst]
-                #     if flat:
-                #         org_scores[org] = sum(flat) / len(flat)
-
-                # if not org_scores:
-                #     st.write(f"**No {assessment} results were found.**")
-                #     continue
-
-                # # Render each org dial
-                # for org, avg in sorted(org_scores.items(), key=lambda x: x[0].lower()):
-                #     w_prefix = str(uuid.uuid4())
-                #     st.html(f"""
-                #         <style>
-                #         .st-key-teal_container_{w_prefix} {{
-                #             background-color: #084C61; border-radius: 20px; padding: 5%;
-                #         }}
-                #         </style>
-                #     """)
-                #     render_overall_score(f"{org} — {assessment}", org_avg_score, key_suffix=f"{assessment}_{org}_{i}")
-                #     with st.container(key=f"teal_container_{w_prefix}"):
-                #         st.plotly_chart(draw_score_dial(avg, "Overall Score"), use_container_width=True)
 
             else:
+                org_input = st.session_state.get("org_input", "")
+                is_admin = st.session_state.get("is_admin", False)
+                if is_admin is None:
+                    is_admin = cookies.get("admin_input", "").strip().lower() == "true"
+                # org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
+                if not org_input.strip():
+                    st.warning("Please enter your organization name on the main page.")
+                    st.stop()
+                org_clean = org_input.strip().lower()
                 # Regular view for non-admins
                 if not is_admin:
                     # Determine the email to match from session
@@ -1042,11 +1010,11 @@ if st.session_state.get("active_page") == "view-results":
     render_variation_buttons()
 
     # # Access the value stored in session state
-    org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
-    if not org_input.strip():
-        st.warning("Please enter your organization name on the main page.")
-        st.stop()
-    org_clean = org_input.strip().lower()
+    # org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
+    # if not org_input.strip():
+    #     st.warning("Please enter your organization name on the main page.")
+    #     st.stop()
+    # org_clean = org_input.strip().lower()
     # admin_input = st.session_state.get("admin_input")
     # if admin_input is None:
     #     admin_input = st.session_state.get("is_admin", "")
@@ -1054,43 +1022,43 @@ if st.session_state.get("active_page") == "view-results":
     # if access_level is None:
     #     access_level = st.session_state.get("access", "")
     # is_admin = admin_input
-    is_admin = st.session_state.get("is_admin")
-    if is_admin is None:
-        is_admin = cookies.get("admin_input", "").strip().lower() == "true"
+    # is_admin = st.session_state.get("is_admin")
+    # if is_admin is None:
+    #     is_admin = cookies.get("admin_input", "").strip().lower() == "true"
 
-    access_level = st.session_state.get("access")
-    if access_level is None:
-        access_level = cookies.get("access_level", "").strip().lower() == "true"
+    # access_level = st.session_state.get("access")
+    # if access_level is None:
+    #     access_level = cookies.get("access_level", "").strip().lower() == "true"
     assessment = st.session_state.get("variation", None)
-    is_admin = st.session_state.get("is_admin")
-    if is_admin is None:
-        is_admin = cookies.get("admin_input", "").strip().lower() == "true"
+    # is_admin = st.session_state.get("is_admin")
+    # if is_admin is None:
+    #     is_admin = cookies.get("admin_input", "").strip().lower() == "true"
 
-    access_level = st.session_state.get("access")
-    if access_level is None:
-        access_level = cookies.get("access_level", "").strip().lower() == "true"
+    # access_level = st.session_state.get("access")
+    # if access_level is None:
+    #     access_level = cookies.get("access_level", "").strip().lower() == "true"
 
-    org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
-    if not org_input.strip():
-        st.warning("Please enter your organization name on the main page.")
-        st.stop()
-    org_clean = org_input.strip().lower()
+    # org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
+    # if not org_input.strip():
+    #     st.warning("Please enter your organization name on the main page.")
+    #     st.stop()
+    # org_clean = org_input.strip().lower()
     if assessment == "all":
         render_all_scores(ASSESSMENTS)
     elif assessment:
-        is_admin = st.session_state.get("is_admin")
-        if is_admin is None:
-            is_admin = cookies.get("admin_input", "").strip().lower() == "true"
+        # is_admin = st.session_state.get("is_admin")
+        # if is_admin is None:
+        #     is_admin = cookies.get("admin_input", "").strip().lower() == "true"
 
-        access_level = st.session_state.get("access")
-        if access_level is None:
-            access_level = cookies.get("access_level", "").strip().lower() == "true"
+        # access_level = st.session_state.get("access")
+        # if access_level is None:
+        #     access_level = cookies.get("access_level", "").strip().lower() == "true"
 
-        org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
-        if not org_input.strip():
-            st.warning("Please enter your organization name on the main page.")
-            st.stop()
-        org_clean = org_input.strip().lower()
+        # org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
+        # if not org_input.strip():
+        #     st.warning("Please enter your organization name on the main page.")
+        #     st.stop()
+        # org_clean = org_input.strip().lower()
     #     title = assessment + " Results"
     #     thisStyle = f"""<h3 style='text-align: center; font-size: 35px; font-weight: 600; font-family: Poppins;'>{title}</h3>"""
     #     st.html(
@@ -1102,19 +1070,19 @@ if st.session_state.get("active_page") == "view-results":
         client = gspread.authorize(creds)
         sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
 
-        is_admin = st.session_state.get("is_admin")
-        if is_admin is None:
-            is_admin = cookies.get("admin_input", "").strip().lower() == "true"
+        # is_admin = st.session_state.get("is_admin")
+        # if is_admin is None:
+        #     is_admin = cookies.get("admin_input", "").strip().lower() == "true"
 
-        access_level = st.session_state.get("access")
-        if access_level is None:
-            access_level = cookies.get("access_level", "").strip().lower() == "true"
+        # access_level = st.session_state.get("access")
+        # if access_level is None:
+        #     access_level = cookies.get("access_level", "").strip().lower() == "true"
 
-        org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
-        if not org_input.strip():
-            st.warning("Please enter your organization name on the main page.")
-            st.stop()
-        org_clean = org_input.strip().lower()
+        # org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
+        # if not org_input.strip():
+        #     st.warning("Please enter your organization name on the main page.")
+        #     st.stop()
+        # org_clean = org_input.strip().lower()
 
     
         # Load raw data and headers for the specific organization.
@@ -1153,7 +1121,7 @@ if st.session_state.get("active_page") == "view-results":
         if not Program_Name:
             st.error("Could not find the column with organization/program name. Please check your form question titles.")
             st.stop()
-        
+        access_level = st.session_state.get("access_level", False) or st.session_state.get("access", False)
         if access_level:
             org_df = df.copy()
 
@@ -1216,6 +1184,11 @@ if st.session_state.get("active_page") == "view-results":
 
             # Clean both Program Name column and org_input for flexible comparison
             df["Program Name_clean"] = df[Program_Name].str.strip().str.lower()
+            org_input = st.session_state.get("org_input", "")
+            # org_clean = org_input.strip().lower()
+            if not org_input.strip():
+                st.warning("Please enter your organization name on the main page.")
+                st.stop()
             org_clean = org_input.strip().lower()
 
             # Filter the DataFrame to just this org
