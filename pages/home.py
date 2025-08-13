@@ -1118,8 +1118,8 @@ if st.session_state.get("active_page") == "view-results":
         if not Program_Name:
             st.error("Could not find the column with organization/program name. Please check your form question titles.")
             st.stop()
-        if access_level is None:
-            access_level = st.session_state.get("access", False)
+        # if access_level is None:
+        #     access_level = st.session_state.get("access", False)
         if access_level:
             org_df = df.copy()
 
