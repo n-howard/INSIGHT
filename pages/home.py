@@ -1164,7 +1164,7 @@ if st.session_state.get("active_page") == "view-results":
                         if these_all_scores:
                             over_scores[org] = sum(these_all_scores) / len(these_all_scores)
                         else:
-                            over_scores[org] = 0
+                            over_scores[org] = 1000
                 else:
                     selected_orgs = []
             else:
