@@ -554,12 +554,12 @@ def render_all_scores(ASSESSMENTS):
             # if access_level is None:
             #     access_level = cookies.get("access_level", "").strip().lower() == "true"
 
-            access_level = st.session_state.get("access", False)
-            if access_level is None:
-                access_level = cookies.get("access_level", "").strip().lower() == "true"
+            # access_level = st.session_state.get("access", False)
+            # if access_level is None:
+            #     access_level = cookies.get("access_level", "").strip().lower() == "true"
 
             if access_level:
-                org_input = st.session_state.get("org_input", "")
+                # org_input = st.session_state.get("org_input", "")
                 org_df = df.copy()
 
             
@@ -633,9 +633,9 @@ def render_all_scores(ASSESSMENTS):
 
             else:
                 org_input = st.session_state.get("org_input", "")
-                is_admin = st.session_state.get("is_admin", False)
-                if is_admin is None:
-                    is_admin = cookies.get("admin_input", "").strip().lower() == "true"
+                # is_admin = st.session_state.get("is_admin", False)
+                # if is_admin is None:
+                #     is_admin = cookies.get("admin_input", "").strip().lower() == "true"
                 # org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
                 org_clean = org_input.strip().lower()
                 # Regular view for non-admins
@@ -1129,6 +1129,7 @@ if st.session_state.get("active_page") == "view-results":
         if access_level:
             org_df = df.copy()
 
+            org_input = st.session_state.get("org_input", "")
             
             if Program_Name in org_df.columns:
 
