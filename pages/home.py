@@ -26,43 +26,43 @@ import numpy as np
 #             """
 # st.html(hide_st_style)
 
-cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
-if not cookies.ready():
-    st.stop()
+# cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
+# if not cookies.ready():
+#     st.stop()
 
-# Restore from cookies if needed
-if "org_input" not in st.session_state:
-    cookie_org = cookies.get("org_input")
-    cookie_site = cookies.get("site_input")
-    cookie_admin = cookies.get("admin_input")
-    cookie_access = cookies.get("access_level")
-    email = cookies.get("user_email")
+# # Restore from cookies if needed
+# if "org_input" not in st.session_state:
+#     cookie_org = cookies.get("org_input")
+#     cookie_site = cookies.get("site_input")
+#     cookie_admin = cookies.get("admin_input")
+#     cookie_access = cookies.get("access_level")
+#     email = cookies.get("user_email")
 
-    if cookie_org:
-        st.session_state["org_input"] = cookie_org
-        st.session_state["site_input"] = cookie_site or ""
-        st.session_state["admin_input"] = cookie_admin or ""
-        st.session_state["access_level"] = cookie_access or ""
-        st.session_state["user_email"] = email or ""
-
-
+#     if cookie_org:
+#         st.session_state["org_input"] = cookie_org
+#         st.session_state["site_input"] = cookie_site or ""
+#         st.session_state["admin_input"] = cookie_admin or ""
+#         st.session_state["access_level"] = cookie_access or ""
+#         st.session_state["user_email"] = email or ""
 
 
 
-if "is_admin" not in st.session_state:
-    st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
 
-if "access" not in st.session_state:
-    st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
 
-access_level = st.session_state["access"]
+# if "is_admin" not in st.session_state:
+#     st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
 
-is_admin = st.session_state["is_admin"]
+# if "access" not in st.session_state:
+#     st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
 
-if st.session_state["is_admin"]:
-    ad = "Admin"
-else:
-    ad = "Staff"
+# access_level = st.session_state["access"]
+
+# is_admin = st.session_state["is_admin"]
+
+# if st.session_state["is_admin"]:
+#     ad = "Admin"
+# else:
+#     ad = "Staff"
 
 # if st.query_params.get("logout") == "1":
 #     for key in ["org_input", "site_input", "admin_input", "google_token", "user_info", "access_level"]:
@@ -848,6 +848,38 @@ with col3:
         if st.button("View Results", use_container_width = True):
             st.session_state["active_page"] = "view-results"
 
+cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
+if not cookies.ready():
+    st.stop()
+
+# Restore from cookies if needed
+if "org_input" not in st.session_state:
+    cookie_org = cookies.get("org_input")
+    cookie_site = cookies.get("site_input")
+    cookie_admin = cookies.get("admin_input")
+    cookie_access = cookies.get("access_level")
+    email = cookies.get("user_email")
+
+    if cookie_org:
+        st.session_state["org_input"] = cookie_org
+        st.session_state["site_input"] = cookie_site or ""
+        st.session_state["admin_input"] = cookie_admin or ""
+        st.session_state["access_level"] = cookie_access or ""
+        st.session_state["user_email"] = email or ""
+
+
+
+
+
+if "is_admin" not in st.session_state:
+    st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
+
+if "access" not in st.session_state:
+    st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
+
+access_level = st.session_state["access"]
+
+is_admin = st.session_state["is_admin"]
 with col4:
     with stylable_container(f"navbar_logout_btn_{str(uuid.uuid4())}", css_styles="""
         button {
