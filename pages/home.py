@@ -15,9 +15,9 @@ def restore_state_from_cookies():
                 st.session_state[key] = val
 
 
-if "restored_cookies" not in st.session_state:
-    restore_state_from_cookies()
-    st.session_state["restored_cookies"] = True
+restore_state_from_cookies()
+st.session_state["admin_input"] = str(st.session_state.get("admin_input", "")).strip().lower() == "true"
+st.session_state["access_level"] = str(st.session_state.get("access_level", "")).strip().lower() == "true"
 
 
 
