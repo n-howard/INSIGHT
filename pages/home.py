@@ -6,37 +6,20 @@ cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SEC
 if not cookies.ready():
     st.stop()
 
-@st.cache_data
-def fetch_data():
-    # Restore from cookies if needed
-    if "org_input" not in st.session_state:
-        cookie_org = cookies.get("org_input")
-        cookie_site = cookies.get("site_input")
-        cookie_admin = cookies.get("admin_input")
-        cookie_access = cookies.get("access_level")
-        email = cookies.get("user_email")
 
-        if cookie_org:
-            st.session_state["org_input"] = cookie_org
-            st.session_state["site_input"] = cookie_site or ""
-            st.session_state["admin_input"] = cookie_admin or ""
-            st.session_state["access_level"] = cookie_access or ""
-            st.session_state["user_email"] = email or ""
+def restore_state_from_cookies():
+    for key in ["org_input", "site_input", "admin_input", "access_level", "user_email"]:
+        if key not in st.session_state or not st.session_state[key]:
+            val = cookies.get(key)
+            if val:
+                st.session_state[key] = val
 
-    if "is_admin" not in st.session_state:
-        st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
 
-    if "access" not in st.session_state:
-        st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
+if "restored_cookies" not in st.session_state:
+    restore_state_from_cookies()
+    st.session_state["restored_cookies"] = True
 
-    access_level = st.session_state["access"]
 
-    is_admin = st.session_state["is_admin"]
-
-    org_input = st.session_state["org_input"]
-    return access_level, is_admin, org_input
-
-access_level, is_admin, org_input = fetch_data()
 
 import streamlit.components.v1 as components
 from urllib.parse import unquote
@@ -530,7 +513,7 @@ def render_all_scores(ASSESSMENTS):
     # org_clean = org_input.strip().lower()
 
     cols = st.columns(6)
-    access_level, is_admin, org_input = fetch_data()
+
     for i, (assessment, cfg) in enumerate(ASSESSMENTS.items()):
         with cols[i % 6]:
             # --- Load sheet ---
@@ -595,7 +578,7 @@ def render_all_scores(ASSESSMENTS):
             # if access_level is None:
             #     access_level = cookies.get("access_level", "").strip().lower() == "true"
 
-            if access_level:
+            if st.session_state.get("access_level"):
                 # org_input = st.session_state.get("org_input", "")
                 org_df = df.copy()
 
@@ -669,14 +652,14 @@ def render_all_scores(ASSESSMENTS):
                                     st.plotly_chart(draw_score_dial(org_avg_score, "Overall Score"), use_container_width=True)
 
             else:
-                org_input = st.session_state.get("org_input", "")
+                # org_input = st.session_state.get("org_input", "")
                 # is_admin = st.session_state.get("is_admin", False)
                 # if is_admin is None:
                 #     is_admin = cookies.get("admin_input", "").strip().lower() == "true"
                 # org_input = st.session_state.get("org_input") or cookies.get("org_input") or ""
                 org_clean = org_input.strip().lower()
                 # Regular view for non-admins
-                if not is_admin:
+                if not st.session_state.get("admin_input"):
                     # Determine the email to match from session
                     user_email = norm(st.session_state.get("user_email", ""))
 
@@ -906,7 +889,6 @@ with col4:
     }
     """):
         if st.button("Logout", use_container_width = True):
-            fetch_data.clear()
             for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page"]:
                 
                 st.session_state.pop(key, None)
@@ -1167,8 +1149,8 @@ if st.session_state.get("active_page") == "view-results":
             st.stop()
         # if access_level is None:
         #     access_level = st.session_state.get("access", False)
-        access_level, is_admin, org_input = fetch_data()
-        if access_level:
+
+        if st.session_state.get("access_level"):
             org_df = df.copy()
 
             org_input = st.session_state.get("org_input", "")
@@ -1320,7 +1302,7 @@ if st.session_state.get("active_page") == "view-results":
             email = None
 
         # is_admin = st.session_state.get("is_admin", False)
-        if is_admin:
+        if st.session_state.get("admin_input"):
             chart_df = org_df.copy()
         else:
             if email is not None:
@@ -1359,7 +1341,7 @@ if st.session_state.get("active_page") == "view-results":
 
 
 
-        if is_admin or access_level:
+        if st.session_state.get("admin_input") or st.session_state.get("access_level"):
             staff_scores = {}
             staff_scores_num = {}
             submissions = {}
@@ -1883,7 +1865,7 @@ if st.session_state.get("active_page") == "view-results":
 
             components.html(card_html, height=card_height)
             x = False
-            if access_level or is_admin:
+            if st.session_state.get("access_level") or st.session_state.get("admin_input"):
                 if "Standard" in label:
                     if "Indicator" in label and ((score>=3.0 and score <=4.0) or (score>=75.0)):
                         st.markdown(defst)
@@ -1894,7 +1876,7 @@ if st.session_state.get("active_page") == "view-results":
                     else:
                         for category in l:
                             if "Standard" in category and category in label:
-                                if (not is_admin) and (not access_level):
+                                if (not st.session_state.get("admin_input")) and (not st.session_state.get("access_level")):
                                     st.markdown(defst)
                                     return
                                 tdef = col_a_to_b[category]
@@ -2015,7 +1997,7 @@ if st.session_state.get("active_page") == "view-results":
                     df,
                     x="Timestamp",
                     y="Overall Score",
-                    color="Org Name" if access_level else None,
+                    color="Org Name" if st.session_state.get("access_level") else None,
                     markers=True,
                     color_discrete_sequence=[
                         "#084C61", "#0F6B75", "#138D90", "#56A3A6", "#A7D4D5", "#CBE8E8", "#E6F5F5"
@@ -2111,7 +2093,7 @@ if st.session_state.get("active_page") == "view-results":
         spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
         cat_sheet = spreadsheet.worksheet("Indicators")
         sheet3_data = cat_sheet.get_all_values()
-        if is_admin or access_level:
+        if st.session_state.get("admin_input") or st.session_state.get("access_level"):
             
             with st.container(key = "white_container_big"):
                 
@@ -2146,7 +2128,7 @@ if st.session_state.get("active_page") == "view-results":
                                         # st.plotly_chart(draw_standards(), use_container_width=True)
                                         render_score_card(sheet3_data, sheet2_data, score, label)
 
-                        if is_admin and not access_level:
+                        if st.session_state.get("admin_input") and not st.session_state.get("access_level"):
                             w_prefix = str(uuid.uuid4())
                             wa = "white_container_" + w_prefix
                             st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
@@ -2680,7 +2662,8 @@ else:
     #                 st.session_state["active_page"] = "info"
     #                 st.rerun()
     #                 # components.iframe(data_form_link, width=1500, height=800, scrolling = True)
-    if is_admin:
+    
+    if st.session_state.get("admin_input"):
         data_form_link = "https://docs.google.com/forms/d/e/1FAIpQLScebVl2SRuhtDmzAEag_sPn0MgaAvLIpbwbm7-Imjup8aD2uw/viewform?embedded=true"
         _, acol1 = st.columns([6,4])
         with acol1:
