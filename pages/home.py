@@ -6,35 +6,37 @@ cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SEC
 if not cookies.ready():
     st.stop()
 
-# Restore from cookies if needed
-if "org_input" not in st.session_state:
-    cookie_org = cookies.get("org_input")
-    cookie_site = cookies.get("site_input")
-    cookie_admin = cookies.get("admin_input")
-    cookie_access = cookies.get("access_level")
-    email = cookies.get("user_email")
+@st.cache_data
+def fetch_data():
+    # Restore from cookies if needed
+    if "org_input" not in st.session_state:
+        cookie_org = cookies.get("org_input")
+        cookie_site = cookies.get("site_input")
+        cookie_admin = cookies.get("admin_input")
+        cookie_access = cookies.get("access_level")
+        email = cookies.get("user_email")
 
-    if cookie_org:
-        st.session_state["org_input"] = cookie_org
-        st.session_state["site_input"] = cookie_site or ""
-        st.session_state["admin_input"] = cookie_admin or ""
-        st.session_state["access_level"] = cookie_access or ""
-        st.session_state["user_email"] = email or ""
+        if cookie_org:
+            st.session_state["org_input"] = cookie_org
+            st.session_state["site_input"] = cookie_site or ""
+            st.session_state["admin_input"] = cookie_admin or ""
+            st.session_state["access_level"] = cookie_access or ""
+            st.session_state["user_email"] = email or ""
 
+    if "is_admin" not in st.session_state:
+        st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
 
+    if "access" not in st.session_state:
+        st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
 
+    access_level = st.session_state["access"]
 
+    is_admin = st.session_state["is_admin"]
 
-if "is_admin" not in st.session_state:
-    st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
+    org_input = st.session_state["org_input"]
+    return access_level, is_admin, org_input
 
-if "access" not in st.session_state:
-    st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
-
-access_level = st.session_state["access"]
-
-is_admin = st.session_state["is_admin"]
-
+access_level, is_admin, org_input = fetch_data()
 
 import streamlit.components.v1 as components
 from urllib.parse import unquote
@@ -528,7 +530,7 @@ def render_all_scores(ASSESSMENTS):
     # org_clean = org_input.strip().lower()
 
     cols = st.columns(6)
-
+    access_level, is_admin, org_input = fetch_data()
     for i, (assessment, cfg) in enumerate(ASSESSMENTS.items()):
         with cols[i % 6]:
             # --- Load sheet ---
@@ -593,7 +595,7 @@ def render_all_scores(ASSESSMENTS):
             # if access_level is None:
             #     access_level = cookies.get("access_level", "").strip().lower() == "true"
 
-            if st.session_state.get("access"):
+            if access_level:
                 # org_input = st.session_state.get("org_input", "")
                 org_df = df.copy()
 
@@ -904,10 +906,13 @@ with col4:
     }
     """):
         if st.button("Logout", use_container_width = True):
+            fetch_data.clear()
             for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page"]:
+                
                 st.session_state.pop(key, None)
                 cookies[key] = ""
             cookies.save()
+            
             st.switch_page("app.py")
 st.markdown("""</div>""", unsafe_allow_html=True)
 
@@ -1162,7 +1167,8 @@ if st.session_state.get("active_page") == "view-results":
             st.stop()
         # if access_level is None:
         #     access_level = st.session_state.get("access", False)
-        if st.session_state.get("access"):
+        access_level, is_admin, org_input = fetch_data()
+        if access_level:
             org_df = df.copy()
 
             org_input = st.session_state.get("org_input", "")
