@@ -2394,7 +2394,7 @@ if st.session_state.get("active_page") == "view-results":
                                         elif "Overall Score" in label and (("Standard" not in label) or ("-" in label)):
                                             continue
                                         else:
-                                            if not st.session_state.get("access_level")l:
+                                            if not st.session_state.get("access_level"):
                                                 render_score_card(sheet3_data, sheet2_data, s, label)
                                             if st.session_state.get("access_level"):
                                                 render_score_card(sheet3_data, sheet2_data, s, label, org_name = tname)
