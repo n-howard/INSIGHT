@@ -1367,7 +1367,7 @@ if st.session_state.get("active_page") == "view-results":
 
 
 
-            if not access_level:
+            if not st.session_state.get("access_level"):
 
                 if overall_score_cols:
                     score_col = overall_score_cols[0] 
@@ -1442,7 +1442,7 @@ if st.session_state.get("active_page") == "view-results":
                         elif "Indicator" in column:
                             staff_scores[contact_display].append((column, avg))
                     
-            if not access_level:
+            if not st.session_state.get("access_level"):
                 for column in org_df:
                     if "Overall Score" in column and (("Standard" not in column) or ("-" in column)):
                         continue
@@ -2207,7 +2207,7 @@ if st.session_state.get("active_page") == "view-results":
                             #             for label, score in standard_scores[org]:
                             #                 # st.plotly_chart(draw_standards(), use_container_width=True)
                             #                 render_score_card(sheet3_data, score, label, org_name = org)
-                            if access_level:
+                            if st.session_state.get("access_level"):
                                 for org in all_orgs:
                                     corg = org.rstrip()
                                     # Filter rows for this org
@@ -2357,7 +2357,7 @@ if st.session_state.get("active_page") == "view-results":
                             # st.plotly_chart(fig, use_container_width=True)
                             fig = score_trend(timestamp_score_triples)
                             st.plotly_chart(fig, use_container_width=True)
-                            if access_level:
+                            if st.session_state.get("access_level"):
                                 st.write(f"This chart shows the overall scores for {assessment} by organization over time.")
                             else:
                                 st.write(f"This chart shows {org_input}'s overall scores for {assessment} over time.")
@@ -2387,16 +2387,16 @@ if st.session_state.get("active_page") == "view-results":
                                                 lab = f"{tname}'s {label}"
                                                 st.plotly_chart(draw_score_dial(s, "Overall Score"), use_container_width=True)
                                         if "Overall Score" in label and "Standard" in label and ("-" not in label):
-                                            if not access_level:
+                                            if not st.session_state.get("access_level"):
                                                 render_score_card(sheet3_data, sheet2_data, s, label)
-                                            if access_level:
+                                            if st.session_state.get("access_level"):
                                                 render_score_card(sheet3_data, sheet2_data, s, label, org_name = tname)
                                         elif "Overall Score" in label and (("Standard" not in label) or ("-" in label)):
                                             continue
                                         else:
-                                            if not access_level:
+                                            if not st.session_state.get("access_level")l:
                                                 render_score_card(sheet3_data, sheet2_data, s, label)
-                                            if access_level:
+                                            if st.session_state.get("access_level"):
                                                 render_score_card(sheet3_data, sheet2_data, s, label, org_name = tname)
         else:
             with st.container(key = "white_container_big"):
