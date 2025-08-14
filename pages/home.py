@@ -1,5 +1,41 @@
 import streamlit as st
+from streamlit_cookies_manager import EncryptedCookieManager
 st.set_page_config(page_title="INSIGHT", page_icon="./oask_short_logo.png", layout="wide")
+
+cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
+if not cookies.ready():
+    st.stop()
+
+# Restore from cookies if needed
+if "org_input" not in st.session_state:
+    cookie_org = cookies.get("org_input")
+    cookie_site = cookies.get("site_input")
+    cookie_admin = cookies.get("admin_input")
+    cookie_access = cookies.get("access_level")
+    email = cookies.get("user_email")
+
+    if cookie_org:
+        st.session_state["org_input"] = cookie_org
+        st.session_state["site_input"] = cookie_site or ""
+        st.session_state["admin_input"] = cookie_admin or ""
+        st.session_state["access_level"] = cookie_access or ""
+        st.session_state["user_email"] = email or ""
+
+
+
+
+
+if "is_admin" not in st.session_state:
+    st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
+
+if "access" not in st.session_state:
+    st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
+
+access_level = st.session_state["access"]
+
+is_admin = st.session_state["is_admin"]
+
+
 import streamlit.components.v1 as components
 from urllib.parse import unquote
 import pandas as pd
@@ -8,7 +44,6 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import plotly.graph_objects as go
 import io
-from streamlit_cookies_manager import EncryptedCookieManager
 import random
 import uuid
 import re
@@ -558,7 +593,7 @@ def render_all_scores(ASSESSMENTS):
             # if access_level is None:
             #     access_level = cookies.get("access_level", "").strip().lower() == "true"
 
-            if access_level:
+            if st.session_state.get("access"):
                 # org_input = st.session_state.get("org_input", "")
                 org_df = df.copy()
 
@@ -848,38 +883,7 @@ with col3:
         if st.button("View Results", use_container_width = True):
             st.session_state["active_page"] = "view-results"
 
-cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
-if not cookies.ready():
-    st.stop()
 
-# Restore from cookies if needed
-if "org_input" not in st.session_state:
-    cookie_org = cookies.get("org_input")
-    cookie_site = cookies.get("site_input")
-    cookie_admin = cookies.get("admin_input")
-    cookie_access = cookies.get("access_level")
-    email = cookies.get("user_email")
-
-    if cookie_org:
-        st.session_state["org_input"] = cookie_org
-        st.session_state["site_input"] = cookie_site or ""
-        st.session_state["admin_input"] = cookie_admin or ""
-        st.session_state["access_level"] = cookie_access or ""
-        st.session_state["user_email"] = email or ""
-
-
-
-
-
-if "is_admin" not in st.session_state:
-    st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
-
-if "access" not in st.session_state:
-    st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
-
-access_level = st.session_state["access"]
-
-is_admin = st.session_state["is_admin"]
 with col4:
     with stylable_container(f"navbar_logout_btn_{str(uuid.uuid4())}", css_styles="""
         button {
@@ -1158,7 +1162,7 @@ if st.session_state.get("active_page") == "view-results":
             st.stop()
         # if access_level is None:
         #     access_level = st.session_state.get("access", False)
-        if access_level:
+        if st.session_state.get("access"):
             org_df = df.copy()
 
             org_input = st.session_state.get("org_input", "")
