@@ -34,16 +34,23 @@ if not cookies.ready():
 if "org_input" not in st.session_state:
     cookie_org = cookies.get("org_input")
     cookie_site = cookies.get("site_input")
-    cookie_admin = cookies.get("admin_input")
-    cookie_access = cookies.get("access_level")
-    email = cookies.get("user_email")
-
     if cookie_org:
         st.session_state["org_input"] = cookie_org
         st.session_state["site_input"] = cookie_site or ""
-        st.session_state["admin_input"] = cookie_admin or ""
-        st.session_state["access_level"] = cookie_access or ""
-        st.session_state["user_email"] = email or ""
+
+if "admin_input" not in st.session_state:  
+    cookie_admin = cookies.get("admin_input")
+    if cookie_admin:
+        st.session_state["admin_input"] = cookie_admin
+if "access_level" not in st.session_state:
+    cookie_access = cookies.get("access_level")
+    if cookie_access:
+        st.session_state["access_level"] = cookie_access
+
+if "email" not in st.session_state:
+    email = cookies.get("user_email")
+    if email:
+        st.session_state["user_email"] = email
 
 
 
@@ -868,7 +875,7 @@ with col4:
     }
     """):
         if st.button("Logout", use_container_width = True):
-            for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page"]:
+            for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page", "access", "is_admin"]:
                 st.session_state.pop(key, None)
                 cookies[key] = ""
             cookies.save()
@@ -876,8 +883,7 @@ with col4:
 st.markdown("""</div>""", unsafe_allow_html=True)
 
 
-if "active_page" not in st.session_state:
-    st.session_state["active_page"] = "home"
+
 
 
 # render_variation_buttons()
@@ -2436,7 +2442,7 @@ if st.session_state.get("active_page") == "view-results":
                                     if pd.isna(score):
                                         continue
                                     render_score_card(sheet3_data, sheet2_data, score, label)
-elif st.session_state["active_page"] == "info":
+elif st.session_state.get("active_page") == "info":
     st.html(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
@@ -2502,7 +2508,7 @@ elif st.session_state["active_page"] == "info":
     """)
     data_form_link = "https://docs.google.com/forms/d/e/1FAIpQLScebVl2SRuhtDmzAEag_sPn0MgaAvLIpbwbm7-Imjup8aD2uw/viewform?embedded=true"
     components.iframe(data_form_link, width=1500, height=800, scrolling = True)
-elif st.session_state["active_page"] == "self-assess":
+elif st.session_state.get("active_page") == "self-assess":
     st.session_state.pop("variation", None)
     st.html(f"""
     <style>
@@ -2609,6 +2615,8 @@ elif st.session_state["active_page"] == "self-assess":
         )
         components.iframe(ASSESSMENTS[assessment]["form_url"], width = 1500, height=800, scrolling=True)
 else:
+    if "active_page" not in st.session_state:
+        st.session_state["active_page"] = "home"
 
     #     # Home Page with HTML navigation
     # if is_admin:
