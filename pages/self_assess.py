@@ -17,76 +17,12 @@ import re
 from streamlit_extras.stylable_container import stylable_container
 import numpy as np
 
-# st.set_page_config(page_title="INSIGHT", page_icon="./oask_short_logo.png", layout="wide")
-
-# hide_st_style = """
-#             <style>
-#             #MainMenu {visibility: hidden;}
-#             footer {visibility: hidden;}
-#             header {visibility: hidden;}
-#             </style>
-#             """
-# st.html(hide_st_style)
 
 cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
 if not cookies.ready():
     st.stop()
 
-# Restore from cookies if needed
-if "org_input" not in st.session_state:
-    cookie_org = cookies.get("org_input")
-    cookie_site = cookies.get("site_input")
-    if cookie_org:
-        st.session_state["org_input"] = cookie_org
-        st.session_state["site_input"] = cookie_site or ""
 
-if "admin_input" not in st.session_state:  
-    cookie_admin = cookies.get("admin_input")
-    if cookie_admin:
-        st.session_state["admin_input"] = cookie_admin
-if "access_level" not in st.session_state:
-    cookie_access = cookies.get("access_level")
-    if cookie_access:
-        st.session_state["access_level"] = cookie_access
-
-if "email" not in st.session_state:
-    email = cookies.get("user_email")
-    if email:
-        st.session_state["user_email"] = email
-
-
-
-
-
-if "is_admin" not in st.session_state:
-    st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
-
-if "access" not in st.session_state:
-    st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
-
-access_level = st.session_state["access"]
-
-is_admin = st.session_state["is_admin"]
-
-if st.session_state["is_admin"]:
-    ad = "Admin"
-else:
-    ad = "Staff"
-
-# if st.query_params.get("logout") == "1":
-#     for key in ["org_input", "site_input", "admin_input", "google_token", "user_info", "access_level"]:
-#         st.session_state.pop(key, None)
-
-#     cookies["org_input"] = ""
-#     cookies["site_input"] = ""
-#     cookies["admin_input"] = ""
-#     cookies["access_level"] = ""
-#     cookies.save()
-
-
-#     st.success("You have been logged out.")
-#     st.switch_page("app.py")
-# --- LOGOUT BUTTON ---
 
 
 
