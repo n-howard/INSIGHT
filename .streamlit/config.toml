@@ -2,7 +2,7 @@
 showSidebarNavigation = false
 
 [server]
-disconnectedSessionTTL = 360
+disconnectedSessionTTL = 500
 
 [[theme.fontFaces]]
 family = "Poppins"
