@@ -46,15 +46,15 @@ if not cookies.ready():
 
 
 
-if "is_admin" not in st.session_state:
-    st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
+# if "is_admin" not in st.session_state:
+#     st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
 
-if "access" not in st.session_state:
-    st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
+# if "access" not in st.session_state:
+#     st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
 
-access_level = st.session_state["access"]
+# access_level = st.session_state["access"]
 
-is_admin = st.session_state["is_admin"]
+# is_admin = st.session_state["is_admin"]
 
 
 
@@ -604,7 +604,7 @@ if assessment == "all":
                 df[c] = pd.to_numeric(df[c], errors="coerce")
 
 
-            if access_level:
+            if st.session_state.access:
   
                 org_df = df.copy()
 
@@ -682,7 +682,7 @@ if assessment == "all":
 
                 org_clean = org_input.strip().lower()
                 # Regular view for non-admins
-                if not is_admin:
+                if not st.session_state.is_admin:
                     # Determine the email to match from session
                     user_email = norm(st.session_state.get("user_email", ""))
 
@@ -793,9 +793,8 @@ elif assessment:
     if not Program_Name:
         st.error("Could not find the column with organization/program name. Please check your form question titles.")
         st.stop()
-    # if access_level is None:
-    #     access_level = st.session_state.get("access", False)
-    if access_level:
+
+    if st.session_state.access:
         org_df = df.copy()
 
         
@@ -925,8 +924,7 @@ elif assessment:
     else:
         email = None
 
-    # is_admin = st.session_state.get("is_admin", False)
-    if is_admin:
+    if st.session_state.is_admin:
         chart_df = org_df.copy()
     else:
         if email is not None:
@@ -958,7 +956,7 @@ elif assessment:
 
 
 
-    if is_admin or access_level:
+    if st.session_state.is_admin or st.session_state.access:
         staff_scores = {}
         staff_scores_num = {}
         submissions = {}
@@ -984,7 +982,7 @@ elif assessment:
 
 
 
-        if not access_level:
+        if not st.session_state.access:
 
             if overall_score_cols:
                 score_col = overall_score_cols[0] 
@@ -1059,7 +1057,7 @@ elif assessment:
                     elif "Indicator" in column:
                         staff_scores[contact_display].append((column, avg))
                 
-        if not access_level:
+        if not st.session_state.access:
             for column in org_df:
                 if "Overall Score" in column and (("Standard" not in column) or ("-" in column)):
                     continue
@@ -1432,7 +1430,7 @@ elif assessment:
 
         components.html(card_html, height=card_height)
         x = False
-        if access_level or is_admin:
+        if st.session_state.access or st.session_state.is_admin:
             if "Standard" in label:
                 if "Indicator" in label and ((score>=3.0 and score <=4.0) or (score>=75.0)):
                     st.markdown(defst)
@@ -1443,7 +1441,7 @@ elif assessment:
                 else:
                     for category in l:
                         if "Standard" in category and category in label:
-                            if (not is_admin) and (not access_level):
+                            if (not st.session_state.is_admin) and (not st.session_state.access):
                                 st.markdown(defst)
                                 return
                             tdef = col_a_to_b[category]
@@ -1493,7 +1491,7 @@ elif assessment:
                 df,
                 x="Timestamp",
                 y="Overall Score",
-                color="Org Name" if access_level else None,
+                color="Org Name" if st.session_state.access else None,
                 markers=True,
                 color_discrete_sequence=[
                     "#084C61", "#0F6B75", "#138D90", "#56A3A6", "#A7D4D5", "#CBE8E8", "#E6F5F5"
@@ -1571,7 +1569,7 @@ elif assessment:
     spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
     cat_sheet = spreadsheet.worksheet("Indicators")
     sheet3_data = cat_sheet.get_all_values()
-    if is_admin or access_level:
+    if st.session_state.is_admin or st.session_state.access:
         
         with st.container(key = "white_container_big"):
             
@@ -1606,7 +1604,7 @@ elif assessment:
                                     # st.plotly_chart(draw_standards(), use_container_width=True)
                                     render_score_card(sheet3_data, sheet2_data, score, label)
 
-                    if is_admin and not access_level:
+                    if st.session_state.is_admin and not st.session_state.access:
                         w_prefix = str(uuid.uuid4())
                         wa = "white_container_" + w_prefix
                         st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
@@ -1669,7 +1667,7 @@ elif assessment:
                     else:
     
                     
-                        if access_level:
+                        if st.session_state.access:
                             for org in all_orgs:
                                 corg = org.rstrip()
                         
@@ -1780,7 +1778,7 @@ elif assessment:
     
                         fig = score_trend(timestamp_score_triples)
                         st.plotly_chart(fig, use_container_width=True)
-                        if access_level:
+                        if st.session_state.access:
                             st.write(f"This chart shows the overall scores for {assessment} by organization over time.")
                         else:
                             st.write(f"This chart shows {org_input}'s overall scores for {assessment} over time.")
@@ -1810,16 +1808,16 @@ elif assessment:
                                             lab = f"{tname}'s {label}"
                                             st.plotly_chart(draw_score_dial(s, "Overall Score"), use_container_width=True)
                                     if "Overall Score" in label and "Standard" in label and ("-" not in label):
-                                        if not access_level:
+                                        if not st.session_state.access:
                                             render_score_card(sheet3_data, sheet2_data, s, label)
-                                        if access_level:
+                                        if st.session_state.access:
                                             render_score_card(sheet3_data, sheet2_data, s, label, org_name = tname)
                                     elif "Overall Score" in label and (("Standard" not in label) or ("-" in label)):
                                         continue
                                     else:
-                                        if not access_level:
+                                        if not st.session_state.access:
                                             render_score_card(sheet3_data, sheet2_data, s, label)
-                                        if access_level:
+                                        if st.session_state.access:
                                             render_score_card(sheet3_data, sheet2_data, s, label, org_name = tname)
     else:
         with st.container(key = "white_container_big"):

@@ -832,7 +832,7 @@ with col2:
             box-shadow: none;
     """):
         if st.button("Self-Assess", use_container_width = True):
-            st.switch_page("pages/self-assess.py")
+            st.switch_page("pages/self_assess.py")
 
 with col3:
     with stylable_container(f"navbar_view_btn", css_styles="""
