@@ -20,41 +20,6 @@ cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SEC
 if not cookies.ready():
     st.stop()
 
-# # Restore from cookies if needed
-# if "org_input" not in st.session_state:
-#     cookie_org = cookies.get("org_input")
-#     cookie_site = cookies.get("site_input")
-#     if cookie_org:
-#         st.session_state["org_input"] = cookie_org
-#         st.session_state["site_input"] = cookie_site or ""
-
-# if "admin_input" not in st.session_state:  
-#     cookie_admin = cookies.get("admin_input")
-#     if cookie_admin:
-#         st.session_state["admin_input"] = cookie_admin
-# if "access_level" not in st.session_state:
-#     cookie_access = cookies.get("access_level")
-#     if cookie_access:
-#         st.session_state["access_level"] = cookie_access
-
-# if "email" not in st.session_state:
-#     email = cookies.get("user_email")
-#     if email:
-#         st.session_state["user_email"] = email
-
-
-
-
-
-# if "is_admin" not in st.session_state:
-#     st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
-
-# if "access" not in st.session_state:
-#     st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
-
-# access_level = st.session_state["access"]
-
-# is_admin = st.session_state["is_admin"]
 
 
 
@@ -603,7 +568,10 @@ if assessment == "all":
             for c in overall_score_cols:
                 df[c] = pd.to_numeric(df[c], errors="coerce")
 
-
+            def sess_state_create():
+                st.session_state.access = st.session_state.get("access", False)
+                st.session_state.is_admin = st.session_state.get("is_admin", False)
+                
             if st.session_state.access:
   
                 org_df = df.copy()
