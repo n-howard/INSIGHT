@@ -496,7 +496,10 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_se
 client = gspread.authorize(creds)
 
 assessment = st.session_state.get("variation", None)
-
+def sess_state_create():
+    st.session_state.access = st.session_state.get("access", False)
+    st.session_state.is_admin = st.session_state.get("is_admin", False)
+sess_state_create()
 if assessment == "all":
 
     # --- Helpers ---
@@ -568,10 +571,7 @@ if assessment == "all":
             for c in overall_score_cols:
                 df[c] = pd.to_numeric(df[c], errors="coerce")
 
-            def sess_state_create():
-                st.session_state.access = st.session_state.get("access", False)
-                st.session_state.is_admin = st.session_state.get("is_admin", False)
-                
+            
             if st.session_state.access:
   
                 org_df = df.copy()
