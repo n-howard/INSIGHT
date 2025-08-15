@@ -1,6 +1,9 @@
 [client]
 showSidebarNavigation = false
 
+[server]
+disconnectedSessionTTL = 360
+
 [[theme.fontFaces]]
 family = "Poppins"
 url = "/.static/Poppins-Medium.ttf"
