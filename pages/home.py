@@ -240,6 +240,7 @@ with col2:
             box-shadow: none;
     """):
         if st.button("Self-Assess", use_container_width = True):
+            st.session_state["active_page"] = "self-assess"
             st.switch_page("pages/self_assess.py")
 
 with col3:
@@ -261,6 +262,7 @@ with col3:
             box-shadow: none;
     """):
         if st.button("View Results", use_container_width = True):
+            st.session_state["active_page"] = "view-results"
             st.switch_page("pages/view_results.py")
 
 with col4:
