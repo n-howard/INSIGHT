@@ -240,8 +240,8 @@ with col2:
             box-shadow: none;
     """):
         if st.button("Self-Assess", use_container_width = True):
-            st.session_state["active_page"] = "self-assess"
             st.switch_page("pages/self_assess.py")
+            st.rerun()
 
 with col3:
     with stylable_container(f"navbar_view_btn", css_styles="""
@@ -262,8 +262,8 @@ with col3:
             box-shadow: none;
     """):
         if st.button("View Results", use_container_width = True):
-            st.session_state["active_page"] = "view-results"
             st.switch_page("pages/view_results.py")
+            st.rerun()
 
 with col4:
     with stylable_container(f"navbar_logout_btn_{str(uuid.uuid4())}", css_styles="""
