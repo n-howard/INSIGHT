@@ -1540,7 +1540,6 @@ elif assessment:
     spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
     cat_sheet = spreadsheet.worksheet("Indicators")
     sheet3_data = cat_sheet.get_all_values()
-    wuit
     if st.session_state.is_admin or st.session_state.access:
         
         with st.container(key = "white_container_big"):
