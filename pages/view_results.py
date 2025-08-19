@@ -718,154 +718,135 @@ if assessment == "all":
                     with st.container(key=f"teal_container_{w_prefix}"):
                         st.plotly_chart(draw_score_dial(avg), use_container_width=True)
 elif assessment:
-    with st.spinner("Loading results..."):
-        time.sleep(7)
+
     
             # Authorize and load the sheet
     
-        sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
+    sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
 
 
 
 
-        # Load raw data and headers for the specific organization.
-        raw_data = sheet.get_all_values()
-        headers = raw_data[0]
+    # Load raw data and headers for the specific organization.
+    raw_data = sheet.get_all_values()
+    headers = raw_data[0]
 
-        # Make headers unique to avoid duplicate error
-        seen = {}
-        unique_headers = []
-        for h in headers:
-            if h in seen:
-                seen[h] += 1
-                unique_headers.append(f"{h} ({seen[h]})")
-            else:
-                seen[h] = 0
-                unique_headers.append(h)
+    # Make headers unique to avoid duplicate error
+    seen = {}
+    unique_headers = []
+    for h in headers:
+        if h in seen:
+            seen[h] += 1
+            unique_headers.append(f"{h} ({seen[h]})")
+        else:
+            seen[h] = 0
+            unique_headers.append(h)
 
-        # Create DataFrame
-        df = pd.DataFrame(raw_data[1:], columns=unique_headers)
-        reg_df = df.copy()
+    # Create DataFrame
+    df = pd.DataFrame(raw_data[1:], columns=unique_headers)
+    reg_df = df.copy()
 
-        Program_Name = "Please enter the organization name you logged in with." 
+    Program_Name = "Please enter the organization name you logged in with." 
+
+    
+    # --- STEP 1: Dynamically detect the "Program Name" column ---
+    candidate_keywords = ["organization name", "program name", "your org", "site or organization", "Please enter the organization name you logged in with."]
+    Program_Name = None
+
+    for col in df.columns:
+        col_lower = col.strip().lower()
+        if any(keyword.strip().lower() in col_lower for keyword in candidate_keywords):
+            Program_Name = col
+            break
+
+    # If no matching column found, show error
+    if not Program_Name:
+        st.error("Could not find the column with organization/program name. Please check your form question titles.")
+        st.stop()
+
+    if st.session_state.access:
+        org_df = df.copy()
 
         
-        # --- STEP 1: Dynamically detect the "Program Name" column ---
-        candidate_keywords = ["organization name", "program name", "your org", "site or organization", "Please enter the organization name you logged in with."]
-        Program_Name = None
+        if Program_Name in org_df.columns:
 
-        for col in df.columns:
-            col_lower = col.strip().lower()
-            if any(keyword.strip().lower() in col_lower for keyword in candidate_keywords):
-                Program_Name = col
-                break
+            # org_df["Extracted Orgs"] = org_df[Program_Name].fillna("").astype(str).str.strip()
+            def normalize_orgs(val):
+                if pd.isna(val):
+                    return []
+                parts = re.split(r"[;,/\n]+", str(val))
+                return [p.strip() for p in parts if p and p.strip()]
 
-        # If no matching column found, show error
-        if not Program_Name:
-            st.error("Could not find the column with organization/program name. Please check your form question titles.")
+            org_df["Extracted Orgs"] = org_df[Program_Name].apply(normalize_orgs)
+
+            # Fallback: if all lists are empty, just use raw org names
+            if org_df["Extracted Orgs"].apply(len).sum() == 0:
+                org_df["Extracted Orgs"] = org_df[Program_Name].apply(lambda x: [x.strip()] if x else [])
+
+
+            all_orgs = sorted({
+                o
+                for sublist in org_df["Extracted Orgs"]
+                for o in sublist
+                if o
+            })
+            over_scores = {}
+            if all_orgs:
+                # Step 1: Get all columns that include "Overall Score"
+                over_score_col = [col for col in org_df.columns if "Overall Score" in col]
+
+                # Step 2: Collect all numeric values from these columns
+                for org in all_orgs:
+                    these_all_scores = []
+
+                    for col in over_score_col:
+                        series = pd.to_numeric(org_df[col], errors="coerce")  # convert to numbers, NaN if invalid
+                        scores = series.dropna().tolist()  # drop non-numeric
+                        these_all_scores.extend(scores)
+
+                    # Step 3: Calculate the average
+                    if these_all_scores:
+                        over_scores[org] = sum(these_all_scores) / len(these_all_scores)
+                    else:
+                        over_scores[org] = 1000
+            else:
+                selected_orgs = []
+        else:
+            
+            selected_orgs = []
+
+        def matches_selected_orgs(org_list):
+            return any(org in org_list for org in selected_orgs)
+    
+    else:
+        all_orgs = False
+        if Program_Name not in df.columns:
+            st.error("Column Program Name not found in the data.")
             st.stop()
 
-        if st.session_state.access:
-            org_df = df.copy()
+        # Clean both Program Name column and org_input for flexible comparison
+        df["Program Name_clean"] = df[Program_Name].str.strip().str.lower()
+        org_input = st.session_state.get("org_input", "")
 
-            
-            if Program_Name in org_df.columns:
+        org_clean = org_input.strip().lower()
 
-                # org_df["Extracted Orgs"] = org_df[Program_Name].fillna("").astype(str).str.strip()
-                def normalize_orgs(val):
-                    if pd.isna(val):
-                        return []
-                    parts = re.split(r"[;,/\n]+", str(val))
-                    return [p.strip() for p in parts if p and p.strip()]
+        # Filter the DataFrame to just this org
+        df = df[df["Program Name_clean"] == org_clean]
 
-                org_df["Extracted Orgs"] = org_df[Program_Name].apply(normalize_orgs)
+        org_df = df.copy()
 
-                # Fallback: if all lists are empty, just use raw org names
-                if org_df["Extracted Orgs"].apply(len).sum() == 0:
-                    org_df["Extracted Orgs"] = org_df[Program_Name].apply(lambda x: [x.strip()] if x else [])
-
-
-                all_orgs = sorted({
-                    o
-                    for sublist in org_df["Extracted Orgs"]
-                    for o in sublist
-                    if o
-                })
-                over_scores = {}
-                if all_orgs:
-                    # Step 1: Get all columns that include "Overall Score"
-                    over_score_col = [col for col in org_df.columns if "Overall Score" in col]
-
-                    # Step 2: Collect all numeric values from these columns
-                    for org in all_orgs:
-                        these_all_scores = []
-
-                        for col in over_score_col:
-                            series = pd.to_numeric(org_df[col], errors="coerce")  # convert to numbers, NaN if invalid
-                            scores = series.dropna().tolist()  # drop non-numeric
-                            these_all_scores.extend(scores)
-
-                        # Step 3: Calculate the average
-                        if these_all_scores:
-                            over_scores[org] = sum(these_all_scores) / len(these_all_scores)
-                        else:
-                            over_scores[org] = 1000
-                else:
-                    selected_orgs = []
-            else:
-                
-                selected_orgs = []
-
-            def matches_selected_orgs(org_list):
-                return any(org in org_list for org in selected_orgs)
+        # Drop the temporary clean column
+        df = df.drop(columns=["Program Name_clean"])
         
-        else:
-            all_orgs = False
-            if Program_Name not in df.columns:
-                st.error("Column Program Name not found in the data.")
-                st.stop()
+    site_name = "Are you filling out this form for a specific site? If yes, what is the site’s name?"
 
-            # Clean both Program Name column and org_input for flexible comparison
-            df["Program Name_clean"] = df[Program_Name].str.strip().str.lower()
-            org_input = st.session_state.get("org_input", "")
-
-            org_clean = org_input.strip().lower()
-
-            # Filter the DataFrame to just this org
-            df = df[df["Program Name_clean"] == org_clean]
-
-            org_df = df.copy()
-
-            # Drop the temporary clean column
-            df = df.drop(columns=["Program Name_clean"])
-            
-        site_name = "Are you filling out this form for a specific site? If yes, what is the site’s name?"
-
-        if site_name not in org_df.columns:
-            site_keywords = ["name of the site", "site", "the site", "which site", "site's name", "Please enter the name of the site and/or program you work at."]
-            for col in df.columns:
-                col_lower = col.strip().lower()
-                if any(keyword in col_lower for keyword in site_keywords):
-                    site_name = col
-        # --- MULTI-FILTER CONTROLS ---
-            # Normalize Site Name
-            if site_name in org_df.columns:
-                org_df["Site Name"] = org_df[site_name].fillna("").astype(str).str.strip()
-            else:
-                org_df["Site Name"] = ""  # Add a blank column if missing
-
-
-
-
-            def extract_sites(text):
-                lines = text.split('\n')
-                site_names = []
-                for line in lines:
-                    match = re.match(r"\s*-\s*(.*?):", line)
-                    if match:
-                        site_names.append(match.group(1).strip())
-                return site_names 
-        # --- MULTI-FILTER CONTROLS ---
+    if site_name not in org_df.columns:
+        site_keywords = ["name of the site", "site", "the site", "which site", "site's name", "Please enter the name of the site and/or program you work at."]
+        for col in df.columns:
+            col_lower = col.strip().lower()
+            if any(keyword in col_lower for keyword in site_keywords):
+                site_name = col
+    # --- MULTI-FILTER CONTROLS ---
         # Normalize Site Name
         if site_name in org_df.columns:
             org_df["Site Name"] = org_df[site_name].fillna("").astype(str).str.strip()
@@ -873,307 +854,127 @@ elif assessment:
             org_df["Site Name"] = ""  # Add a blank column if missing
 
 
-        # Apply to org_df only (filtered by org_input earlier)
-        org_df["Extracted Sites"] = org_df["Site Name"]
 
 
-        # Build site dropdown options (only if admin has sites)
-        all_sites = sorted(set(site for site in org_df["Extracted Sites"] if site))
+        def extract_sites(text):
+            lines = text.split('\n')
+            site_names = []
+            for line in lines:
+                match = re.match(r"\s*-\s*(.*?):", line)
+                if match:
+                    site_names.append(match.group(1).strip())
+            return site_names 
+    # --- MULTI-FILTER CONTROLS ---
+    # Normalize Site Name
+    if site_name in org_df.columns:
+        org_df["Site Name"] = org_df[site_name].fillna("").astype(str).str.strip()
+    else:
+        org_df["Site Name"] = ""  # Add a blank column if missing
 
 
-        selected_contacts = []
-        
+    # Apply to org_df only (filtered by org_input earlier)
+    org_df["Extracted Sites"] = org_df["Site Name"]
 
-        # Try converting all columns to numeric
-        converted_df = df.copy()
-        # Apply staff and site filters to org_df before generating charts
 
-        chart_df = org_df.copy() 
+    # Build site dropdown options (only if admin has sites)
+    all_sites = sorted(set(site for site in org_df["Extracted Sites"] if site))
 
-        if st.session_state.get("user_email")!="":
-            email = st.session_state.get("user_email")
+
+    selected_contacts = []
+    
+
+    # Try converting all columns to numeric
+    converted_df = df.copy()
+    # Apply staff and site filters to org_df before generating charts
+
+    chart_df = org_df.copy() 
+
+    if st.session_state.get("user_email")!="":
+        email = st.session_state.get("user_email")
+    else:
+        email = None
+
+    if st.session_state.is_admin:
+        chart_df = org_df.copy()
+    else:
+        if email is not None:
+            chart_df = reg_df[reg_df["Contact Email"].str.lower().str.strip() == email.strip().lower()]
+
+
+
+    # Convert to numeric
+    converted_df = chart_df.copy()
+    for col in converted_df.columns:
+        converted_df[col] = pd.to_numeric(converted_df[col], errors="coerce")
+
+    # Keep only mostly-numeric columns
+    EXCLUDED_SUBSTRINGS = ["How many students", "Timestamp", "Contact Phone", "Program Zip Code", "Program Street Address"]
+
+    def is_numeric_column(series):
+        return (
+            series.notna().mean() >= 0.6 and
+            series.apply(lambda x: isinstance(x, (int, float)) or (isinstance(x, str) and "," not in x)).all()
+        )
+
+    numeric_cols = [
+        col for col in converted_df.columns
+        if is_numeric_column(converted_df[col]) and not any(sub.lower() in col.lower() for sub in EXCLUDED_SUBSTRINGS)
+    ]
+
+    filtered_df = converted_df[numeric_cols].dropna(axis=1, how="all")
+
+
+
+
+    if st.session_state.is_admin or st.session_state.access:
+        staff_scores = {}
+        staff_scores_num = {}
+        submissions = {}
+        score_over_time = []
+        standard_scores = []
+
+        # Step 1: Get all columns that include "Overall Score"
+        overall_score_cols = [col for col in org_df.columns if "Overall Score" in col]
+
+        # Step 2: Collect all numeric values from these columns
+        all_scores = []
+
+        for col in overall_score_cols:
+            series = pd.to_numeric(org_df[col], errors="coerce")  # convert to numbers, NaN if invalid
+            scores = series.dropna().tolist()  # drop non-numeric
+            all_scores.extend(scores)
+
+        # Step 3: Calculate the average
+        if all_scores:
+            overall_score = sum(all_scores) / len(all_scores)
         else:
-            email = None
-
-        if st.session_state.is_admin:
-            chart_df = org_df.copy()
-        else:
-            if email is not None:
-                chart_df = reg_df[reg_df["Contact Email"].str.lower().str.strip() == email.strip().lower()]
+            overall_score = 1000  # fallback value or message
 
 
 
-        # Convert to numeric
-        converted_df = chart_df.copy()
-        for col in converted_df.columns:
-            converted_df[col] = pd.to_numeric(converted_df[col], errors="coerce")
-
-        # Keep only mostly-numeric columns
-        EXCLUDED_SUBSTRINGS = ["How many students", "Timestamp", "Contact Phone", "Program Zip Code", "Program Street Address"]
-
-        def is_numeric_column(series):
-            return (
-                series.notna().mean() >= 0.6 and
-                series.apply(lambda x: isinstance(x, (int, float)) or (isinstance(x, str) and "," not in x)).all()
-            )
-
-        numeric_cols = [
-            col for col in converted_df.columns
-            if is_numeric_column(converted_df[col]) and not any(sub.lower() in col.lower() for sub in EXCLUDED_SUBSTRINGS)
-        ]
-
-        filtered_df = converted_df[numeric_cols].dropna(axis=1, how="all")
-
-
-
-
-        if st.session_state.is_admin or st.session_state.access:
-            staff_scores = {}
-            staff_scores_num = {}
-            submissions = {}
-            score_over_time = []
-            standard_scores = []
-
-            # Step 1: Get all columns that include "Overall Score"
-            overall_score_cols = [col for col in org_df.columns if "Overall Score" in col]
-
-            # Step 2: Collect all numeric values from these columns
-            all_scores = []
-
-            for col in overall_score_cols:
-                series = pd.to_numeric(org_df[col], errors="coerce")  # convert to numbers, NaN if invalid
-                scores = series.dropna().tolist()  # drop non-numeric
-                all_scores.extend(scores)
-
-            # Step 3: Calculate the average
-            if all_scores:
-                overall_score = sum(all_scores) / len(all_scores)
-            else:
-                overall_score = 1000  # fallback value or message
-
-
-
-            if not st.session_state.access:
-
-                if overall_score_cols:
-                    score_col = overall_score_cols[0] 
-                    score_series = pd.to_numeric(org_df[score_col], errors="coerce")
-                    
-                    # Optional: Add label (e.g., "Submission 1", "Submission 2", or use timestamps)
-                    # for i, score in enumerate(score_series):
-                    #     if not pd.isna(score):
-                    #         label = f"Submission {i+1}"
-                    #         submissions[label] = score
-                    #         score_over_time.append(score)
-                    timestamp_col = next((col for col in org_df.columns if "timestamp" in col.lower()), None)
-
-                    # Only if timestamp column is found
-                    if timestamp_col and timestamp_col in org_df.columns:
-                        try:
-                            # Convert timestamp strings to datetime objects
-                            timestamp_series = pd.to_datetime(org_df[timestamp_col], errors='coerce')
-                        except Exception:
-                            timestamp_series = pd.Series([pd.NaT] * len(org_df))
-                    else:
-                        timestamp_series = pd.Series([pd.NaT] * len(org_df))
-
-                    for i, score in enumerate(score_series):
-                        if not pd.isna(score):
-                            ts = timestamp_series.iloc[i]
-                            if pd.notna(ts):
-
-                                label = ts.strftime("%B %d, %Y").replace(" 0", " ")
-                                if label in submissions.keys():
-                                    label = label + f", Submission {i+1}"
-                            else:
-                                label = f"Submission {i+1}"
-                            submissions[label] = score
-                            score_over_time.append(score)
-            if "Contact Name" in org_df.columns:
-                # Normalize the Contact Name column
-                org_df["__normalized_contact__"] = org_df["Contact Name"].astype(str).str.strip().str.lower()
-
-                # Get unique normalized names (original casing preserved via mapping)
-                original_names = org_df.dropna(subset=["Contact Name"])["Contact Name"]
-                normalized_map = {name.strip().lower(): name for name in original_names.unique()}
-
-                contacts_to_show = list(normalized_map.keys())
-
-                for contact_norm in contacts_to_show:
-                    contact_display = normalized_map[contact_norm]
-                    staff_scores[contact_display] = []
-
-                    contact_df = org_df[org_df["__normalized_contact__"] == contact_norm]
-                    if contact_df.empty:
-                        continue
-
-                    for column in contact_df.columns:
-                        series = contact_df[column].replace('%', '', regex=True)
-                        series = pd.to_numeric(series, errors="coerce")
-                        avg = series.mean()
-                        if pd.notna(avg):
-                            if "Overall Score" in column:
-                                staff_scores[contact_display].append((column, avg))
-                                staff_scores_num[contact_display] = avg
-                            elif "Standard" in column:
-                                if "percent" in column.lower() or "%" in column:
-                                    staff_scores[contact_display].append((column, avg))
-                                elif 0 <= avg < 1:
-                                    avg *= 100
-                                    staff_scores[contact_display].append((column, avg))
-                                else:
-                                    staff_scores[contact_display].append((column, avg))
-                            elif "Indicator" in column:
-                                staff_scores[contact_display].append((column, avg))
-                        elif "Indicator" in column:
-                            staff_scores[contact_display].append((column, avg))
-                    
-            if not st.session_state.access:
-                for column in org_df:
-                    if "Overall Score" in column and (("Standard" not in column) or ("-" in column)):
-                        continue
-
-                    # Clean and convert
-                    series = org_df[column].replace('%', '', regex=True)
-                    series = pd.to_numeric(series, errors="coerce")
-                    av = series.mean()
-                    if pd.notna(av):
-                        if "Standard" in column:
-                            if "percent" in column.lower() or "%" in column:
-                                standard_scores.append((column, av))
-                            elif 0 <= av < 1:
-                                av*=100
-                                standard_scores.append((column, av))
-                            else:
-                                standard_scores.append((column, av))
-                        elif "Indicator" in column:
-                            standard_scores.append((column, av))
-
-
-            else:
-                standard_scores = {}
-                over_scores = {}
-
-                # Create a mapping from normalized org -> original org
-                normalized_org_map = {}
-                for org in all_orgs:
-                    normalized = org.strip().lower()
-                    normalized_org_map[normalized] = org  # preserve original for display
-
-                # Normalize Extracted Orgs column in the DataFrame
-                org_df["__normalized_extracted_orgs__"] = org_df["Extracted Orgs"].apply(
-                    lambda x: [i.strip().lower() for i in x] if isinstance(x, list) else [str(x).strip().lower()]
-                )
-                
-                    
-                j = 0
-                    
-                for norm_org, display_org in normalized_org_map.items():
-                    
-                    # Match rows where normalized org is in normalized extracted list
-                    torg_df = org_df[org_df["__normalized_extracted_orgs__"].apply(lambda x: norm_org in x)]
-
-
-                    # Overall Score
-                    all_scores = []
-                    for col in torg_df.columns:
-                        if "Overall Score" in col:
-                            series = pd.to_numeric(torg_df[col], errors="coerce")
-                            scores = series.dropna().tolist()
-                            all_scores.extend(scores)
-                    over_scores[display_org] = sum(all_scores) / len(all_scores) if all_scores else 0
-                    if overall_score_cols:
-                        score_col = overall_score_cols[0] 
-                        score_series = pd.to_numeric(torg_df[score_col], errors="coerce")
-        
-                        timestamp_col = next((col for col in torg_df.columns if "timestamp" in col.lower()), None)
-
-                        # Only if timestamp column is found
-                        if timestamp_col and timestamp_col in torg_df.columns:
-                            try:
-                                # Convert timestamp strings to datetime objects
-                                timestamp_series = pd.to_datetime(torg_df[timestamp_col], errors='coerce')
-                            except Exception:
-                                timestamp_series = pd.Series([pd.NaT] * len(torg_df))
-                        else:
-                            timestamp_series = pd.Series([pd.NaT] * len(torg_df))
-
-                        for i, score in enumerate(score_series):
-                            if not pd.isna(score):
-                                ts = timestamp_series.iloc[i]
-                                if pd.notna(ts):
-                                    # label = ts.strftime("%B %Y")
-                                    label = ts.strftime("%B %d, %Y").replace(" 0", " ")
-                                    if label in submissions.keys():
-                                        label = label + f", Submission {i+1}"
-                                else:
-                                    label = f"Submission {i+1}"
-                                label = label + f": {display_org}"
-                                submissions[label] = score
-                                score_over_time.append(score)
-                    # Standards/Indicators
-                    standard_scores[display_org] = []
-                    for column in torg_df.columns:
-                        if "Overall Score" in column and (("Standard" not in column) or ("-" in column)):
-                            continue
-
-                        series = torg_df[column].replace('%', '', regex=True)
-                        series = pd.to_numeric(series, errors="coerce")
-                        av = series.mean()
-
-                        if pd.notna(av):
-                            if "Standard" in column:
-                                if "percent" in column.lower() or "%" in column:
-                                    standard_scores[display_org].append((column, av))
-                                elif 0 <= av < 1:
-                                    standard_scores[display_org].append((column, av * 100))
-                                else:
-                                    standard_scores[display_org].append((column, av))
-                            elif "Indicator" in column:
-                                standard_scores[display_org].append((column, av))
-                        elif "Indicator" in column:
-                            standard_scores[display_org].append((column, av))
-
-        else:
-            standard_scores = {}
-            submissions = {}
-            score_over_time = []
-            email = st.session_state.get("user_email", "").strip().lower()
-            edf = chart_df.copy()
-                # Step 1: Get all columns that include "Overall Score"
-            overall_score_cols = [col for col in edf.columns if "Overall Score" in col]
-
-            # Step 2: Collect all numeric values from these columns
-            all_scores = []
-
-            for col in overall_score_cols:
-                series = pd.to_numeric(edf[col], errors="coerce")  # convert to numbers, NaN if invalid
-                scores = series.dropna().tolist()  # drop non-numeric
-                all_scores.extend(scores)
-
-            # Step 3: Calculate the average
-            if all_scores:
-                overall_score = sum(all_scores) / len(all_scores)
-            else:
-                overall_score = 1000  # fallback value or message
-
+        if not st.session_state.access:
 
             if overall_score_cols:
                 score_col = overall_score_cols[0] 
-                score_series = pd.to_numeric(edf[score_col], errors="coerce")
+                score_series = pd.to_numeric(org_df[score_col], errors="coerce")
                 
-
-                timestamp_col = next((col for col in edf.columns if "timestamp" in col.lower()), None)
+                # Optional: Add label (e.g., "Submission 1", "Submission 2", or use timestamps)
+                # for i, score in enumerate(score_series):
+                #     if not pd.isna(score):
+                #         label = f"Submission {i+1}"
+                #         submissions[label] = score
+                #         score_over_time.append(score)
+                timestamp_col = next((col for col in org_df.columns if "timestamp" in col.lower()), None)
 
                 # Only if timestamp column is found
-                if timestamp_col and timestamp_col in edf.columns:
+                if timestamp_col and timestamp_col in org_df.columns:
                     try:
                         # Convert timestamp strings to datetime objects
-                        timestamp_series = pd.to_datetime(edf[timestamp_col], errors='coerce')
+                        timestamp_series = pd.to_datetime(org_df[timestamp_col], errors='coerce')
                     except Exception:
-                        timestamp_series = pd.Series([pd.NaT] * len(edf))
+                        timestamp_series = pd.Series([pd.NaT] * len(org_df))
                 else:
-                    timestamp_series = pd.Series([pd.NaT] * len(edf))
+                    timestamp_series = pd.Series([pd.NaT] * len(org_df))
 
                 for i, score in enumerate(score_series):
                     if not pd.isna(score):
@@ -1187,26 +988,224 @@ elif assessment:
                             label = f"Submission {i+1}"
                         submissions[label] = score
                         score_over_time.append(score)
-            for column in edf.columns:
-                series = edf[column].replace('%', '', regex=True)
+        if "Contact Name" in org_df.columns:
+            # Normalize the Contact Name column
+            org_df["__normalized_contact__"] = org_df["Contact Name"].astype(str).str.strip().str.lower()
+
+            # Get unique normalized names (original casing preserved via mapping)
+            original_names = org_df.dropna(subset=["Contact Name"])["Contact Name"]
+            normalized_map = {name.strip().lower(): name for name in original_names.unique()}
+
+            contacts_to_show = list(normalized_map.keys())
+
+            for contact_norm in contacts_to_show:
+                contact_display = normalized_map[contact_norm]
+                staff_scores[contact_display] = []
+
+                contact_df = org_df[org_df["__normalized_contact__"] == contact_norm]
+                if contact_df.empty:
+                    continue
+
+                for column in contact_df.columns:
+                    series = contact_df[column].replace('%', '', regex=True)
+                    series = pd.to_numeric(series, errors="coerce")
+                    avg = series.mean()
+                    if pd.notna(avg):
+                        if "Overall Score" in column:
+                            staff_scores[contact_display].append((column, avg))
+                            staff_scores_num[contact_display] = avg
+                        elif "Standard" in column:
+                            if "percent" in column.lower() or "%" in column:
+                                staff_scores[contact_display].append((column, avg))
+                            elif 0 <= avg < 1:
+                                avg *= 100
+                                staff_scores[contact_display].append((column, avg))
+                            else:
+                                staff_scores[contact_display].append((column, avg))
+                        elif "Indicator" in column:
+                            staff_scores[contact_display].append((column, avg))
+                    elif "Indicator" in column:
+                        staff_scores[contact_display].append((column, avg))
+                
+        if not st.session_state.access:
+            for column in org_df:
+                if "Overall Score" in column and (("Standard" not in column) or ("-" in column)):
+                    continue
+
+                # Clean and convert
+                series = org_df[column].replace('%', '', regex=True)
                 series = pd.to_numeric(series, errors="coerce")
                 av = series.mean()
-
                 if pd.notna(av):
                     if "Standard" in column:
                         if "percent" in column.lower() or "%" in column:
-                            standard_scores[column] = av
+                            standard_scores.append((column, av))
                         elif 0 <= av < 1:
-                            standard_scores[column] = av * 100
+                            av*=100
+                            standard_scores.append((column, av))
                         else:
-                            standard_scores[column] = av
+                            standard_scores.append((column, av))
                     elif "Indicator" in column:
+                        standard_scores.append((column, av))
+
+
+        else:
+            standard_scores = {}
+            over_scores = {}
+
+            # Create a mapping from normalized org -> original org
+            normalized_org_map = {}
+            for org in all_orgs:
+                normalized = org.strip().lower()
+                normalized_org_map[normalized] = org  # preserve original for display
+
+            # Normalize Extracted Orgs column in the DataFrame
+            org_df["__normalized_extracted_orgs__"] = org_df["Extracted Orgs"].apply(
+                lambda x: [i.strip().lower() for i in x] if isinstance(x, list) else [str(x).strip().lower()]
+            )
+            
+                
+            j = 0
+                
+            for norm_org, display_org in normalized_org_map.items():
+                
+                # Match rows where normalized org is in normalized extracted list
+                torg_df = org_df[org_df["__normalized_extracted_orgs__"].apply(lambda x: norm_org in x)]
+
+
+                # Overall Score
+                all_scores = []
+                for col in torg_df.columns:
+                    if "Overall Score" in col:
+                        series = pd.to_numeric(torg_df[col], errors="coerce")
+                        scores = series.dropna().tolist()
+                        all_scores.extend(scores)
+                over_scores[display_org] = sum(all_scores) / len(all_scores) if all_scores else 0
+                if overall_score_cols:
+                    score_col = overall_score_cols[0] 
+                    score_series = pd.to_numeric(torg_df[score_col], errors="coerce")
+    
+                    timestamp_col = next((col for col in torg_df.columns if "timestamp" in col.lower()), None)
+
+                    # Only if timestamp column is found
+                    if timestamp_col and timestamp_col in torg_df.columns:
+                        try:
+                            # Convert timestamp strings to datetime objects
+                            timestamp_series = pd.to_datetime(torg_df[timestamp_col], errors='coerce')
+                        except Exception:
+                            timestamp_series = pd.Series([pd.NaT] * len(torg_df))
+                    else:
+                        timestamp_series = pd.Series([pd.NaT] * len(torg_df))
+
+                    for i, score in enumerate(score_series):
+                        if not pd.isna(score):
+                            ts = timestamp_series.iloc[i]
+                            if pd.notna(ts):
+                                # label = ts.strftime("%B %Y")
+                                label = ts.strftime("%B %d, %Y").replace(" 0", " ")
+                                if label in submissions.keys():
+                                    label = label + f", Submission {i+1}"
+                            else:
+                                label = f"Submission {i+1}"
+                            label = label + f": {display_org}"
+                            submissions[label] = score
+                            score_over_time.append(score)
+                # Standards/Indicators
+                standard_scores[display_org] = []
+                for column in torg_df.columns:
+                    if "Overall Score" in column and (("Standard" not in column) or ("-" in column)):
+                        continue
+
+                    series = torg_df[column].replace('%', '', regex=True)
+                    series = pd.to_numeric(series, errors="coerce")
+                    av = series.mean()
+
+                    if pd.notna(av):
+                        if "Standard" in column:
+                            if "percent" in column.lower() or "%" in column:
+                                standard_scores[display_org].append((column, av))
+                            elif 0 <= av < 1:
+                                standard_scores[display_org].append((column, av * 100))
+                            else:
+                                standard_scores[display_org].append((column, av))
+                        elif "Indicator" in column:
+                            standard_scores[display_org].append((column, av))
+                    elif "Indicator" in column:
+                        standard_scores[display_org].append((column, av))
+
+    else:
+        standard_scores = {}
+        submissions = {}
+        score_over_time = []
+        email = st.session_state.get("user_email", "").strip().lower()
+        edf = chart_df.copy()
+            # Step 1: Get all columns that include "Overall Score"
+        overall_score_cols = [col for col in edf.columns if "Overall Score" in col]
+
+        # Step 2: Collect all numeric values from these columns
+        all_scores = []
+
+        for col in overall_score_cols:
+            series = pd.to_numeric(edf[col], errors="coerce")  # convert to numbers, NaN if invalid
+            scores = series.dropna().tolist()  # drop non-numeric
+            all_scores.extend(scores)
+
+        # Step 3: Calculate the average
+        if all_scores:
+            overall_score = sum(all_scores) / len(all_scores)
+        else:
+            overall_score = 1000  # fallback value or message
+
+
+        if overall_score_cols:
+            score_col = overall_score_cols[0] 
+            score_series = pd.to_numeric(edf[score_col], errors="coerce")
+            
+
+            timestamp_col = next((col for col in edf.columns if "timestamp" in col.lower()), None)
+
+            # Only if timestamp column is found
+            if timestamp_col and timestamp_col in edf.columns:
+                try:
+                    # Convert timestamp strings to datetime objects
+                    timestamp_series = pd.to_datetime(edf[timestamp_col], errors='coerce')
+                except Exception:
+                    timestamp_series = pd.Series([pd.NaT] * len(edf))
+            else:
+                timestamp_series = pd.Series([pd.NaT] * len(edf))
+
+            for i, score in enumerate(score_series):
+                if not pd.isna(score):
+                    ts = timestamp_series.iloc[i]
+                    if pd.notna(ts):
+
+                        label = ts.strftime("%B %d, %Y").replace(" 0", " ")
+                        if label in submissions.keys():
+                            label = label + f", Submission {i+1}"
+                    else:
+                        label = f"Submission {i+1}"
+                    submissions[label] = score
+                    score_over_time.append(score)
+        for column in edf.columns:
+            series = edf[column].replace('%', '', regex=True)
+            series = pd.to_numeric(series, errors="coerce")
+            av = series.mean()
+
+            if pd.notna(av):
+                if "Standard" in column:
+                    if "percent" in column.lower() or "%" in column:
+                        standard_scores[column] = av
+                    elif 0 <= av < 1:
+                        standard_scores[column] = av * 100
+                    else:
                         standard_scores[column] = av
                 elif "Indicator" in column:
                     standard_scores[column] = av
+            elif "Indicator" in column:
+                standard_scores[column] = av
 
-        
-        
+    
+    
 
 
 
