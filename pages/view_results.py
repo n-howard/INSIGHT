@@ -21,10 +21,6 @@ if not cookies.ready():
     st.stop()
 
 
-def sess_state_create():
-    st.session_state.access = str(cookies.get("access_level")).strip().lower()=="true"
-    st.session_state.is_admin = str(cookies.get("admin_input")).strip().lower()=="true"
-
 
 
 
@@ -495,14 +491,15 @@ button:hover {
     
 render_variation_buttons()
 
-sess_state_create()
-
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
 client = gspread.authorize(creds)
 
 assessment = st.session_state.get("variation", None)
-
+def sess_state_create():
+    st.session_state.access = str(cookies.get("access_level", "")).strip().lower()=="true"
+    st.session_state.is_admin = str(cookies.get("admin_input", "")).strip().lower()=="true"
+sess_state_create()
 if assessment == "all":
 
     # --- Helpers ---
@@ -722,7 +719,7 @@ if assessment == "all":
 elif assessment:
 
             # Authorize and load the sheet
-
+    
     sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
 
 
