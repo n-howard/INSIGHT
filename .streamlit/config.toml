@@ -1,6 +1,10 @@
 [client]
 showSidebarNavigation = false
 
+[runner]
+
+fastReruns = false
+
 [server]
 disconnectedSessionTTL = 1000
 

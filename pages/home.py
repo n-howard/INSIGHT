@@ -66,25 +66,7 @@ access_level = st.session_state["access"]
 
 is_admin = st.session_state["is_admin"]
 
-if st.session_state["is_admin"]:
-    ad = "Admin"
-else:
-    ad = "Staff"
 
-# if st.query_params.get("logout") == "1":
-#     for key in ["org_input", "site_input", "admin_input", "google_token", "user_info", "access_level"]:
-#         st.session_state.pop(key, None)
-
-#     cookies["org_input"] = ""
-#     cookies["site_input"] = ""
-#     cookies["admin_input"] = ""
-#     cookies["access_level"] = ""
-#     cookies.save()
-
-
-#     st.success("You have been logged out.")
-#     st.switch_page("app.py")
-# --- LOGOUT BUTTON ---
 
 
 
