@@ -765,7 +765,7 @@ elif assessment:
         st.error("Could not find the column with organization/program name. Please check your form question titles.")
         st.stop()
 
-    if str(cookies.get("access_level")).strip().lower()=="true":
+    if st.session_state.access:
         org_df = df.copy()
 
         
