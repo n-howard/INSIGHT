@@ -495,12 +495,14 @@ button:hover {
     
 render_variation_buttons()
 
+sess_state_create()
+
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
 client = gspread.authorize(creds)
 
 assessment = st.session_state.get("variation", None)
-sess_state_create()
+
 if assessment == "all":
 
     # --- Helpers ---
@@ -763,7 +765,7 @@ elif assessment:
         st.error("Could not find the column with organization/program name. Please check your form question titles.")
         st.stop()
 
-    if st.session_state.access:
+    if str(cookies.get("access_level")).strip().lower()=="true":
         org_df = df.copy()
 
         
