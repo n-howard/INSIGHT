@@ -22,7 +22,65 @@ if not cookies.ready():
 
 
 
+def get_gspread_client():
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
 
+    return gspread.authorize(creds)
+
+# # --- Cached loader ---
+# @st.cache_data(ttl=600)  # cached for 10 min, or until manually cleared
+# def load_all_assessment_sheets():
+#     """
+#     Load ALL worksheets for ALL assessment spreadsheets into DataFrames.
+#     Returns dict: { "AssessmentName|WorksheetName": DataFrame }
+#     """
+#     client = get_gspread_client()
+#     data_dict = {}
+
+#     for assessment, meta in ASSESSMENTS.items():
+#         try:
+#             spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
+#             for ws in spreadsheet.worksheets():
+#                 df = pd.DataFrame(ws.get_all_records())
+#                 key = f"{assessment}|{ws.title}"
+#                 data_dict[key] = df
+#         except Exception as e:
+#             st.error(f"Error loading {assessment}: {e}")
+
+#     return data_dict
+
+
+@st.cache_data(ttl=600)
+def load_all_assessment_sheets(as_dataframe=True):
+    """
+    Load ALL worksheets for ALL assessment spreadsheets.
+
+    Args:
+        as_dataframe (bool): If True, return Pandas DataFrames. 
+                             If False, return raw lists of lists.
+
+    Returns:
+        dict { "AssessmentName|WorksheetName": DataFrame or list[list] }
+    """
+
+    client = get_gspread_client()
+    data_dict = {}
+
+    for assessment, meta in ASSESSMENTS.items():
+        try:
+            spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
+            for ws in spreadsheet.worksheets():
+                if as_dataframe:
+                    data = pd.DataFrame(ws.get_all_records())
+                else:
+                    data = ws.get_all_values()
+                key = f"{assessment}|{ws.title}"
+                data_dict[key] = data
+        except Exception as e:
+            st.error(f"Error loading {assessment}: {e}")
+
+    return data_dict
 
 
 st.html("""<style>
@@ -257,12 +315,34 @@ def render_overall_score(title: str, score: float, key_suffix: str = ""):
              
 
 
-acol, _, col1, col2, col3, col4 = st.columns([1, 5, 1, 1, 1, 1])
+acol, _, refresh, col1, col2, col3, col4 = st.columns([1, 4, 1, 1, 1, 1, 1])
 
 
 with acol:
     st.markdown("<h3 style='color:#084C61; margin: 0;'>INSIGHT</h3>", unsafe_allow_html=True)
 
+with refresh:
+
+    with stylable_container(f"refresh_btn", css_styles="""
+        button {
+            background-color: white;
+            color: black;
+            border-radius: 6px;
+            padding: 8px 16px;
+            border: none;
+            font-weight: 600;
+        }
+        button:focus,
+        button:active, 
+        button:hover {
+            background-color: white !important;
+            color: #084C61 !important;
+            outline: none;
+            box-shadow: none;
+    """):
+        if st.button("Refresh", use_container_width = True):
+            st.cache_data.clear()   # Clear cache so next call reloads everything
+            st.rerun()
 with col1:
     # st.markdown("<h3 style='color:white; margin: 0;'>INSIGHT</h3>", unsafe_allow_html=True)
     with stylable_container(f"navbar_home_btn", css_styles="""
@@ -491,9 +571,13 @@ button:hover {
     
 render_variation_buttons()
 
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
-client = gspread.authorize(creds)
+all_data = load_all_assessment_sheets()
+
+all_raw_data = load_all_assessment_sheets(as_dataframe=False)
+
+# scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+# creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
+# client = gspread.authorize(creds)
 
 assessment = st.session_state.get("variation", None)
 def sess_state_create():
@@ -519,30 +603,36 @@ if assessment == "all":
     for i, (assessment, cfg) in enumerate(ASSESSMENTS.items()):
         with cols[i % 6]:
             # --- Load sheet ---
-            try:
-                sheet = client.open(cfg["sheet_name"]).sheet1
-                raw_data = sheet.get_all_values()
-            except Exception as e:
-                st.error(f"Could not open sheet for {assessment}: {e}")
-                continue
+            # try:
+            #     sheet = client.open(cfg["sheet_name"]).sheet1
+            #     raw_data = sheet.get_all_values()
+            # except Exception as e:
+            #     st.error(f"Could not open sheet for {assessment}: {e}")
+            #     continue
             
-            if not raw_data or len(raw_data) < 2:
+            # if not raw_data or len(raw_data) < 2:
+            #     st.html(f"""<style>.st-key-white_container_small_{assessment}_{i}_{i}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;}}</style>""")
+            #     with st.container(key=f"white_container_small_{assessment}_{i}_{i}"):
+            #         st.write(f"**No {assessment} results were found.**")
+            #     continue
+
+            # headers = raw_data[0]
+
+            # # Make headers unique
+            # seen, unique_headers = {}, []
+            # for h in headers:
+            #     c = seen.get(h, 0)
+            #     unique_headers.append(h if c == 0 else f"{h} ({c})")
+            #     seen[h] = c + 1
+
+            # df = pd.DataFrame(raw_data[1:], columns=unique_headers)
+            df = all_data.get(f"{assessment}|Scores")
+
+            if df is None:
                 st.html(f"""<style>.st-key-white_container_small_{assessment}_{i}_{i}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;}}</style>""")
                 with st.container(key=f"white_container_small_{assessment}_{i}_{i}"):
                     st.write(f"**No {assessment} results were found.**")
                 continue
-
-            headers = raw_data[0]
-
-            # Make headers unique
-            seen, unique_headers = {}, []
-            for h in headers:
-                c = seen.get(h, 0)
-                unique_headers.append(h if c == 0 else f"{h} ({c})")
-                seen[h] = c + 1
-
-            df = pd.DataFrame(raw_data[1:], columns=unique_headers)
-
             # --- Detect Program/Org Name column ---
             candidate_keywords = [
                 "organization name",
@@ -720,28 +810,33 @@ elif assessment:
 
             # Authorize and load the sheet
     
-    sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
+    # sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
+    df = all_data.get(f"{assessment}|Scores")
 
+    if df is None:
+        st.html(f"""<style>.st-key-white_container_small_{assessment}_{i}_{i}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;}}</style>""")
+        with st.container(key=f"white_container_small_{assessment}_{i}_{i}"):
+            st.write(f"**No {assessment} results were found.**")
 
 
 
     # Load raw data and headers for the specific organization.
-    raw_data = sheet.get_all_values()
-    headers = raw_data[0]
+    # raw_data = sheet.get_all_values()
+    # headers = raw_data[0]
 
-    # Make headers unique to avoid duplicate error
-    seen = {}
-    unique_headers = []
-    for h in headers:
-        if h in seen:
-            seen[h] += 1
-            unique_headers.append(f"{h} ({seen[h]})")
-        else:
-            seen[h] = 0
-            unique_headers.append(h)
+    # # Make headers unique to avoid duplicate error
+    # seen = {}
+    # unique_headers = []
+    # for h in headers:
+    #     if h in seen:
+    #         seen[h] += 1
+    #         unique_headers.append(f"{h} ({seen[h]})")
+    #     else:
+    #         seen[h] = 0
+    #         unique_headers.append(h)
 
-    # Create DataFrame
-    df = pd.DataFrame(raw_data[1:], columns=unique_headers)
+    # # Create DataFrame
+    # df = pd.DataFrame(raw_data[1:], columns=unique_headers)
     reg_df = df.copy()
 
     Program_Name = "Please enter the organization name you logged in with." 
@@ -1249,11 +1344,14 @@ elif assessment:
 
     def recs():
         # Open the spreadsheet and get the "Recommendations" worksheet
-        spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
-        recs_sheet = spreadsheet.worksheet("Recommendations")
+        # spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
+        # recs_sheet = spreadsheet.worksheet("Recommendations")
+        sheet2_data = all_raw_data.get(f"{assessment}|Recommendations")
+
+
         
-        # Get all data from sheet2 as a list of lists
-        sheet2_data = recs_sheet.get_all_values()
+        # # Get all data from sheet2 as a list of lists
+        # sheet2_data = recs_sheet.get_all_values()
         
         # First, identify all low indicators
         low_indicators = []
@@ -1534,9 +1632,10 @@ elif assessment:
     st.html("""<style>.st-key-white_container_big{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}</style>""")
     # Title
 
-    spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
-    cat_sheet = spreadsheet.worksheet("Indicators")
-    sheet3_data = cat_sheet.get_all_values()
+    # spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
+    # cat_sheet = spreadsheet.worksheet("Indicators")
+    # sheet3_data = cat_sheet.get_all_values()
+    sheet3_data = all_raw_data.get(f"{assessment}|Indicators")
     if st.session_state.is_admin or st.session_state.access:
         
         with st.container(key = "white_container_big"):
