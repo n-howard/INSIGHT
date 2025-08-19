@@ -52,31 +52,26 @@ def get_gspread_client():
 
 
 @st.cache_data(ttl=600)
-def load_all_assessment_sheets(as_dataframe=True):
+def load_all_assessment_sheets():
     """
-    Load ALL worksheets for ALL assessment spreadsheets.
-
-    Args:
-        as_dataframe (bool): If True, return Pandas DataFrames. 
-                             If False, return raw lists of lists.
-
+    Load ALL worksheets once, but return BOTH DataFrames and raw values.
+    
     Returns:
-        dict { "AssessmentName|WorksheetName": DataFrame or list[list] }
+        dict { "AssessmentName|WorksheetName": {"df": DataFrame, "raw": list[list]} }
     """
+    from __main__ import ASSESSMENTS  # assumes your ASSESSMENTS dict is global
 
     client = get_gspread_client()
     data_dict = {}
 
     for assessment, meta in ASSESSMENTS.items():
         try:
-            spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
+            spreadsheet = client.open(assessment)
             for ws in spreadsheet.worksheets():
-                if as_dataframe:
-                    data = pd.DataFrame(ws.get_all_records())
-                else:
-                    data = ws.get_all_values()
+                raw = ws.get_all_values()
+                df = pd.DataFrame(raw[1:], columns=raw[0]) if raw else pd.DataFrame()
                 key = f"{assessment}|{ws.title}"
-                data_dict[key] = data
+                data_dict[key] = {"df": df, "raw": raw}
         except Exception as e:
             st.error(f"Error loading {assessment}: {e}")
 
@@ -573,7 +568,6 @@ render_variation_buttons()
 
 all_data = load_all_assessment_sheets()
 
-all_raw_data = load_all_assessment_sheets(as_dataframe=False)
 
 # scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 # creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
@@ -626,7 +620,7 @@ if assessment == "all":
             #     seen[h] = c + 1
 
             # df = pd.DataFrame(raw_data[1:], columns=unique_headers)
-            df = all_data.get(f"{assessment}|Scores")
+            df = all_data[f"{assessment}|Scores"]["df"]
 
             if df is None:
                 st.html(f"""<style>.st-key-white_container_small_{assessment}_{i}_{i}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;}}</style>""")
@@ -811,7 +805,7 @@ elif assessment:
             # Authorize and load the sheet
     
     # sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
-    df = all_data.get(f"{assessment}|Scores")
+    df = all_data[f"{assessment}|Scores"]["df"]
 
     if df is None:
         st.html(f"""<style>.st-key-white_container_small_{assessment}_{i}_{i}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;}}</style>""")
@@ -1346,7 +1340,7 @@ elif assessment:
         # Open the spreadsheet and get the "Recommendations" worksheet
         # spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
         # recs_sheet = spreadsheet.worksheet("Recommendations")
-        sheet2_data = all_raw_data.get(f"{assessment}|Recommendations")
+        sheet2_data = all_data[f"{assessment}|Recommendations"]["raw"]
 
 
         
@@ -1635,7 +1629,7 @@ elif assessment:
     # spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
     # cat_sheet = spreadsheet.worksheet("Indicators")
     # sheet3_data = cat_sheet.get_all_values()
-    sheet3_data = all_raw_data.get(f"{assessment}|Indicators")
+    sheet3_data = all_data[(f"{assessment}|Indicators"]["raw"]
     if st.session_state.is_admin or st.session_state.access:
         
         with st.container(key = "white_container_big"):
