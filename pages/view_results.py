@@ -14,6 +14,7 @@ import uuid
 import re
 from streamlit_extras.stylable_container import stylable_container
 import numpy as np
+import time
 
 
 cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
@@ -571,8 +572,8 @@ if assessment == "all":
             for c in overall_score_cols:
                 df[c] = pd.to_numeric(df[c], errors="coerce")
 
-            
             if st.session_state.access:
+
   
                 org_df = df.copy()
 
@@ -718,6 +719,7 @@ if assessment == "all":
                         st.plotly_chart(draw_score_dial(avg), use_container_width=True)
 elif assessment:
 
+    
             # Authorize and load the sheet
     
     sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
@@ -1537,105 +1539,106 @@ elif assessment:
     spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
     cat_sheet = spreadsheet.worksheet("Indicators")
     sheet3_data = cat_sheet.get_all_values()
-    if st.session_state.is_admin or st.session_state.access:
-        
-        with st.container(key = "white_container_big"):
-            
-            st.markdown(f"<h1 style='color:#084C61; font-size:48px; font-weight:800;'>{assessment}</h1>", unsafe_allow_html=True)
-            st.write("View results.")
-
-            # Layout: 3 main columns
-            col1, col2, col3 = st.columns([6, 7, 7])
-            
-            def white_container(i):
-                return st.html(f"""<style>.st-key-white_container_{i}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
-            st.html("""<style>.st-key-white_container_1{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}</style>""")
-            st.html("""<style>.st-key-white_container_2{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}</style>""")
-            st.html("""<style>.st-key-white_container_3{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}</style>""")
-            
-            st.html("""<style>.st-key-teal_container{background-color: #084C61; border-radius: 20px; padding: 5%;}</style>""")
-            if overall_score == 1000:
-                st.html("""<style>.st-key-white_container_small{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;}</style>""")
-                with st.container(key ="white_container_small"):
-                    st.write(f"**No {assessment} results were found.**")
-            else:
-                with col1:
-                    if not all_orgs:
-                        with st.container(key ="white_container_1"):
-                            
-                            with st.container(key ="teal_container"):
-                                st.plotly_chart(draw_score_dial(overall_score), use_container_width=True)
-                            with st.expander("**Scores by Standards and Indicators**"):
-                                for label, score in standard_scores:
-                                    if pd.isna(score):
-                                        continue
-                                    # st.plotly_chart(draw_standards(), use_container_width=True)
-                                    render_score_card(sheet3_data, sheet2_data, score, label)
-
-                    if st.session_state.is_admin and not st.session_state.access:
-                        w_prefix = str(uuid.uuid4())
-                        wa = "white_container_" + w_prefix
-                        st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
-                        site_col_candidates = ["Extracted Sites", "Site Name"]
-                        site_series = None
-                        for col in site_col_candidates:
-                            if col in org_df.columns and org_df[col].dropna().apply(lambda x: isinstance(x, str) and x.strip() != "").any():
-                                site_series = org_df[col]
-                                break
-                        if site_series is not None:
-                            with st.container(key=wa):
-                                st.write("#### Scores by Site")
-
-                                # Determine the site column, or skip if none found
-                                site_col_candidates = ["Extracted Sites", "Site Name"]
-                                site_series = None
-                                for col in site_col_candidates:
-                                    if col in org_df.columns and org_df[col].dropna().apply(lambda x: isinstance(x, str)).any():
-                                        site_series = org_df[col]
-                                        break
-                                # Build normalized-to-original site name map
-                                site_display_map = {}
-                                for raw in site_series.dropna().unique():
-                                    if isinstance(raw, str):
-                                        norm = raw.strip().lower()
-                                        if norm not in site_display_map:
-                                            site_display_map[norm] = raw  # preserve original casing
-
-                                for norm_site, display_site in site_display_map.items():
-                                    if display_site!="" and display_site!=" ":
-                                        # Match using normalized form
-                                        matching_df = org_df[site_series.astype(str).str.strip().str.lower() == norm_site]
-                                        if matching_df.empty:
-                                            continue
-
-                                        # Compute overall score
-                                        all_scores = []
-                                        for col in overall_score_cols:
-                                            all_scores.extend(pd.to_numeric(matching_df[col], errors="coerce").dropna().tolist())
-
-                                        if not all_scores:
-                                            continue
-
-                                        avg_score = sum(all_scores) / len(all_scores)
-
-                                        with st.expander(f"**{display_site}'s Results**"):
-                                            ta = "teal_container_" + str(uuid.uuid4())
-                                            st.html(f"""<style>.st-key-{ta}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
-                                            with st.container(key =ta):
-                                                st.plotly_chart(draw_score_dial(avg_score, "Overall Score"), use_container_width=True)
-
-                                            for col in matching_df.columns:
-                                                if "Overall Score" in col and (("Standard" not in col) or ("-" in col)):
-                                                    continue
-                                                series = matching_df[col].replace('%', '', regex=True)
-                                                series = pd.to_numeric(series, errors="coerce")
-                                                avg = series.mean()
-                                                if pd.notna(avg) and ("Standard" in col or "Indicator" in col):
-                                                    render_score_card(sheet3_data, sheet2_data, avg, col, org_name=display_site)
-                    else:
     
-                    
-                        if st.session_state.access:
+    if st.session_state.is_admin or st.session_state.access:
+        with st.spinner("Loading results..."):
+            time.sleep(7)
+            with st.container(key = "white_container_big"):
+                
+                st.markdown(f"<h1 style='color:#084C61; font-size:48px; font-weight:800;'>{assessment}</h1>", unsafe_allow_html=True)
+                st.write("View results.")
+
+                # Layout: 3 main columns
+                col1, col2, col3 = st.columns([6, 7, 7])
+                
+                def white_container(i):
+                    return st.html(f"""<style>.st-key-white_container_{i}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
+                st.html("""<style>.st-key-white_container_1{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}</style>""")
+                st.html("""<style>.st-key-white_container_2{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}</style>""")
+                st.html("""<style>.st-key-white_container_3{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}</style>""")
+                
+                st.html("""<style>.st-key-teal_container{background-color: #084C61; border-radius: 20px; padding: 5%;}</style>""")
+                if overall_score == 1000:
+                    st.html("""<style>.st-key-white_container_small{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;}</style>""")
+                    with st.container(key ="white_container_small"):
+                        st.write(f"**No {assessment} results were found.**")
+                else:
+                    with col1:
+                        if not all_orgs:
+                            with st.container(key ="white_container_1"):
+                                
+                                with st.container(key ="teal_container"):
+                                    st.plotly_chart(draw_score_dial(overall_score), use_container_width=True)
+                                with st.expander("**Scores by Standards and Indicators**"):
+                                    for label, score in standard_scores:
+                                        if pd.isna(score):
+                                            continue
+                                        # st.plotly_chart(draw_standards(), use_container_width=True)
+                                        render_score_card(sheet3_data, sheet2_data, score, label)
+
+                        if st.session_state.is_admin and not st.session_state.access:
+                            w_prefix = str(uuid.uuid4())
+                            wa = "white_container_" + w_prefix
+                            st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
+                            site_col_candidates = ["Extracted Sites", "Site Name"]
+                            site_series = None
+                            for col in site_col_candidates:
+                                if col in org_df.columns and org_df[col].dropna().apply(lambda x: isinstance(x, str) and x.strip() != "").any():
+                                    site_series = org_df[col]
+                                    break
+                            if site_series is not None:
+                                with st.container(key=wa):
+                                    st.write("#### Scores by Site")
+
+                                    # Determine the site column, or skip if none found
+                                    site_col_candidates = ["Extracted Sites", "Site Name"]
+                                    site_series = None
+                                    for col in site_col_candidates:
+                                        if col in org_df.columns and org_df[col].dropna().apply(lambda x: isinstance(x, str)).any():
+                                            site_series = org_df[col]
+                                            break
+                                    # Build normalized-to-original site name map
+                                    site_display_map = {}
+                                    for raw in site_series.dropna().unique():
+                                        if isinstance(raw, str):
+                                            norm = raw.strip().lower()
+                                            if norm not in site_display_map:
+                                                site_display_map[norm] = raw  # preserve original casing
+
+                                    for norm_site, display_site in site_display_map.items():
+                                        if display_site!="" and display_site!=" ":
+                                            # Match using normalized form
+                                            matching_df = org_df[site_series.astype(str).str.strip().str.lower() == norm_site]
+                                            if matching_df.empty:
+                                                continue
+
+                                            # Compute overall score
+                                            all_scores = []
+                                            for col in overall_score_cols:
+                                                all_scores.extend(pd.to_numeric(matching_df[col], errors="coerce").dropna().tolist())
+
+                                            if not all_scores:
+                                                continue
+
+                                            avg_score = sum(all_scores) / len(all_scores)
+
+                                            with st.expander(f"**{display_site}'s Results**"):
+                                                ta = "teal_container_" + str(uuid.uuid4())
+                                                st.html(f"""<style>.st-key-{ta}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
+                                                with st.container(key =ta):
+                                                    st.plotly_chart(draw_score_dial(avg_score, "Overall Score"), use_container_width=True)
+
+                                                for col in matching_df.columns:
+                                                    if "Overall Score" in col and (("Standard" not in col) or ("-" in col)):
+                                                        continue
+                                                    series = matching_df[col].replace('%', '', regex=True)
+                                                    series = pd.to_numeric(series, errors="coerce")
+                                                    avg = series.mean()
+                                                    if pd.notna(avg) and ("Standard" in col or "Indicator" in col):
+                                                        render_score_card(sheet3_data, sheet2_data, avg, col, org_name=display_site)
+                        else:
+        
+                        
                             for org in all_orgs:
                                 corg = org.rstrip()
                         
@@ -1712,81 +1715,81 @@ elif assessment:
                                                             if pd.notna(avg) and ("Standard" in col or "Indicator" in col):
                                                                 render_score_card(sheet3_data, sheet2_data, avg, col, org_name=display_site)
 
-                with col2:
-                    with st.container(key ="white_container_2"):
-                        
-                        timestamp_col = next((col for col in org_df.columns if "timestamp" in col.lower()), None)
-                        timestamp_score_pairs = []
+                    with col2:
+                        with st.container(key ="white_container_2"):
+                            
+                            timestamp_col = next((col for col in org_df.columns if "timestamp" in col.lower()), None)
+                            timestamp_score_pairs = []
 
-                        if timestamp_col:
-                            timestamps = pd.to_datetime(org_df[timestamp_col], errors='coerce')
+                            if timestamp_col:
+                                timestamps = pd.to_datetime(org_df[timestamp_col], errors='coerce')
 
-                            # Normalize Extracted Orgs first (if not done already)
-                            if "Extracted Orgs" in org_df.columns:
-                                org_df["__normalized_extracted_orgs__"] = org_df["Extracted Orgs"].apply(
-                                    lambda x: x[0] if isinstance(x, list) and x else str(x)
-                                )
-                            else:
-                                org_df["__normalized_extracted_orgs__"] = st.session_state.get("org_input", "Unknown Org")
+                                # Normalize Extracted Orgs first (if not done already)
+                                if "Extracted Orgs" in org_df.columns:
+                                    org_df["__normalized_extracted_orgs__"] = org_df["Extracted Orgs"].apply(
+                                        lambda x: x[0] if isinstance(x, list) and x else str(x)
+                                    )
+                                else:
+                                    org_df["__normalized_extracted_orgs__"] = st.session_state.get("org_input", "Unknown Org")
 
-                            timestamp_score_triples = []  # (timestamp, score, org_name)
+                                timestamp_score_triples = []  # (timestamp, score, org_name)
 
-                            for idx, row in org_df.iterrows():
-                
-                                ts = pd.to_datetime(row[timestamp_col], errors="coerce")
-                                if pd.isna(ts):
-                                    continue
-                                org_name = row["__normalized_extracted_orgs__"]
-                                for col in org_df.columns:
-                                    if "Overall Score" in col:
-                                        score = pd.to_numeric(row[col], errors="coerce")
-                                        if pd.notna(score):
-                                            timestamp_score_triples.append((ts, score, org_name))
-
-    
-                        fig = score_trend(timestamp_score_triples)
-                        st.plotly_chart(fig, use_container_width=True)
-                        if st.session_state.access:
-                            st.write(f"This chart shows the overall scores for {assessment} by organization over time.")
-                        else:
-                            st.write(f"This chart shows {org_input}'s overall scores for {assessment} over time.")
-                        with st.expander("**Overall Score Over Time**"):
-                            for label, score in submissions.items():
-                                if pd.isna(score):
-                                    continue
-                                render_score_card(sheet3_data, sheet2_data, score, label)
-
-
-                with col3:
-                    with st.container(key ="white_container_3"):
-                        st.plotly_chart(staff_bar(staff_scores_num), use_container_width=True)
-                        st.write(f"This chart shows the overall score for {assessment} for each staff member.")
-                        for name, score in staff_scores.items():
-                            that_prefix = str(uuid.uuid4())
-                            tname = name.rstrip()
-                            # st.write("##### " + tname)
-                            with st.expander(f"**{tname}'s Results**"):
-                                for label, s in score:
-                                    if pd.isna(s):
-                                        continue 
-                                    if "Overall Score" in label:
-                                        la = "teal_container_" + that_prefix
-                                        st.html(f"""<style>.st-key-{la}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
-                                        with st.container(key = la):
-                                            lab = f"{tname}'s {label}"
-                                            st.plotly_chart(draw_score_dial(s, "Overall Score"), use_container_width=True)
-                                    if "Overall Score" in label and "Standard" in label and ("-" not in label):
-                                        if not st.session_state.access:
-                                            render_score_card(sheet3_data, sheet2_data, s, label)
-                                        if st.session_state.access:
-                                            render_score_card(sheet3_data, sheet2_data, s, label, org_name = tname)
-                                    elif "Overall Score" in label and (("Standard" not in label) or ("-" in label)):
+                                for idx, row in org_df.iterrows():
+                    
+                                    ts = pd.to_datetime(row[timestamp_col], errors="coerce")
+                                    if pd.isna(ts):
                                         continue
-                                    else:
-                                        if not st.session_state.access:
-                                            render_score_card(sheet3_data, sheet2_data, s, label)
-                                        if st.session_state.access:
-                                            render_score_card(sheet3_data, sheet2_data, s, label, org_name = tname)
+                                    org_name = row["__normalized_extracted_orgs__"]
+                                    for col in org_df.columns:
+                                        if "Overall Score" in col:
+                                            score = pd.to_numeric(row[col], errors="coerce")
+                                            if pd.notna(score):
+                                                timestamp_score_triples.append((ts, score, org_name))
+
+        
+                            fig = score_trend(timestamp_score_triples)
+                            st.plotly_chart(fig, use_container_width=True)
+                            if st.session_state.access:
+                                st.write(f"This chart shows the overall scores for {assessment} by organization over time.")
+                            else:
+                                st.write(f"This chart shows {org_input}'s overall scores for {assessment} over time.")
+                            with st.expander("**Overall Score Over Time**"):
+                                for label, score in submissions.items():
+                                    if pd.isna(score):
+                                        continue
+                                    render_score_card(sheet3_data, sheet2_data, score, label)
+
+
+                    with col3:
+                        with st.container(key ="white_container_3"):
+                            st.plotly_chart(staff_bar(staff_scores_num), use_container_width=True)
+                            st.write(f"This chart shows the overall score for {assessment} for each staff member.")
+                            for name, score in staff_scores.items():
+                                that_prefix = str(uuid.uuid4())
+                                tname = name.rstrip()
+                                # st.write("##### " + tname)
+                                with st.expander(f"**{tname}'s Results**"):
+                                    for label, s in score:
+                                        if pd.isna(s):
+                                            continue 
+                                        if "Overall Score" in label:
+                                            la = "teal_container_" + that_prefix
+                                            st.html(f"""<style>.st-key-{la}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
+                                            with st.container(key = la):
+                                                lab = f"{tname}'s {label}"
+                                                st.plotly_chart(draw_score_dial(s, "Overall Score"), use_container_width=True)
+                                        if "Overall Score" in label and "Standard" in label and ("-" not in label):
+                                            if not st.session_state.access:
+                                                render_score_card(sheet3_data, sheet2_data, s, label)
+                                            if st.session_state.access:
+                                                render_score_card(sheet3_data, sheet2_data, s, label, org_name = tname)
+                                        elif "Overall Score" in label and (("Standard" not in label) or ("-" in label)):
+                                            continue
+                                        else:
+                                            if not st.session_state.access:
+                                                render_score_card(sheet3_data, sheet2_data, s, label)
+                                            if st.session_state.access:
+                                                render_score_card(sheet3_data, sheet2_data, s, label, org_name = tname)
     else:
         with st.container(key = "white_container_big"):
             st.markdown(f"<h1 style='color:#084C61; font-size:48px; font-weight:800;'>{assessment}</h1>", unsafe_allow_html=True)
