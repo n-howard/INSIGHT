@@ -719,6 +719,7 @@ if assessment == "all":
 elif assessment:
 
             # Authorize and load the sheet
+    sess_state_create()
     
     sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
 

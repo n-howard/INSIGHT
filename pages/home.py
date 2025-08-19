@@ -263,7 +263,6 @@ with col3:
     """):
         if st.button("View Results", use_container_width = True):
             st.switch_page("pages/view_results.py")
-            st.rerun()
 
 with col4:
     with stylable_container(f"navbar_logout_btn_{str(uuid.uuid4())}", css_styles="""
