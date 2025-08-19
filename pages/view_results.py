@@ -24,7 +24,7 @@ if not cookies.ready():
 def sess_state_create():
     st.session_state.access = str(cookies.get("access_level")).strip().lower()=="true"
     st.session_state.is_admin = str(cookies.get("admin_input")).strip().lower()=="true"
-sess_state_create()
+
 
 
 

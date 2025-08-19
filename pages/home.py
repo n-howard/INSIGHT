@@ -57,10 +57,10 @@ if "email" not in st.session_state:
 
 
 if "is_admin" not in st.session_state:
-    st.session_state["is_admin"] = cookies.get("admin_input", "").strip().lower() == "true"
+    st.session_state["is_admin"] = str(cookies.get("admin_input", "")).strip().lower() == "true"
 
 if "access" not in st.session_state:
-    st.session_state["access"] = cookies.get("access_level", "").strip().lower() == "true"
+    st.session_state["access"] = str(cookies.get("access_level", "")).strip().lower() == "true"
 
 access_level = st.session_state["access"]
 
