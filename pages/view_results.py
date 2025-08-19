@@ -500,7 +500,7 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_se
 client = gspread.authorize(creds)
 
 assessment = st.session_state.get("variation", None)
-
+sess_state_create()
 if assessment == "all":
 
     # --- Helpers ---
