@@ -59,14 +59,14 @@ def load_all_assessment_sheets():
     Returns:
         dict { "AssessmentName|WorksheetName": {"df": DataFrame, "raw": list[list]} }
     """
-    from __main__ import ASSESSMENTS  # assumes your ASSESSMENTS dict is global
+
 
     client = get_gspread_client()
     data_dict = {}
 
     for assessment, meta in ASSESSMENTS.items():
         try:
-            spreadsheet = client.open(assessment)
+            spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
             for ws in spreadsheet.worksheets():
                 raw = ws.get_all_values()
                 df = pd.DataFrame(raw[1:], columns=raw[0]) if raw else pd.DataFrame()
