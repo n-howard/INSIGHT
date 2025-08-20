@@ -1248,6 +1248,7 @@ import uuid
 import re
 from streamlit_extras.stylable_container import stylable_container
 import numpy as np
+import time
 
 
 cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
@@ -1813,6 +1814,11 @@ def sess_state_create():
     st.session_state.access = str(cookies.get("access_level", "")).strip().lower()=="true"
     st.session_state.is_admin = str(cookies.get("admin_input", "")).strip().lower()=="true"
 sess_state_create()
+
+if st.session_state.access is False and st.session_state.is_admin is False and st.session_state.email is None:
+    with st.spinner("Loading..."):
+        time.sleep(5)
+        sess_state_create()
 if assessment == "all":
 
     # --- Helpers ---
@@ -1890,7 +1896,7 @@ if assessment == "all":
             for c in overall_score_cols:
                 df[c] = pd.to_numeric(df[c], errors="coerce")
 
-            
+
             if st.session_state.access:
   
                 org_df = df.copy()
@@ -2973,12 +2979,11 @@ elif assessment:
                     else:
                     
                         if st.session_state.access:
-                            ex_orgs = st.multiselect("Select which organizations' results you would like to view.", [org for org in all_orgs])
                             def row_has_org(org_str, target):
                                     if pd.isna(org_str):
                                         return False
                                     return org_str.strip().lower() == target.strip().lower()
-                            for org in ex_orgs:
+                            for org in all_orgs:
                                 corg = org.rstrip()
                         
                                 
