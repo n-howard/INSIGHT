@@ -2384,92 +2384,89 @@ elif assessment:
 
 
         else:
-            @st.fragment
-            def access_load():
-                standard_scores = {}
-                over_scores = {}
+            standard_scores = {}
+            over_scores = {}
 
-                # Create a mapping from normalized org -> original org
-                normalized_org_map = {}
-                for org in all_orgs:
-                    normalized = org.strip().lower()
-                    normalized_org_map[normalized] = org  # preserve original for display
+            # Create a mapping from normalized org -> original org
+            normalized_org_map = {}
+            for org in all_orgs:
+                normalized = org.strip().lower()
+                normalized_org_map[normalized] = org  # preserve original for display
 
-                # Normalize Extracted Orgs column in the DataFrame
-                org_df["__normalized_extracted_orgs__"] = org_df["Extracted Orgs"].apply(
-                    lambda x: [i.strip().lower() for i in x] if isinstance(x, list) else [str(x).strip().lower()]
-                )
+            # Normalize Extracted Orgs column in the DataFrame
+            org_df["__normalized_extracted_orgs__"] = org_df["Extracted Orgs"].apply(
+                lambda x: [i.strip().lower() for i in x] if isinstance(x, list) else [str(x).strip().lower()]
+            )
+            
                 
-                    
-                j = 0
-                    
-                for norm_org, display_org in normalized_org_map.items():
-                    
-                    # Match rows where normalized org is in normalized extracted list
-                    torg_df = org_df[org_df["__normalized_extracted_orgs__"].apply(lambda x: norm_org in x)]
+            j = 0
+                
+            for norm_org, display_org in normalized_org_map.items():
+                
+                # Match rows where normalized org is in normalized extracted list
+                torg_df = org_df[org_df["__normalized_extracted_orgs__"].apply(lambda x: norm_org in x)]
 
 
-                    # Overall Score
-                    all_scores = []
-                    for col in torg_df.columns:
-                        if "Overall Score" in col:
-                            series = pd.to_numeric(torg_df[col], errors="coerce")
-                            scores = series.dropna().tolist()
-                            all_scores.extend(scores)
-                    over_scores[display_org] = sum(all_scores) / len(all_scores) if all_scores else 0
-                    if overall_score_cols:
-                        score_col = overall_score_cols[0] 
-                        score_series = pd.to_numeric(torg_df[score_col], errors="coerce")
-        
-                        timestamp_col = next((col for col in torg_df.columns if "timestamp" in col.lower()), None)
+                # Overall Score
+                all_scores = []
+                for col in torg_df.columns:
+                    if "Overall Score" in col:
+                        series = pd.to_numeric(torg_df[col], errors="coerce")
+                        scores = series.dropna().tolist()
+                        all_scores.extend(scores)
+                over_scores[display_org] = sum(all_scores) / len(all_scores) if all_scores else 0
+                if overall_score_cols:
+                    score_col = overall_score_cols[0] 
+                    score_series = pd.to_numeric(torg_df[score_col], errors="coerce")
+    
+                    timestamp_col = next((col for col in torg_df.columns if "timestamp" in col.lower()), None)
 
-                        # Only if timestamp column is found
-                        if timestamp_col and timestamp_col in torg_df.columns:
-                            try:
-                                # Convert timestamp strings to datetime objects
-                                timestamp_series = pd.to_datetime(torg_df[timestamp_col], errors='coerce')
-                            except Exception:
-                                timestamp_series = pd.Series([pd.NaT] * len(torg_df))
-                        else:
+                    # Only if timestamp column is found
+                    if timestamp_col and timestamp_col in torg_df.columns:
+                        try:
+                            # Convert timestamp strings to datetime objects
+                            timestamp_series = pd.to_datetime(torg_df[timestamp_col], errors='coerce')
+                        except Exception:
                             timestamp_series = pd.Series([pd.NaT] * len(torg_df))
+                    else:
+                        timestamp_series = pd.Series([pd.NaT] * len(torg_df))
 
-                        for i, score in enumerate(score_series):
-                            if not pd.isna(score):
-                                ts = timestamp_series.iloc[i]
-                                if pd.notna(ts):
-                                    # label = ts.strftime("%B %Y")
-                                    label = ts.strftime("%B %d, %Y").replace(" 0", " ")
-                                    if label in submissions.keys():
-                                        label = label + f", Submission {i+1}"
-                                else:
-                                    label = f"Submission {i+1}"
-                                label = label + f": {display_org}"
-                                submissions[label] = score
-                                score_over_time.append(score)
-                    # Standards/Indicators
-                    standard_scores[display_org] = []
-                    for column in torg_df.columns:
-                        if "Overall Score" in column and (("Standard" not in column) or ("-" in column)):
-                            continue
+                    for i, score in enumerate(score_series):
+                        if not pd.isna(score):
+                            ts = timestamp_series.iloc[i]
+                            if pd.notna(ts):
+                                # label = ts.strftime("%B %Y")
+                                label = ts.strftime("%B %d, %Y").replace(" 0", " ")
+                                if label in submissions.keys():
+                                    label = label + f", Submission {i+1}"
+                            else:
+                                label = f"Submission {i+1}"
+                            label = label + f": {display_org}"
+                            submissions[label] = score
+                            score_over_time.append(score)
+                # Standards/Indicators
+                standard_scores[display_org] = []
+                for column in torg_df.columns:
+                    if "Overall Score" in column and (("Standard" not in column) or ("-" in column)):
+                        continue
 
-                        series = torg_df[column].replace('%', '', regex=True)
-                        series = pd.to_numeric(series, errors="coerce")
-                        av = series.mean()
+                    series = torg_df[column].replace('%', '', regex=True)
+                    series = pd.to_numeric(series, errors="coerce")
+                    av = series.mean()
 
-                        if pd.notna(av):
-                            if "Standard" in column:
-                                if "percent" in column.lower() or "%" in column:
-                                    standard_scores[display_org].append((column, av))
-                                elif 0 <= av < 1:
-                                    standard_scores[display_org].append((column, av * 100))
-                                else:
-                                    standard_scores[display_org].append((column, av))
-                            elif "Indicator" in column:
+                    if pd.notna(av):
+                        if "Standard" in column:
+                            if "percent" in column.lower() or "%" in column:
+                                standard_scores[display_org].append((column, av))
+                            elif 0 <= av < 1:
+                                standard_scores[display_org].append((column, av * 100))
+                            else:
                                 standard_scores[display_org].append((column, av))
                         elif "Indicator" in column:
                             standard_scores[display_org].append((column, av))
-                return standard_scores, over_scores
-            standard_scores, over_scores = access_load()
+                    elif "Indicator" in column:
+                        standard_scores[display_org].append((column, av))
+
     else:
         standard_scores = {}
         submissions = {}
