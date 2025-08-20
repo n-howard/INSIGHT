@@ -1815,7 +1815,7 @@ def sess_state_create():
     st.session_state.is_admin = str(cookies.get("admin_input", "")).strip().lower()=="true"
 sess_state_create()
 
-if st.session_state.access is False and st.session_state.is_admin is False and st.session_state.email is None:
+if st.session_state.access is False and st.session_state.is_admin is False and st.session_state.user_email is None:
     with st.spinner("Loading..."):
         time.sleep(5)
         sess_state_create()
