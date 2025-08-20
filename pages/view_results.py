@@ -3185,7 +3185,7 @@ elif assessment:
                         fig = score_trend(timestamp_score_triples)
                         st.plotly_chart(fig, use_container_width=True)
                         st.write(f"This chart shows your overall score(s) for {assessment} over time.")
-                        with st.expander("**Overall Score by Submission**"):
+                        with st.expander("**Overall Score Over Time**"):
                             for label, score in submissions.items():
                                 if pd.isna(score):
                                     continue
