@@ -1,3 +1,1237 @@
+# import streamlit as st
+# st.set_page_config(page_title="INSIGHT", page_icon="./oask_short_logo.png", layout="wide")
+# import streamlit.components.v1 as components
+# from urllib.parse import unquote
+# import pandas as pd
+# import plotly.express as px
+# import gspread
+# from oauth2client.service_account import ServiceAccountCredentials
+# import plotly.graph_objects as go
+# import io
+# from streamlit_cookies_manager import EncryptedCookieManager
+# import random
+# import uuid
+# import re
+# from streamlit_extras.stylable_container import stylable_container
+# import numpy as np
+# from functools import lru_cache
+
+# # Initialize cookies
+# cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
+# if not cookies.ready():
+#     st.stop()
+
+# # Cached gspread client
+# @st.cache_resource
+# def get_gspread_client():
+#     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+#     creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
+#     return gspread.authorize(creds)
+
+# # More aggressive caching for data loading
+# @st.cache_data(ttl=600, show_spinner=False)
+# def load_all_assessment_sheets():
+#     """Load ALL worksheets with optimized data structure"""
+#     client = get_gspread_client()
+#     data_dict = {}
+
+#     for assessment, meta in ASSESSMENTS.items():
+#         try:
+#             spreadsheet = client.open(ASSESSMENTS[assessment]["sheet_name"])
+#             for ws in spreadsheet.worksheets():
+#                 raw = ws.get_all_values()
+#                 if raw:
+#                     # Pre-process data for faster access
+#                     headers = raw[0]
+#                     df = pd.DataFrame(raw[1:], columns=headers)
+                    
+#                     # Pre-convert numeric columns
+#                     numeric_cols = []
+#                     for col in df.columns:
+#                         if any(keyword in col.lower() for keyword in ["score", "percent"]):
+#                             df[col] = pd.to_numeric(df[col].replace('%', '', regex=True), errors='coerce')
+#                             numeric_cols.append(col)
+                    
+#                     key = f"{assessment}|{ws.title}"
+#                     data_dict[key] = {
+#                         "df": df, 
+#                         "raw": raw,
+#                         "numeric_cols": numeric_cols,
+#                         "headers": headers
+#                     }
+#         except Exception as e:
+#             st.error(f"Error loading {assessment}: {e}")
+
+#     return data_dict
+
+# # Constants moved to top level
+# ASSESSMENTS = {
+#     "Environment, Health, and Safety": {
+#         "form_url": "https://docs.google.com/forms/d/e/1FAIpQLScTWIWH3ucfkk2Ud4Dsv5JGFst3kFxQvOMVp4aYXwyhrppPCg/viewform?embedded=true",
+#         "sheet_name": "Environment, Health, and Safety (Responses)"
+#     },
+#     "Highly Skilled Personnel": {
+#         "form_url": "https://docs.google.com/forms/d/e/1FAIpQLSfCs3lUrb2hEB92aZn33ledpwKNXtDOuPjd1hw40p-ZW-Y0JA/viewform?embedded=true",
+#         "sheet_name": "Highly Skilled Personnel (Responses)"
+#     },
+#     "Program Management": {
+#         "form_url": "https://docs.google.com/forms/d/e/1FAIpQLSfiFsaUqThoawBo-vTQLp5vPslFV-4A_efQw9PBwd3QRiHSIA/viewform?embedded=true",
+#         "sheet_name": "Program Management (Responses)"
+#     },
+#     "Youth Development and Engagement": {
+#         "form_url": "https://docs.google.com/forms/d/e/1FAIpQLSfvrLHuw7dqBQ5gN-i3rjNA-fusFxd96Hl4hsrC1MwKofBP9A/viewform?embedded=true",
+#         "sheet_name": "Youth Development and Engagement (Responses)"
+#     },
+#     "Programming and Activities": {
+#         "form_url": "https://docs.google.com/forms/d/e/1FAIpQLSejk08smadc3IPkfoOYk9P8Hdj4JcS8UEfnh1bUXwAPUEpPDw/viewform?embedded=true",
+#         "sheet_name": "Programming and Activities (Responses)"
+#     },
+#     "Families, Schools, and Communities": {
+#         "form_url": "https://docs.google.com/forms/d/e/1FAIpQLSf2jg-yPBIGx9w2Zhl1aX3SQGcASQIDMTBizMJ4v4zurNTF-w/viewform?embedded=true",
+#         "sheet_name": "Families, Schools, and Communities (Responses)"
+#     },
+# }
+
+# # Optimized utility functions
+# @lru_cache(maxsize=128)
+# def norm(s):
+#     return str(s).strip().lower()
+
+# def split_orgs(val):
+#     if pd.isna(val): 
+#         return []
+#     parts = re.split(r"[;,/\n]+", str(val))
+#     return [p.strip() for p in parts if p and p.strip()]
+
+# # Pre-compiled CSS styles to avoid repetition
+# COMMON_STYLES = """
+# <style>
+# /* ───── Remove header & padding on top ───── */
+# [data-testid="stHeader"] {display: none;}
+# [data-testid="stMainBlockContainer"] {padding-top: 1rem;}
+
+# /* ───── Hide overflowing navbar columns ───── */
+# .st-emotion-cache-ocqkz7.eiemyj0 { 
+#     height: 35px; 
+#     overflow: hidden;
+# }
+
+# /* ───── Move sidebar toggle to the right and replace SVG ───── */
+# [data-testid="stSidebarCollapsedControl"] {
+#     position: fixed;
+#     right: 3rem;
+# }
+# [data-testid="stSidebarCollapsedControl"] svg {
+#     display: none;
+# }
+
+# [data-testid="stSidebarCollapsedControl"]::before {
+#     content: "☰"; 
+#     font-size: 24px;
+#     position: fixed;
+#     right: 3rem;
+# }
+
+# /* ───── Display sidebar button based on screen size ───── */
+# @media (min-width: 640px) {
+#     [data-testid="stSidebarCollapsedControl"] {
+#         display: none;
+#     }
+# }
+
+# @media (max-width: 639px) {
+#     [data-testid="stSidebarCollapsedControl"] {
+#         display: flex;
+#         justify-content: flex-end;
+#     }
+# }
+
+# iframe {
+#     margin: 0 !important;
+#     padding: 0 !important;
+#     display: block;
+# }
+
+# .score-card {
+#     background-color: white;
+#     filter:drop-shadow(2px 2px 2px grey);
+#     border-radius: 20px;
+#     padding: 14px 12px;
+# }
+# .score-card__title {
+#     min-height: 70px;
+#     display: flex;
+#     align-items: center;
+#     justify-content: center;
+#     text-align: center;
+#     color: #084C61;
+#     font-weight: 600;
+#     font-size: 16px;
+#     line-height: 1.2;
+#     margin-bottom: 6px;
+#     padding: 0 8px;
+#     word-break: break-word;
+# }
+# .score-card__title .clamp {
+#     display: -webkit-box;
+#     -webkit-line-clamp: 4;
+#     -webkit-box-orient: vertical;
+#     overflow: hidden;
+# }
+# .score-card__dial {
+#     display: flex;
+#     justify-content: center;
+# }
+# </style>
+# """
+
+# # Apply styles once
+# st.html(COMMON_STYLES)
+
+# # Font loading
+# st.markdown("""
+# <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap" rel="stylesheet">
+# <style>
+# html, body, [class*="css"] {
+#     font-family: 'Poppins', sans-serif !important;
+# }
+# .block-container {
+#     padding-top: 0rem;
+# }
+# </style>
+# """, unsafe_allow_html=True)
+
+# # Optimized button rendering
+# def render_variation_buttons():
+#     st.markdown("""<div style='margin-top: 20px;'>""", unsafe_allow_html=True)
+
+#     var_cols = st.columns(3)
+#     variations = [
+#         "Youth Development and Engagement",
+#         "Environment, Health, and Safety",
+#         "Families, Schools, and Communities",
+#         "Highly Skilled Personnel",
+#         "Programming and Activities",
+#         "Program Management"
+#     ]
+
+
+#     for i in range(0, len(variations), 3):
+#         row = st.columns(3)
+#         for j, variation in enumerate(variations[i:i+3]):
+#             with row[j]:
+#                 with stylable_container(f"variation_btn_{i+j}", css_styles="""
+#                     button {
+#                         font-weight: 600;
+#                         font-size: .9rem;
+#                         padding: 1rem 2rem;
+#                         border: none;
+#                         border-radius: 2rem;
+#                         cursor: pointer;
+#                         text-align: center;
+#                         text-decoration: none;
+#                         min-width: 33.33%;
+#                         max-width: 100%;
+#                         width: 100%;
+#                         transition: background-color 0.2s;
+#                         background-color: #d6e3e7;
+#                         color: #333;
+#                         margin-bottom: 10%;
+#                     }
+
+#                     button:focus,
+#                     button:active, 
+#                     button:hover {
+#                         background-color: #084C61 !important;
+#                         color: white !important;
+#                         outline: none;
+#                         box-shadow: none;
+#                     }
+#                 """):
+#                     if st.button(variation, use_container_width=True):
+#                         st.session_state["variation"] = variation
+#                         st.rerun()
+
+
+# # Optimized score dial function with caching
+# @st.cache_data(show_spinner=False)
+# def create_score_dial_figure(score, label="Overall Score"):
+#     fig = go.Figure(go.Pie(
+#         values=[score, 4 - score],
+#         labels=["", ""],
+#         marker_colors=["#D3F3FD", "#013747"],
+#         hole=0.78,
+#         sort=False,
+#         direction='clockwise',
+#         textinfo='none',
+#     ))
+#     fig.update_layout(
+#         showlegend=False,
+#         margin=dict(t=20, b=20, l=0, r=0),
+#         annotations=[dict(
+#             text=f"<b style='color:white;'>{score:.2f}</b><br><span style='font-size:13px; color:white;'>{label}</span>",
+#             x=0.5, y=0.5, showarrow=False, align="center", font=dict(size=24, family="Poppins")
+#         )],
+#         height=200,
+#         width=200,
+#         paper_bgcolor="rgba(0,0,0,0)",
+#     )
+#     return fig
+
+# def draw_score_dial(score, label="Overall Score"):
+#     return create_score_dial_figure(score, label)
+
+# # Optimized score card rendering
+# def render_overall_score(title: str, score: float, key_suffix: str = ""):
+#     st.html(f"""
+#         <div class="score-card">
+#             <div class="score-card__title">
+#                 <span class="clamp">{title}</span>
+#             </div>
+#         </div>
+#     """)
+
+# # Optimized navbar
+# def render_navbar():
+#     acol, _, refresh, col1, col2, col3, col4 = st.columns([1, 4, 1, 1, 1, 1, 1])
+
+#     with acol:
+#         st.markdown("<h3 style='color:#084C61; margin: 0;'>INSIGHT</h3>", unsafe_allow_html=True)
+
+#     button_style = """
+#         button {
+#             background-color: white;
+#             color: black;
+#             border-radius: 6px;
+#             padding: 8px 16px;
+#             border: none;
+#             font-weight: 600;
+#         }
+#         button:focus, button:active, button:hover {
+#             background-color: white !important;
+#             color: #084C61 !important;
+#             outline: none;
+#             box-shadow: none;
+#         }
+#     """
+    
+#     logout_style = """
+#         button {
+#             background-color: #084C61;
+#             color: white;
+#             border-radius: 6px;
+#             padding: 8px 16px;
+#             border: none;
+#             font-weight: 600;
+#         }
+#         button:focus, button:active, button:hover {
+#             background-color: white !important;
+#             color: black !important;
+#             outline: none;
+#             box-shadow: none;
+#         }
+#     """
+
+#     with refresh:
+#         with stylable_container("refresh_btn", css_styles=button_style):
+#             if st.button("Refresh", use_container_width=True):
+#                 st.cache_data.clear()
+#                 st.rerun()
+
+#     with col1:
+#         with stylable_container("navbar_home_btn", css_styles=button_style):
+#             if st.button("Home", use_container_width=True):
+#                 st.switch_page("pages/home.py")
+
+#     with col2:
+#         with stylable_container("navbar_self_btn", css_styles=button_style):
+#             if st.button("Self-Assess", use_container_width=True):
+#                 st.switch_page("pages/self_assess.py")
+
+#     with col3:
+#         with stylable_container("navbar_view_btn", css_styles=button_style):
+#             if st.button("View Results", use_container_width=True):
+#                 st.rerun()
+
+#     with col4:
+#         with stylable_container(f"navbar_logout_btn_{str(uuid.uuid4())}", css_styles=logout_style):
+#             if st.button("Logout", use_container_width=True):
+#                 for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page", "access", "is_admin"]:
+#                     st.session_state.pop(key, None)
+#                     cookies[key] = ""
+#                 cookies.save()
+#                 st.switch_page("app.py")
+
+# # Session state initialization
+# def init_session_state():
+#     if 'access' not in st.session_state:
+#         st.session_state.access = str(cookies.get("access_level", "")).strip().lower() == "true"
+#     if 'is_admin' not in st.session_state:
+#         st.session_state.is_admin = str(cookies.get("admin_input", "")).strip().lower() == "true"
+
+# # Optimized data processing functions
+# @st.cache_data(show_spinner=False)
+# def process_org_data(df, org_input, user_email, is_admin, access):
+#     """Process organization data based on access level"""
+#     if access:
+#         return df.copy(), df[df.columns[0]].unique() if not df.empty else []
+    
+#     if not is_admin:
+#         # Filter by email
+#         contact_email_col = None
+#         for col in df.columns:
+#             if "contact email" in col.strip().lower():
+#                 contact_email_col = col
+#                 break
+        
+#         if contact_email_col:
+#             df_clean = df.copy()
+#             df_clean["__email_clean__"] = df_clean[contact_email_col].astype(str).apply(norm)
+#             return df_clean[df_clean["__email_clean__"] == norm(user_email)].copy(), []
+    
+#     # Admin view for specific org
+#     program_col = find_program_column(df)
+#     if program_col:
+#         df_clean = df.copy()
+#         df_clean["__org_clean__"] = df_clean[program_col].astype(str).apply(norm)
+#         return df_clean[df_clean["__org_clean__"] == norm(org_input)].copy(), []
+    
+#     return df.copy(), []
+
+# @st.cache_data(show_spinner=False)
+# def find_program_column(df):
+#     """Find the program/organization name column"""
+#     candidate_keywords = [
+#         "organization name", "program name", "your org", 
+#         "site or organization", "please enter the organization name you logged in with"
+#     ]
+    
+#     for col in df.columns:
+#         if any(k in col.strip().lower() for k in candidate_keywords):
+#             return col
+#     return None
+
+# @st.cache_data(show_spinner=False)
+# def calculate_overall_scores(df):
+#     """Calculate overall scores efficiently"""
+#     overall_score_cols = [c for c in df.columns if "overall score" in c.strip().lower()]
+#     if not overall_score_cols:
+#         return None, []
+    
+#     # Convert all score columns at once
+#     score_data = df[overall_score_cols].apply(pd.to_numeric, errors='coerce')
+    
+#     # Calculate averages
+#     all_scores = score_data.values.flatten()
+#     all_scores = all_scores[~pd.isna(all_scores)]
+    
+#     if len(all_scores) > 0:
+#         return sum(all_scores) / len(all_scores), overall_score_cols
+#     return None, overall_score_cols
+
+# # Main application
+# def main():
+#     init_session_state()
+#     render_navbar()
+    
+#     # Landing page content
+#     st.html(f"""
+#     <style>
+#     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;900&display=swap');
+    
+#     .landing-container {{
+#         padding: 3rem 4rem;
+#         display: flex;
+#         flex-direction: column;
+#         align-items: flex-start;
+#         position: relative;
+#     }}
+    
+#     .landing-title {{
+#         font-size: 48px;
+#         font-weight: 800;
+#         color: #084C61;
+#         line-height: 1.1;
+#     }}
+    
+#     .landing-subtitle {{
+#         margin-top: 0.5rem;
+#         font-size: 18px;
+#     }}
+    
+#     @media (max-width: 768px) {{
+#         .landing-title {{
+#             font-size: 36px;
+#             text-align: center;
+#         }}
+#         .landing-container {{
+#             align-items: center;
+#             text-align: center;
+#             padding: 2rem;
+#         }}
+#     }}
+#     </style>
+    
+#     <div class="landing-container">
+#         <h1 class="landing-title">Results<br>Dashboard</h1>
+#         <p class="landing-subtitle">View results.</p>
+#         <img src="https://i.imgur.com/8Q3M2NU.png" class="faded-bg" alt="Background Illustration" style="position: absolute; right: 0; top: 0; opacity: 0.08; max-width: 100%; z-index: 0;"/>
+#     </div>
+#     """)
+    
+#     # All assessments button
+#     button_style = """
+#     button {
+#         font-weight: 600;
+#         font-size: .9rem;
+#         padding: 1rem 2rem;
+#         border: none;
+#         border-radius: 2rem;
+#         cursor: pointer;
+#         text-align: center;
+#         text-decoration: none;
+#         min-width: 33.33%;
+#         max-width: 100%;
+#         width: 100%;
+#         transition: background-color 0.2s;
+#         background-color: #d6e3e7;
+#         color: #333;
+#         margin-bottom: 0%;
+#     }
+#     button:focus, button:active, button:hover {
+#         background-color: #084C61 !important;
+#         color: white !important;
+#         outline: none;
+#         box-shadow: none;
+#     }
+#     """
+    
+#     with stylable_container("all_assessment", css_styles=button_style):
+#         if st.button("All Assessments", use_container_width=True):
+#             st.session_state["variation"] = "all"
+#             st.rerun()
+    
+#     render_variation_buttons()
+    
+#     # Load data once
+#     with st.spinner("Loading assessment data..."):
+#         all_data = load_all_assessment_sheets()
+    
+#     assessment = st.session_state.get("variation", None)
+    
+#     if assessment == "all":
+#         render_all_assessments(all_data)
+#     elif assessment:
+#         render_single_assessment(assessment, all_data)
+
+# def render_all_assessments(all_data):
+#     """Render all assessments overview"""
+#     cols = st.columns(6)
+    
+#     for i, (assessment, cfg) in enumerate(ASSESSMENTS.items()):
+#         with cols[i % 6]:
+#             df_key = f"{assessment}|Scores"
+#             if df_key not in all_data:
+#                 render_no_results_card(assessment, i)
+#                 continue
+            
+#             df = all_data[df_key]["df"]
+#             if df.empty:
+#                 render_no_results_card(assessment, i)
+#                 continue
+#             processed_df, all_orgs = process_org_data(
+#                 df,
+#                 st.session_state.get("org_input", ""),
+#                 st.session_state.get("user_email", ""),
+#                 st.session_state.is_admin,
+#                 st.session_state.access
+#             )
+#             if st.session_state.access and all_orgs is not None and len(all_orgs) > 0:
+#                 for org in all_orgs:
+#                     if processed_df.empty:
+#                         render_no_results_card(assessment, i)
+#                         continue
+                    
+#                     # Calculate scores
+#                     overall_score, score_cols = calculate_overall_scores(processed_df)
+#                     if overall_score is None:
+#                         render_no_results_card(assessment, i)
+#                         continue
+                    
+#                     # Render score card
+#                     render_assessment_score_card(assessment, overall_score, i)
+#             else:
+#                 # Process data efficiently
+#                 processed_df, _ = process_org_data(
+#                     df, 
+#                     st.session_state.get("org_input", ""),
+#                     st.session_state.get("user_email", ""),
+#                     st.session_state.is_admin,
+#                     st.session_state.access
+#                 )
+                
+#                 if processed_df.empty:
+#                     render_no_results_card(assessment, i)
+#                     continue
+                
+#                 # Calculate scores
+#                 overall_score, score_cols = calculate_overall_scores(processed_df)
+#                 if overall_score is None:
+#                     render_no_results_card(assessment, i)
+#                     continue
+                
+#                 # Render score card
+#                 render_assessment_score_card(assessment, overall_score, i)
+
+# def render_no_results_card(assessment, index):
+#     """Render card when no results found"""
+#     container_style = "background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;"
+#     st.html(f"""<style>.st-key-white_container_small_{assessment}_{index}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 1%;}}</style>""")
+#     with st.container(key=f"white_container_small_{assessment}_{index}"):
+#         st.write(f"**No {assessment} results were found.**")
+
+# def render_assessment_score_card(assessment, score, index):
+#     """Render individual assessment score card"""
+#     w_prefix = str(uuid.uuid4())
+#     wa = f"white_container_{w_prefix}"
+#     ta = f"teal_container_{w_prefix}"
+    
+#     st.html(f"""<style>
+#     .st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}
+#     .st-key-{ta}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}
+#     </style>""")
+    
+#     with st.container(key=wa):
+#         if st.session_state.access:
+#             title = f"Average Overall Score for {assessment}"
+#         else:
+#             org_name = st.session_state.get("org_input", "Organization")
+#             title = f"{org_name} — {assessment}"
+        
+#         render_overall_score(title, score, key_suffix=f"{assessment}_{index}")
+        
+#         with st.container(key=ta):
+#             st.plotly_chart(draw_score_dial(score, "Overall Score"), use_container_width=True, key=f"dial_{w_prefix}")
+
+# # def render_single_assessment(assessment, all_data):
+# #     """Render detailed view for single assessment"""
+# #     df_key = f"{assessment}|Scores"
+# #     if df_key not in all_data:
+# #         st.error(f"No data found for {assessment}")
+# #         return
+    
+# #     df = all_data[df_key]["df"]
+# #     if df.empty:
+# #         st.write(f"**No {assessment} results were found.**")
+# #         return
+    
+# #     # Process the data for the specific assessment
+# #     processed_df, all_orgs = process_org_data(
+# #         df,
+# #         st.session_state.get("org_input", ""),
+# #         st.session_state.get("user_email", ""),
+# #         st.session_state.is_admin,
+# #         st.session_state.access
+# #     )
+    
+# #     if processed_df.empty:
+# #         st.write(f"**No {assessment} results were found.**")
+# #         return
+    
+# #     # Get additional data sheets
+# #     recommendations_data = all_data.get(f"{assessment}|Recommendations", {}).get("raw", [])
+# #     indicators_data = all_data.get(f"{assessment}|Indicators", {}).get("raw", [])
+    
+# #     # Render the detailed assessment view
+# #     render_detailed_assessment(assessment, processed_df, recommendations_data, indicators_data, all_orgs)
+
+# def render_single_assessment(assessment, all_data):
+#     """Render detailed view for single assessment"""
+#     df_key = f"{assessment}|Scores"
+#     if df_key not in all_data:
+#         st.error(f"No data found for {assessment}")
+#         return
+    
+#     df = all_data[df_key]["df"]
+#     if df.empty:
+#         st.write(f"**No {assessment} results were found.**")
+#         return
+    
+#     # Process the data for the specific assessment
+#     processed_df, all_orgs = process_org_data(
+#         df,
+#         st.session_state.get("org_input", ""),
+#         st.session_state.get("user_email", ""),
+#         st.session_state.is_admin,
+#         st.session_state.access
+#     )
+    
+#     if processed_df.empty:
+#         st.write(f"**No {assessment} results were found.**")
+#         return
+    
+#     # Get additional data sheets
+#     recommendations_data = all_data.get(f"{assessment}|Recommendations", {}).get("raw", [])
+#     indicators_data = all_data.get(f"{assessment}|Indicators", {}).get("raw", [])
+    
+#     # Access-level users → see results for ALL orgs
+#     if st.session_state.access and all_orgs is not None and len(all_orgs) > 0:
+#         for org in all_orgs:
+#             org_df = processed_df.copy()
+#             program_col = find_program_column(org_df)
+#             if program_col:
+#                 org_specific = org_df[org_df[program_col].astype(str).str.strip().str.lower() == org.strip().lower()]
+#             else:
+#                 org_specific = org_df
+
+#             if org_specific.empty:
+#                 continue
+#             st.html("""<style>
+#                 .st-key-white_container_{org}{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}""")
+#             with st.container(key = f"white_container_{org}"):
+#                 st.markdown(f"### {org} — {assessment}")
+                
+#                 render_detailed_assessment(assessment, org_specific, recommendations_data, indicators_data, all_orgs)
+    
+#     # Admins and regular users → just see filtered results
+#     else:
+#         render_detailed_assessment(assessment, processed_df, recommendations_data, indicators_data, all_orgs)
+
+
+# def render_detailed_assessment(assessment, df, recommendations_data, indicators_data, all_orgs):
+#     """Render detailed assessment view with optimizations"""
+    
+#     # Calculate overall scores once
+#     overall_score, score_cols = calculate_overall_scores(df)
+    
+#     if overall_score is None:
+#         st.write(f"**No {assessment} results were found.**")
+#         return
+    
+#     # Container styling
+#     st.html("""<style>
+#     .st-key-white_container_big{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}
+#     .st-key-white_container_1{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}
+#     .st-key-white_container_2{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}
+#     .st-key-white_container_3{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}
+#     .st-key-teal_container{background-color: #084C61; border-radius: 20px; padding: 5%;}
+#     </style>""")
+    
+#     with st.container(key="white_container_big"):
+#         st.markdown(f"<h1 style='color:#084C61; font-size:48px; font-weight:800;'>{assessment}</h1>", unsafe_allow_html=True)
+#         st.write("View results.")
+        
+#         # Use responsive columns
+#         if st.session_state.is_admin or st.session_state.access:
+#             col1, col2, col3 = st.columns([6, 7, 7])
+#         else:
+#             col1, col2, col3 = st.columns([6, 7, 7])
+        
+#         with col1:
+#             with st.container(key="white_container_1"):
+#                 with st.container(key="teal_container"):
+#                     st.plotly_chart(draw_score_dial(overall_score), use_container_width=True, key="main_dial")
+                
+#                 # Standards and indicators (simplified for performance)
+#                 with st.expander("**Scores by Standards and Indicators**"):
+#                     render_standards_indicators(df, indicators_data, recommendations_data)
+        
+#         with col2:
+#             with st.container(key="white_container_2"):
+#                 render_score_trend(df, assessment, all_orgs)
+        
+#         with col3:
+#             with st.container(key="white_container_3"):
+#                 render_staff_scores(df, assessment, indicators_data, recommendations_data)
+
+# @st.cache_data(show_spinner=False)
+# def extract_standards_indicators(df):
+#     """Extract and process standards and indicators efficiently"""
+#     standard_scores = {}
+    
+#     for column in df.columns:
+#         if "Overall Score" in column and (("Standard" not in column) or ("-" in column)):
+#             continue
+            
+#         series = df[column].replace('%', '', regex=True)
+#         series = pd.to_numeric(series, errors="coerce")
+#         avg = series.mean()
+        
+#         if pd.notna(avg):
+#             if "Standard" in column:
+#                 if "percent" in column.lower() or "%" in column:
+#                     standard_scores[column] = avg
+#                 elif 0 <= avg < 1:
+#                     standard_scores[column] = avg * 100
+#                 else:
+#                     standard_scores[column] = avg
+#             elif "Indicator" in column:
+#                 standard_scores[column] = avg
+#         elif "Indicator" in column:
+#             standard_scores[column] = avg
+            
+#     return standard_scores
+
+# @st.cache_data(show_spinner=False)
+# def create_recommendations_lookup(recommendations_data):
+#     """Create efficient lookup for recommendations"""
+#     if not recommendations_data or len(recommendations_data) < 2:
+#         return {}
+    
+#     lookup = {}
+#     for row in recommendations_data[1:]:  # Skip header
+#         if len(row) >= 2 and row[0]:
+#             lookup[row[0]] = row[1]
+#     return lookup
+
+# @st.cache_data(show_spinner=False)
+# def create_indicators_lookup(indicators_data):
+#     """Create efficient lookup for indicator descriptions"""
+#     if not indicators_data or len(indicators_data) < 2:
+#         return {}
+    
+#     lookup = {}
+#     for row in indicators_data[1:]:  # Skip header
+#         if len(row) >= 2 and row[0]:
+#             lookup[row[0]] = row[1]
+#     return lookup
+
+# def render_score_card_optimized(score, label, indicators_lookup, recommendations_lookup, org_name=""):
+#     """Optimized score card rendering"""
+#     max_score = 4.0 if score <= 4.0 else 100.0
+#     percent = score / max_score
+    
+#     # Create mini chart
+#     fig = go.Figure(go.Pie(
+#         values=[percent, 1 - percent],
+#         labels=["", ""],
+#         marker_colors=["#D3F3FD", "#013747"],
+#         hole=0.8,
+#         sort=False,
+#         direction="clockwise",
+#         textinfo="none"
+#     ))
+#     fig.update_layout(
+#         margin=dict(l=0, r=0, t=0, b=0),
+#         width=60,
+#         height=60,
+#         showlegend=False,
+#         paper_bgcolor="rgba(0,0,0,0)",
+#     )
+    
+#     # Convert to HTML
+#     buffer = io.StringIO()
+#     fig.write_html(buffer, config={'displaylogo': False, 'modeBarButtonsToRemove': ['toImage']}, include_plotlyjs='cdn')
+#     html_string = buffer.getvalue()
+    
+#     # Format score display
+#     score_text = f"{score:.0f}%" if "Percent" in label else f"{score:.3f}"
+    
+#     # Render card
+#     card_html = f"""
+#     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+#     <style>
+#     .card-container {{
+#         margin: 0px;
+#         background-color: #084C61;
+#         border-radius: 12px;
+#         padding: 0.8rem 1.2rem;
+#         display: flex;
+#         justify-content: space-between;
+#         align-items: center;
+#         max-width: 100%;
+#         height: fit-content;
+#     }}
+#     .card-left {{
+#         display: flex;
+#         flex-direction: column;
+#         justify-content: center;
+#     }}
+#     .card-score {{
+#         font-family: 'Poppins', sans-serif;
+#         font-size: 20px;
+#         font-weight: 600;
+#         color: white;
+#         margin-bottom: 0px;
+#     }}
+#     .card-label {{
+#         font-family: 'Poppins', sans-serif;
+#         font-size: 14px;
+#         font-weight: 400;
+#         color: white;
+#     }}
+#     .desc-display {{
+#         font-size: 0.9rem;
+#         color: #084c61;
+#         font-family: 'Poppins', sans-serif;
+#     }}
+#     </style>
+#     <div class="card-container">
+#         <div class="card-left">
+#             <div class="card-score">{score_text}</div>
+#             <div class="card-label">{label}</div>
+#         </div>
+#         <div class="card-ring">{html_string}</div>
+#     </div>
+#     """
+    
+#     components.html(card_html, height=85)
+    
+#     # Show descriptions and recommendations
+#     render_descriptions_and_recommendations(label, score, indicators_lookup, recommendations_lookup, org_name)
+
+# def render_descriptions_and_recommendations(label, score, indicators_lookup, recommendations_lookup, org_name):
+#     """Render descriptions and recommendations efficiently"""
+#     # Find matching descriptions
+#     descriptions = []
+#     for category, description in indicators_lookup.items():
+#         if category in label:
+#             descriptions.append(f"**{category}**: {description}")
+    
+#     if descriptions:
+#         st.markdown("\n\n".join(descriptions))
+    
+#     # Show recommendations for low scores
+#     show_recommendation = False
+#     if st.session_state.access or st.session_state.is_admin:
+#         if "Indicator" in label:
+#             show_recommendation = score < 3.0 or (4.0 < score < 75.0)
+#         elif "Standard" in label:
+#             show_recommendation = score < 3.0 or (4.0 < score < 75.0)
+    
+#     if show_recommendation:
+#         for rec_key, recommendation in recommendations_lookup.items():
+#             if rec_key in label:
+#                 formatted_rec = recommendation.replace("{YOUR PROGRAM NAME}", org_name or "your program")
+#                 name_display = rec_key.replace("Score", "").strip()
+#                 if "Standard" in name_display:
+#                     indicator_match = re.search(r"Indicator.*", name_display)
+#                     if indicator_match:
+#                         name_display = indicator_match.group(0).replace("(", "").replace(")", "")
+#                 st.write(f"**{name_display} INSIGHT:** {formatted_rec}")
+#                 break
+
+# def render_standards_indicators(df, indicators_data, recommendations_data):
+#     """Optimized rendering of standards and indicators"""
+#     # Create lookups once
+#     indicators_lookup = create_indicators_lookup(indicators_data)
+#     recommendations_lookup = create_recommendations_lookup(recommendations_data)
+    
+#     # Extract scores
+#     standard_scores = extract_standards_indicators(df)
+    
+#     # Get org name
+#     org_name = st.session_state.get("org_input", "")
+    
+#     # Render each score card
+#     for label, score in standard_scores.items():
+#         if pd.notna(score):
+#             render_score_card_optimized(score, label, indicators_lookup, recommendations_lookup, org_name)
+
+# @st.cache_data(show_spinner=False)
+# def extract_timestamp_scores(df, overall_score_cols):
+#     """Extract timestamp and score data efficiently"""
+#     timestamp_col = None
+#     for col in df.columns:
+#         if "timestamp" in col.lower():
+#             timestamp_col = col
+#             break
+    
+#     if not timestamp_col or not overall_score_cols:
+#         return []
+    
+#     timestamp_score_triples = []
+#     timestamps = pd.to_datetime(df[timestamp_col], errors='coerce')
+    
+#     org_name = st.session_state.get("org_input", "Unknown Org")
+    
+#     for idx, row in df.iterrows():
+#         ts = timestamps.iloc[idx] if idx < len(timestamps) else None
+#         if pd.notna(ts):
+#             for col in overall_score_cols:
+#                 score = pd.to_numeric(row[col], errors="coerce")
+#                 if pd.notna(score):
+#                     timestamp_score_triples.append((ts, score, org_name))
+    
+#     return timestamp_score_triples
+
+# @st.cache_data(show_spinner=False)
+# def create_trend_chart(timestamp_score_triples):
+#     """Create optimized trend chart"""
+#     if not timestamp_score_triples:
+#         return None
+    
+#     df = pd.DataFrame(timestamp_score_triples, columns=["Timestamp", "Overall Score", "Org Name"])
+#     df = df.dropna(subset=["Timestamp", "Overall Score", "Org Name"])
+    
+#     if df.empty:
+#         return None
+    
+#     if len(df) == 1:
+#         # Single point chart
+#         df["Label"] = df["Timestamp"].dt.strftime("%B %d, %Y")
+#         fig = px.line(df, x="Label", y="Overall Score", markers=True, 
+#                      color_discrete_sequence=["#084C61"])
+#         fig.update_layout(xaxis_title="Date", height=300)
+#     else:
+#         # Multi-point chart
+#         color_col = "Org Name" if st.session_state.access else None
+#         fig = px.line(df, x="Timestamp", y="Overall Score", 
+#                      color=color_col, markers=True,
+#                      color_discrete_sequence=["#084C61", "#0F6B75", "#138D90", "#56A3A6"])
+#         fig.update_traces(marker=dict(size=10))
+#         fig.update_layout(
+#             xaxis_title="Date",
+#             yaxis_title="Overall Score", 
+#             xaxis=dict(tickformat="%b %d, %Y"),
+#             height=300
+#         )
+    
+#     fig.update_layout(
+#         margin=dict(l=40, r=40, t=40, b=40),
+#         paper_bgcolor="rgba(0,0,0,0)",
+#         title=dict(text="Score Over Time", font=dict(size=24))
+#     )
+    
+#     return fig
+
+# def render_score_trend(df, assessment, all_orgs):
+#     """Render score trend chart"""
+#     overall_score, score_cols = calculate_overall_scores(df)
+    
+#     if not score_cols:
+#         st.write("No timeline data available.")
+#         return
+    
+#     timestamp_score_triples = extract_timestamp_scores(df, score_cols)
+#     fig = create_trend_chart(timestamp_score_triples)
+    
+#     if fig:
+#         st.plotly_chart(fig, use_container_width=True)
+        
+#         if st.session_state.access:
+#             st.write(f"This chart shows the overall scores for {assessment} by organization over time.")
+#         else:
+#             org_name = st.session_state.get("org_input", "your organization")
+#             st.write(f"This chart shows {org_name}'s overall scores for {assessment} over time.")
+        
+#         # Show submissions in expandable section
+#         render_submissions_timeline(df, score_cols, all_orgs)
+#     else:
+#         st.write("No timeline data available.")
+
+# def render_submissions_timeline(df, score_cols, all_orgs):
+#     """Render submissions timeline in expander"""
+#     submissions = {}
+    
+#     # Find timestamp column
+#     timestamp_col = None
+#     for col in df.columns:
+#         if "timestamp" in col.lower():
+#             timestamp_col = col
+#             break
+    
+#     if timestamp_col and score_cols:
+#         timestamps = pd.to_datetime(df[timestamp_col], errors='coerce')
+        
+#         for idx, row in df.iterrows():
+#             ts = timestamps.iloc[idx] if idx < len(timestamps) else None
+#             for col in score_cols:
+#                 score = pd.to_numeric(row[col], errors="coerce")
+#                 if pd.notna(score):
+#                     if pd.notna(ts):
+#                         label = ts.strftime("%B %d, %Y").replace(" 0", " ")
+#                         # Handle duplicate dates
+#                         counter = 1
+#                         original_label = label
+#                         while label in submissions:
+#                             counter += 1
+#                             label = f"{original_label}, Submission {counter}"
+#                     else:
+#                         label = f"Submission {idx + 1}"
+                    
+#                     submissions[label] = score
+#                     break  # Only take first score per row
+    
+#     if submissions:
+        
+#         with st.expander("**Overall Score Over Time**"):
+#             indicators_lookup = {}  # Empty for timeline items
+#             recommendations_lookup = {}
+#             if st.session_state.access:
+#                 for org in all_orgs:
+#                     org_name = org
+#                     for label, score in submissions.items():
+#                         if pd.notna(score):
+#                             render_score_card_optimized(score, label, indicators_lookup, recommendations_lookup, org_name)
+#             else:
+#                 org_name = st.session_state.get("org_input", "")
+                
+#                 for label, score in submissions.items():
+#                     if pd.notna(score):
+#                         render_score_card_optimized(score, label, indicators_lookup, recommendations_lookup, org_name)
+
+# @st.cache_data(show_spinner=False)
+# def extract_staff_scores(df):
+#     """Extract staff scores efficiently"""
+#     if "Contact Name" not in df.columns:
+#         return {}, {}
+    
+#     staff_scores = {}
+#     staff_scores_num = {}
+    
+#     # Normalize contact names
+#     df_copy = df.copy()
+#     df_copy["__normalized_contact__"] = df_copy["Contact Name"].astype(str).str.strip().str.lower()
+    
+#     # Get unique normalized names with original mapping
+#     original_names = df_copy.dropna(subset=["Contact Name"])["Contact Name"]
+#     normalized_map = {name.strip().lower(): name for name in original_names.unique()}
+    
+#     for contact_norm, contact_display in normalized_map.items():
+#         contact_df = df_copy[df_copy["__normalized_contact__"] == contact_norm]
+#         if contact_df.empty:
+#             continue
+        
+#         staff_scores[contact_display] = []
+        
+#         for column in contact_df.columns:
+#             series = contact_df[column].replace('%', '', regex=True)
+#             series = pd.to_numeric(series, errors="coerce")
+#             avg = series.mean()
+            
+#             if pd.notna(avg):
+#                 if "Overall Score" in column:
+#                     staff_scores[contact_display].append((column, avg))
+#                     staff_scores_num[contact_display] = avg
+#                 elif "Standard" in column:
+#                     if "percent" in column.lower() or "%" in column:
+#                         staff_scores[contact_display].append((column, avg))
+#                     elif 0 <= avg < 1:
+#                         staff_scores[contact_display].append((column, avg * 100))
+#                     else:
+#                         staff_scores[contact_display].append((column, avg))
+#                 elif "Indicator" in column:
+#                     staff_scores[contact_display].append((column, avg))
+#             elif "Indicator" in column:
+#                 staff_scores[contact_display].append((column, avg))
+    
+#     return staff_scores, staff_scores_num
+
+# @st.cache_data(show_spinner=False)
+# def create_staff_bar_chart(staff_scores_num):
+#     """Create staff performance bar chart"""
+#     if not staff_scores_num:
+#         return None
+    
+#     df = pd.DataFrame(staff_scores_num.items(), columns=["Staff", "Score"])
+#     fig = px.bar(df, y="Staff", x="Score", orientation="h", 
+#                 color="Score", color_continuous_scale=["#56A3A6", "#084C61"])
+#     fig.update_layout(
+#         height=300, 
+#         margin=dict(l=40, r=40, t=40, b=40), 
+#         paper_bgcolor="rgba(0,0,0,0)",
+#         coloraxis_showscale=True, 
+#         title=dict(text="Score by Staff", font=dict(size=24))
+#     )
+#     return fig
+
+# @st.cache_data(show_spinner=False)
+# def create_category_bar_chart(standard_scores):
+#     """Create category performance bar chart"""
+#     if not standard_scores:
+#         return None
+    
+#     df = pd.DataFrame(standard_scores.items(), columns=["Category", "Score"])
+#     df["Score"] = pd.to_numeric(df["Score"], errors="coerce")
+    
+#     # Custom sorting function
+#     def sort_key(label):
+#         standard_match = re.search(r"Standard (\d+)", label)
+#         indicator_match = re.search(r"Indicator (\d+)\.(\d+)", label)
+        
+#         if standard_match:
+#             standard_num = int(standard_match.group(1))
+#             return (standard_num, 0, 0)
+#         elif indicator_match:
+#             standard_num = int(indicator_match.group(1))
+#             indicator_num = int(indicator_match.group(2))
+#             return (standard_num, 1, indicator_num)
+#         else:
+#             return (999, 999, label)
+    
+#     df = df.sort_values(by="Category", key=lambda col: col.map(sort_key))
+    
+#     fig = px.bar(df, y="Category", x="Score", orientation="h",
+#                 color="Score", color_continuous_scale=["#56A3A6", "#084C61"])
+#     fig.update_yaxes(autorange="reversed")
+#     fig.update_layout(
+#         height=300,
+#         margin=dict(l=40, r=40, t=40, b=40),
+#         paper_bgcolor="rgba(0,0,0,0)",
+#         coloraxis_showscale=True,
+#         title=dict(text="Score by Category", font=dict(size=24))
+#     )
+#     return fig
+
+# def render_staff_scores(df, assessment, indicators_data, recommendations_data):
+#     """Render staff scores section"""
+#     staff_scores, staff_scores_num = extract_staff_scores(df)
+    
+#     if st.session_state.is_admin or st.session_state.access:
+#         # Admin/Access view - show staff breakdown
+#         fig = create_staff_bar_chart(staff_scores_num)
+#         if fig:
+#             st.plotly_chart(fig, use_container_width=True)
+#             st.write(f"This chart shows the overall score for {assessment} for each staff member.")
+        
+#         # Create lookups once
+#         indicators_lookup = create_indicators_lookup(indicators_data)
+#         recommendations_lookup = create_recommendations_lookup(recommendations_data)
+        
+#         # Show individual staff results
+#         for name, scores in staff_scores.items():
+#             if not scores:
+#                 continue
+                
+#             name_clean = name.strip()
+#             with st.expander(f"**{name_clean}'s Results**"):
+#                 # Find overall score for dial
+#                 overall_scores = [(label, score) for label, score in scores if "Overall Score" in label]
+#                 if overall_scores:
+#                     dial_prefix = str(uuid.uuid4())
+#                     st.html(f"""<style>.st-key-teal_container_{dial_prefix}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
+#                     with st.container(key=f"teal_container_{dial_prefix}"):
+#                         st.plotly_chart(draw_score_dial(overall_scores[0][1], "Overall Score"), use_container_width=True)
+                
+#                 # Show all other scores
+#                 for label, score in scores:
+#                     if pd.notna(score) and "Overall Score" not in label:
+#                         org_name = name_clean if st.session_state.access else st.session_state.get("org_input", "")
+#                         render_score_card_optimized(score, label, indicators_lookup, recommendations_lookup, org_name)
+#     else:
+#         # Regular user view - show categories
+#         standard_scores = extract_standards_indicators(df)
+        
+#         fig = create_category_bar_chart(standard_scores)
+#         if fig:
+#             st.plotly_chart(fig, use_container_width=True)
+#             st.write(f"This chart shows your score for each Standard and Indicator in {assessment}.")
+        
+#         # Show category descriptions
+#         indicators_lookup = create_indicators_lookup(indicators_data)
+#         with st.expander("**Category Descriptions**"):
+#             for label in standard_scores:
+#                 descriptions = []
+#                 for category, description in indicators_lookup.items():
+#                     if category in label:
+#                         descriptions.append(f"**{category}**: {description}")
+#                 if descriptions:
+#                     st.markdown("\n\n".join(descriptions))
+
+# if __name__ == "__main__":
+#     main()
+
 import streamlit as st
 st.set_page_config(page_title="INSIGHT", page_icon="./oask_short_logo.png", layout="wide")
 import streamlit.components.v1 as components
@@ -51,7 +1285,7 @@ def get_gspread_client():
 #     return data_dict
 
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=600, show_spinner=False)
 def load_all_assessment_sheets():
     """
     Load ALL worksheets once, but return BOTH DataFrames and raw values.
@@ -566,7 +1800,8 @@ button:hover {
     
 render_variation_buttons()
 
-all_data = load_all_assessment_sheets()
+with st.spinner("Loading Assessment Results..."):
+    all_data = load_all_assessment_sheets()
 
 
 # scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -670,7 +1905,7 @@ if assessment == "all":
                         org_df["Extracted Orgs"] = org_df[Program_Name].apply(lambda x: [x.strip()] if x else [])
 
 
-                    all_orgs = sorted(set(org for org in org_df["Extracted Orgs"] if org))
+                    all_orgs = sorted(list(set(org for org in org_df["Extracted Orgs"] if org)))
                     over_scores = {}
                     if all_orgs:
                         # Step 1: Get all columns that include "Overall Score"
@@ -857,26 +2092,38 @@ elif assessment:
         
         if Program_Name in org_df.columns:
 
-            # org_df["Extracted Orgs"] = org_df[Program_Name].fillna("").astype(str).str.strip()
-            def normalize_orgs(val):
-                if pd.isna(val):
-                    return []
-                parts = re.split(r"[;,/\n]+", str(val))
-                return [p.strip() for p in parts if p and p.strip()]
+            # # org_df["Extracted Orgs"] = org_df[Program_Name].fillna("").astype(str).str.strip()
+            # def normalize_orgs(val):
+            #     if pd.isna(val):
+            #         return []
+            #     parts = re.split(r"[;,/\n]+", str(val))
+            #     return [p.strip() for p in parts if p and p.strip()]
 
-            org_df["Extracted Orgs"] = org_df[Program_Name].apply(normalize_orgs)
+            # org_df["Extracted Orgs"] = org_df[Program_Name].apply(normalize_orgs)
+
+            # # Fallback: if all lists are empty, just use raw org names
+            # if org_df["Extracted Orgs"].apply(len).sum() == 0:
+            #     org_df["Extracted Orgs"] = org_df[Program_Name].apply(lambda x: [x.strip()] if x else [])
+
+
+            # all_orgs = sorted({
+            #     o
+            #     for sublist in org_df["Extracted Orgs"]
+            #     for o in sublist
+            #     if o
+            # })
+
+            org_df["Extracted Orgs"] = org_df[Program_Name].fillna("").astype(str).str.strip()
 
             # Fallback: if all lists are empty, just use raw org names
             if org_df["Extracted Orgs"].apply(len).sum() == 0:
                 org_df["Extracted Orgs"] = org_df[Program_Name].apply(lambda x: [x.strip()] if x else [])
 
 
-            all_orgs = sorted({
-                o
-                for sublist in org_df["Extracted Orgs"]
-                for o in sublist
-                if o
-            })
+            all_orgs = sorted(list(set(org for org in org_df["Extracted Orgs"] if org)))
+
+
+
             over_scores = {}
             if all_orgs:
                 # Step 1: Get all columns that include "Overall Score"
@@ -964,7 +2211,7 @@ elif assessment:
 
 
     # Build site dropdown options (only if admin has sites)
-    all_sites = sorted(set(site for site in org_df["Extracted Sites"] if site))
+    all_sites = sorted(list(set(site for site in org_df["Extracted Sites"] if site)))
 
 
     selected_contacts = []
@@ -1292,8 +2539,6 @@ elif assessment:
                 standard_scores[column] = av
 
     
-    
-
 
 
 
@@ -1726,17 +2971,19 @@ elif assessment:
                                                 if pd.notna(avg) and ("Standard" in col or "Indicator" in col):
                                                     render_score_card(sheet3_data, sheet2_data, avg, col, org_name=display_site)
                     else:
-    
                     
                         if st.session_state.access:
-                            for org in all_orgs:
+                            ex_orgs = st.multiselect("Select which organizations' results you would like to view.", [org for org in all_orgs])
+                            def row_has_org(org_str, target):
+                                    if pd.isna(org_str):
+                                        return False
+                                    return org_str.strip().lower() == target.strip().lower()
+                            for org in ex_orgs:
                                 corg = org.rstrip()
                         
-                                def row_has_org(org_list, target):
-                                    target = target.strip().lower()
-                                    return any(str(o).strip().lower() == target for o in (org_list or []))
+                                
 
-                                porg_df = org_df[org_df["Extracted Orgs"].apply(lambda xs: row_has_org(xs, corg))]
+                                porg_df = org_df[org_df["Extracted Orgs"].apply(lambda x: row_has_org(x, corg))]
                                 if porg_df.empty:
                                     continue
 
@@ -1759,7 +3006,6 @@ elif assessment:
                                                 if pd.isna(score):
                                                     continue 
                                                 render_score_card(sheet3_data, sheet2_data, score, label, org_name=corg)
-
                                     # --- Show Site Scores if Available ---
                                     site_col = None
                                     for col in ["Extracted Sites", "Site Name"]:
