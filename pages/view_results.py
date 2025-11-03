@@ -357,6 +357,7 @@ with col4:
                 st.session_state.pop(key, None)
                 cookies[key] = ""
             cookies.save()
+            st.cache_data.clear()
             st.switch_page("app.py")
 
 
