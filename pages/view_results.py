@@ -538,7 +538,7 @@ def render_variation_buttons():
                         box-shadow: none;
                     }
                 """):
-                    if st.button(variation, use_container_width=True):
+                    if st.button(variation, width='stretch'):
                         st.session_state["variation"] = variation
 
     st.markdown("""</div>""", unsafe_allow_html=True)
@@ -699,7 +699,7 @@ button:hover {
     box-shadow: none;
 }
 """):
-    if st.button("All Assessments", use_container_width=True):
+    if st.button("All Assessments", width='stretch'):
         st.session_state["variation"] = "all"
     
 render_variation_buttons()
@@ -947,11 +947,11 @@ if assessment == "all":
                             render_overall_score(f"{org} Average Overall Score for {assessment}", avg, key_suffix=f"{assessment}__{i}_{j}")
                             st.html(f"""<style>.st-key-teal_container_{w_prefix}_{j}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
                             with st.container(key=f"teal_container_{w_prefix}_{j}"):
-                                st.plotly_chart(draw_score_dial(avg), use_container_width=True)
+                                st.plotly_chart(draw_score_dial(avg), width='stretch')
                     else:
                         render_overall_score(f"Average Overall Score for {assessment}", avg, key_suffix=f"{assessment}__{i}_{i}{i}")
                         with st.container(key=f"teal_container_{w_prefix}"):
-                            st.plotly_chart(draw_score_dial(avg), use_container_width=True)
+                            st.plotly_chart(draw_score_dial(avg), width='stretch')
 elif assessment:
 
             # Authorize and load the sheet
@@ -2088,7 +2088,7 @@ elif assessment:
                             with st.container(key ="white_container_1"):
                                 
                                 with st.container(key ="teal_container"):
-                                    st.plotly_chart(draw_score_dial(overall_score), use_container_width=True)
+                                    st.plotly_chart(draw_score_dial(overall_score), width='stretch')
                                 with st.expander("**Scores by Standards and Indicators**"):
 
                                     for column in df:
@@ -2139,7 +2139,7 @@ elif assessment:
                                         
                                                         if "Overall Score" in normed_col: 
                                                             with st.container(key =ta):
-                                                                st.plotly_chart(draw_score_dial(av, "Overall Score"), use_container_width=True)
+                                                                st.plotly_chart(draw_score_dial(av, "Overall Score"), width='stretch')
                                                             continue
                                                         if "Standard" or "Indicator" or "Percent" in column:
                                                             render_score_card(av, normed_col)
@@ -2275,7 +2275,7 @@ elif assessment:
                                 with st.container(key=wa):
                                     st.write(f"#### {display_org}'s Scores")
                                     with st.container(key=f"teal_container_{w_prefix}"):
-                                            st.plotly_chart(draw_score_dial(over_scores[org], "Overall Score"), use_container_width=True)
+                                            st.plotly_chart(draw_score_dial(over_scores[org], "Overall Score"), width='stretch')
 
                 
                                     torg_df = df[df["__normalized_extracted_orgs__"].apply(lambda x: norm_org in x)]
@@ -2329,7 +2329,7 @@ elif assessment:
                                                                 ta = "teal_container_" + str(uuid.uuid4())
                                                                 st.html(f"""<style>.st-key-{ta}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
                                                                 with st.container(key =ta):
-                                                                    st.plotly_chart(draw_score_dial(av, "Overall Score"), use_container_width=True)
+                                                                    st.plotly_chart(draw_score_dial(av, "Overall Score"), width='stretch')
                                                                 continue
                                                             if "Standard" or "Indicator" or "Percent" in column:
                                                                 render_score_card(av, normed_col, site)
@@ -2496,7 +2496,7 @@ elif assessment:
                             #     else:
                             #         timestamp_score_triples.append((key, submissions[key], st.session_state.org_input))
                             fig = score_trend(timestamp_score_triples)
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width='stretch')
                             if st.session_state.access:
                                 st.write(f"This chart shows the overall scores for {assessment} by organization over time.")
                             else:
@@ -2535,7 +2535,7 @@ elif assessment:
                                     avg = series.mean()
                                     if pd.notna(avg):
                                         staff_scores_num[contact_display] = avg
-                                st.plotly_chart(staff_bar(staff_scores_num), use_container_width=True)
+                                st.plotly_chart(staff_bar(staff_scores_num), width='stretch')
                                 st.write(f"This chart shows the overall score for {assessment} for each staff member.")
                                 for contact_norm in contacts_to_show:
                                     contact_display = normalized_map[contact_norm]
@@ -2556,7 +2556,7 @@ elif assessment:
                                                     la = "teal_container_" + that_prefix
                                                     st.html(f"""<style>.st-key-{la}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
                                                     with st.container(key = la):
-                                                       st.plotly_chart(draw_score_dial(avg, "Overall Score"), use_container_width=True)
+                                                       st.plotly_chart(draw_score_dial(avg, "Overall Score"), width='stretch')
                                                     
                                                     continue
                                                 
@@ -2632,7 +2632,7 @@ elif assessment:
                                # if overall_score_cols:
                         with st.container(key ="white_container_1"):
                             with st.container(key ="teal_container"):
-                                st.plotly_chart(draw_score_dial(overall_score), use_container_width=True)
+                                st.plotly_chart(draw_score_dial(overall_score), width='stretch')
                             with st.expander("**Score by Standards and Indicators**"):
                                 for column in df.columns:
                                 
@@ -2666,7 +2666,7 @@ elif assessment:
                     
                     with col2:
                         with st.container(key = "white_container_3"):
-                            st.plotly_chart(reg_staff_bar(standard_scores), use_container_width=True)
+                            st.plotly_chart(reg_staff_bar(standard_scores), width='stretch')
                             st.write(f"This chart shows your score for each Standard and Indicator in {assessment}.")
                             with st.expander("**Category Descriptions**"):
                                 # for label in standard_scores:
@@ -2696,7 +2696,7 @@ elif assessment:
                             # for key in submissions:
                             #     timestamp_score_triples.append((key, submissions[key], org_name))
                             fig = score_trend(timestamp_score_triples)
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width='stretch')
                             st.write(f"This chart shows your overall score(s) for {assessment} over time.")
                             with st.expander("**Overall Score Over Time**"):
                                 # for label, score in submissions.items():
