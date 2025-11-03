@@ -963,7 +963,9 @@ elif assessment:
     # df = all_data[f"{assessment}|Scores"]["df"]
     # org_input = st.session_state.org_input
     if "org_input" not in st.session_state:
-        time.sleep(2)
+        st.session_state.org_input = cookies.get("org_input", "")
+        if st.session_state.org_input == "":
+            st.switch_page("app.py")
 
 
     org_input = st.session_state.org_input
