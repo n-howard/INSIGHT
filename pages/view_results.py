@@ -714,11 +714,10 @@ render_variation_buttons()
 
 assessment = st.session_state.get("variation", None)
 
-@st.cache_data
+
 def sess_state_create():
     st.session_state.access = str(cookies.get("access_level", "")).strip().lower()=="true"
     st.session_state.is_admin = str(cookies.get("admin_input", "")).strip().lower()=="true"
-    st.session_state.org_input = str(cookies.get("org_input", ""))
 sess_state_create()
 
 
@@ -963,12 +962,8 @@ elif assessment:
     # sheet = client.open(ASSESSMENTS[assessment]["sheet_name"]).sheet1
     # df = all_data[f"{assessment}|Scores"]["df"]
     # org_input = st.session_state.org_input
-    if not st.session_state.org_input:
-        for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page", "access", "is_admin"]:
-            st.session_state.pop(key, None)
-            cookies[key] = ""
-        cookies.save()
-        st.switch_page("app.py")
+    if "org_input" not in st.session_state:
+        time.sleep(2)
 
 
     org_input = st.session_state.org_input
