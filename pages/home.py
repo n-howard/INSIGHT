@@ -175,7 +175,9 @@ ASSESSMENTS = {
 }
 
 
-acol, _, col1, col2, col3, col4 = st.columns([1, 5, 1, 1, 1, 1])
+# acol, _, col1, col2, col3, col4 = st.columns([1, 5, 1, 1, 1, 1])
+
+acol, _, col1, col2, col3, col4 = st.columns([2, 3, 2, 2, 2, 2])
 
 with acol:
     st.markdown("<h3 style='color:#084C61; margin: 0;'>INSIGHT</h3>", unsafe_allow_html=True)
@@ -198,6 +200,7 @@ with col1:
             color: #084C61 !important;
             outline: none;
             box-shadow: none;
+        }
     """):
         if st.button("Home", use_container_width = True):
             st.session_state["active_page"] = "home"
@@ -220,6 +223,7 @@ with col2:
             color: #084C61 !important;
             outline: none;
             box-shadow: none;
+        }
     """):
         if st.button("Self-Assess", use_container_width = True):
             st.switch_page("pages/self_assess.py")
@@ -242,6 +246,7 @@ with col3:
             color: #084C61 !important;
             outline: none;
             box-shadow: none;
+        }
     """):
         if st.button("View Results", use_container_width = True):
             st.switch_page("pages/view_results.py")
@@ -263,6 +268,7 @@ with col4:
         color: black !important;
         outline: none;
         box-shadow: none;
+        }
     }
     """):
         if st.button("Logout", use_container_width = True):

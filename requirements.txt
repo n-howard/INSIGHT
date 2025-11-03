@@ -18,3 +18,4 @@ supabase
 pytz
 streamlit-extras
 extra-streamlit-components
+simple-salesforce

@@ -181,7 +181,9 @@ def render_variation_buttons():
 
     st.markdown("""</div>""", unsafe_allow_html=True)
 
-acol, _, col1, col2, col3, col4 = st.columns([1, 5, 1, 1, 1, 1])
+# acol, _, col1, col2, col3, col4 = st.columns([1, 5, 1, 1, 1, 1])
+
+acol, _, col1, col2, col3, col4 = st.columns([2, 3, 2, 2, 2, 2])
 
 
 with acol:
@@ -205,6 +207,7 @@ with col1:
             color: #084C61 !important;
             outline: none;
             box-shadow: none;
+        }
     """):
         if st.button("Home", use_container_width = True):
             st.switch_page("pages/home.py")
@@ -227,6 +230,7 @@ with col2:
             color: #084C61 !important;
             outline: none;
             box-shadow: none;
+        }
     """):
         if st.button("Self-Assess", use_container_width = True):
             st.rerun()
@@ -248,6 +252,7 @@ with col3:
             color: #084C61 !important;
             outline: none;
             box-shadow: none;
+        }
     """):
         if st.button("View Results", use_container_width = True):
             st.switch_page("pages/view_results.py")
@@ -269,7 +274,7 @@ with col4:
         color: black !important;
         outline: none;
         box-shadow: none;
-    }
+        }
     """):
         if st.button("Logout", use_container_width = True):
             for key in ["org_input", "user_email", "access_level", "admin_input", "site_input", "variation", "active_page", "access", "is_admin"]:
