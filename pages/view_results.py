@@ -712,9 +712,12 @@ render_variation_buttons()
 # client = gspread.authorize(creds)
 
 assessment = st.session_state.get("variation", None)
+
+@st.cache_data
 def sess_state_create():
     st.session_state.access = str(cookies.get("access_level", "")).strip().lower()=="true"
     st.session_state.is_admin = str(cookies.get("admin_input", "")).strip().lower()=="true"
+    st.session_state.org_input = str(cookies.get("org_input", ""))
 sess_state_create()
 
 
