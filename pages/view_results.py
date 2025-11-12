@@ -2109,20 +2109,21 @@ elif assessment:
 
                                     for column in org_row:
                                         normed_col = norm_col(column)
-                                        av = org_row[column]
-                                        # series = df[column]
-                                        # series = pd.to_numeric(series, errors="coerce")
-                                        # av = series.mean()
-                                        # if pd.notna(av):
-                                        if "Overall Score" in normed_col:
-                                            continue
-                                        
-                                        
-                                        render_score_card(av, normed_col)
-                                        if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
-                                            st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", org_input))
-                                        else:
-                                            st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
+                                        if isinstance(org_row[column], float):
+                                            av = org_row[column]
+                                            # series = df[column]
+                                            # series = pd.to_numeric(series, errors="coerce")
+                                            # av = series.mean()
+                                            # if pd.notna(av):
+                                            if "Overall Score" in normed_col:
+                                                continue
+                                            
+                                            
+                                            render_score_card(av, normed_col)
+                                            if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
+                                                st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", org_input))
+                                            else:
+                                                st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
                             # sites = {}
                             # for site in all_sites:
                             #     normalized = site.strip().lower()
@@ -2146,25 +2147,25 @@ elif assessment:
                                             # sdf = df[df["normalized__site"].apply(lambda x: norm_site in x)]
                                             # if sdf is not None:
                                             for column in site_row.index:
-                                                
-                                                av = site_row[column]
-                                                # series = sdf[column]
-                                                # series = pd.to_numeric(series, errors="coerce")
-                                                # av = series.mean()
+                                                if isinstance(site_row[column], float):
+                                                    av = site_row[column]
+                                                    # series = sdf[column]
+                                                    # series = pd.to_numeric(series, errors="coerce")
+                                                    # av = series.mean()
+                                            
+                                                    if pd.notna(av):
+                                                        normed_col = norm_col(column)
                                         
-                                                if pd.notna(av):
-                                                    normed_col = norm_col(column)
-                                    
-                                                    if "Overall Score" in normed_col: 
-                                                        with st.container(key =ta):
-                                                            st.plotly_chart(draw_score_dial(av, "Overall Score"), width='stretch')
-                                                        continue
-                                                    if "Standard" or "Indicator" or "Percent" in column:
-                                                        render_score_card(av, normed_col)
-                                                    if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
-                                                        st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_site))
-                                                    else:
-                                                        st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
+                                                        if "Overall Score" in normed_col: 
+                                                            with st.container(key =ta):
+                                                                st.plotly_chart(draw_score_dial(av, "Overall Score"), width='stretch')
+                                                            continue
+                                                        if "Standard" or "Indicator" or "Percent" in column:
+                                                            render_score_card(av, normed_col)
+                                                        if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
+                                                            st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_site))
+                                                        else:
+                                                            st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
 
                         #             for label, score in standard_scores:
                         #                 if pd.isna(score):
@@ -2304,25 +2305,23 @@ elif assessment:
                                     with st.expander("**Scores by Standards and Indicators**"):
                                         for column in org_row.index:
                                     
-
-                                            # series = torg_df[column]
-                                            # series = pd.to_numeric(series, errors="coerce")
-                                            # av = series.mean()
-                                            av = org_row[column]
-
-                                            st.write(org_row)
-                                            if pd.notna(av):
-                                                normed_col = norm_col(column)
-                                
-                                                if "Overall Score" in normed_col: 
-                                                    continue
-                                                    # standard_scores[display_org].append((norm_col(column), av))
-                                                if "Standard" or "Indicator" or "Percent" in column:
-                                                    render_score_card(av, normed_col, display_org)
-                                                if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
-                                                    st.write(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_org))
-                                                else:
-                                                    st.write(f"**{normed_col}:** " + desc["records"][0][column]) 
+                                            if isinstance(org_row[column], float):
+                                                # series = torg_df[column]
+                                                # series = pd.to_numeric(series, errors="coerce")
+                                                # av = series.mean()
+                                                av = org_row[column]
+                                                if pd.notna(av):
+                                                    normed_col = norm_col(column)
+                                    
+                                                    if "Overall Score" in normed_col: 
+                                                        continue
+                                                        # standard_scores[display_org].append((norm_col(column), av))
+                                                    if "Standard" or "Indicator" or "Percent" in column:
+                                                        render_score_card(av, normed_col, display_org)
+                                                    if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
+                                                        st.write(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_org))
+                                                    else:
+                                                        st.write(f"**{normed_col}:** " + desc["records"][0][column]) 
 
                                     # torg_sites = [site for site in torg_df["Site__c"] if site is not None]
                                     # sites = {}
@@ -2345,27 +2344,27 @@ elif assessment:
                                             
                                                 for column in site.index:
                                                     
-
+                                                    if isinstance(site[column], float):
                                                     # series = sdf[column]
                                                     # series = pd.to_numeric(series, errors="coerce")
                                                     # av = series.mean()
-                                                    av = site[column]
+                                                        av = site[column]
+                                                
+                                                        if pd.notna(av):
+                                                            normed_col = norm_col(column)
                                             
-                                                    if pd.notna(av):
-                                                        normed_col = norm_col(column)
-                                        
-                                                        if "Overall Score" in normed_col: 
-                                                            ta = "teal_container_" + str(uuid.uuid4())
-                                                            st.html(f"""<style>.st-key-{ta}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
-                                                            with st.container(key =ta):
-                                                                st.plotly_chart(draw_score_dial(av, "Overall Score"), width='stretch')
-                                                            continue
-                                                        if "Standard" or "Indicator" or "Percent" in column:
-                                                            render_score_card(av, normed_col, display_site)
-                                                        if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
-                                                            st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_site))
-                                                        else:
-                                                            st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
+                                                            if "Overall Score" in normed_col: 
+                                                                ta = "teal_container_" + str(uuid.uuid4())
+                                                                st.html(f"""<style>.st-key-{ta}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
+                                                                with st.container(key =ta):
+                                                                    st.plotly_chart(draw_score_dial(av, "Overall Score"), width='stretch')
+                                                                continue
+                                                            if "Standard" or "Indicator" or "Percent" in column:
+                                                                render_score_card(av, normed_col, display_site)
+                                                            if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
+                                                                st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_site))
+                                                            else:
+                                                                st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
 
                             # for org in all_orgs:
                             #     corg = org.rstrip()
