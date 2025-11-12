@@ -25,9 +25,11 @@ cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SEC
 if not cookies.ready():
     st.stop()
 
-st.session_state.org_input = st.session_state.org_input
+st.session_state.org_input = str(cookies.get("org_input", "No Org"))
 st.session_state.access = st.session_state.access
 st.session_state.is_admin = st.session_state.is_admin
+
+org_input = st.session_state.org_input
 
 
 
@@ -616,7 +618,7 @@ elif assessment:
 
 
 
-    org_input = st.session_state.org_input
+    
     results = {}
     if st.session_state.is_admin or st.session_state.access:
         results = get_avg_records(st.session_state.org_input, sf, ASSESSMENTS[assessment], assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
@@ -894,6 +896,7 @@ elif assessment:
                     with st.container(key ="white_container_small"):
                         st.write(f"**No {assessment} results were found.**")
                 else:
+                    
                     with col1:
                         def collapse_average(text):
                             if not isinstance(text, str):
