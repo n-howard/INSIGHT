@@ -2098,7 +2098,8 @@ elif assessment:
                         # if not all_orgs:
                         if st.session_state.is_admin and not st.session_state.access:
                             # all_sites = [site for site in df["Site__c"] if site is not None]
-                            org_row = df.loc["Average" in df["Organization__c"]]
+                            org_row = org_loc = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
+
                             overall_score = org_row["Overall_Score__c"]
                             with st.container(key ="white_container_1"):
                                 
@@ -2126,7 +2127,8 @@ elif assessment:
                             # for site in all_sites:
                             #     normalized = site.strip().lower()
                             #     sites[normalized] = site
-                            site_loc = df.loc["Average" in df["Site__c"]]
+                            site_loc = org_loc = df.loc[df["Site__c"].str.contains("Average", case=False, na=False)]
+
                             if site_loc:
                                 w_prefix = str(uuid.uuid4())
                                 wa = "white_container_" + w_prefix
@@ -2282,7 +2284,7 @@ elif assessment:
                             # for site in all_sites:
                             #     normalized = site.strip().lower()
                             #     sites[normalized] = site
-                            org_loc = df.loc["Average" in df["Organization__c"]]
+                            org_loc = org_loc = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
                             # for norm_org, display_org in normalized_org_map.items():
                             for org_row in org_loc:
                                 display_org = org_row["Organization__c"]
@@ -2326,7 +2328,11 @@ elif assessment:
                                     # for site in torg_sites:
                                     #     normalized = site.strip().lower()
                                     #     sites[normalized] = site
-                                    sites = df.loc["Average" in df["Site__c"] and df["Organization__c"]==display_org]
+                                    sites = df.loc[
+                                        df["Site__c"].str.contains("Average", case=False, na=False)
+                                        & (df["Organization__c"] == display_org)
+                                    ]
+
                                     if sites:
                                         # torg_df["normalized__site"] = torg_df["Site__c"].apply(lambda x: [i.strip().lower() for i in x] if isinstance(x, list) else [str(x).strip().lower()])
                                         # for norm_site, display_site in sites.items():
