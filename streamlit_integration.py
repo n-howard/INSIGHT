@@ -216,7 +216,7 @@ def get_avg_records(org_input, sf, assessment, name, is_admin, access_level, ema
     element_escaped = name.replace("'", "''")
 
     if access_level:
-        opts += ", Organization__c, Site__c"
+        opts += ", Organization__c"
         query = (
             f"SELECT {opts} "
             f"FROM INSIGHT_Results__c "
