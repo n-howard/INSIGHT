@@ -78,7 +78,7 @@ def get_org_records(org_input, sf, assessment, name, is_admin, access_level, ema
     org_escaped = org_input.replace("'", "\'")
     if access_level:
         opts = opts + ", Organization__c" 
-        results = sf.query_all(f"SELECT {opts} FROM INSIGHT_Results__c WHERE Element__c='{name}' AND (NOT (Organization__c LIKE '%Average%')) AND (NOT (Site__c NOT  '%Average%'))")
+        results = sf.query_all(f"SELECT {opts} FROM INSIGHT_Results__c WHERE Element__c='{name}' AND (NOT (Organization__c LIKE '%Average%')) AND (NOT (Site__c LIKE '%Average%'))")
         return results
     if is_admin:
         results = sf.query_all(f"SELECT {opts} FROM INSIGHT_Results__c WHERE Organization__c='{org_escaped}' AND Element__c='{name}' AND (NOT (Site__c LIKE '%Average%'))")
