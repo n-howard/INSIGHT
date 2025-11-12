@@ -947,6 +947,7 @@ if assessment == "all":
                                     render_overall_score(f"Average Overall Score for {assessment}", avg, key_suffix=f"{assessment}__{i}_{i}{i}")
                                     with st.container(key=f"teal_container_{w_prefix}"):
                                         st.plotly_chart(draw_score_dial(avg), width='stretch')
+                                    break
                     # else:
 
                 
