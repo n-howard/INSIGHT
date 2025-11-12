@@ -1071,7 +1071,7 @@ elif assessment:
         #     st.error("Could not find the column with organization/program name. Please check your form question titles.")
         #     st.stop()
 
-        # overall = get_overall(org_input, sf, assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
+        overall = get_overall(org_input, sf, assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
         overall_score = 1000
         # over_scores = {}
         # all_orgs = []
