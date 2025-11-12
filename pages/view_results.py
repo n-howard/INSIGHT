@@ -2128,7 +2128,7 @@ elif assessment:
                                                 if "Overall Score" in normed_col:
                                                     continue
                                                 
-                                                if "Standard" or "Indicator" or "Percent" in col:
+                                                if "Standard" or "Indicator" or "Percent" in column:
                                                     render_score_card(av, normed_col)
                                                 if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
                                                     st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", org_input))
