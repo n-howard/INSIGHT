@@ -2098,7 +2098,7 @@ elif assessment:
                         # if not all_orgs:
                         if st.session_state.is_admin and not st.session_state.access:
                             # all_sites = [site for site in df["Site__c"] if site is not None]
-                            org_row = org_loc = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
+                            org_row = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
 
                             overall_score = org_row["Overall_Score__c"]
                             with st.container(key ="white_container_1"):
@@ -2137,7 +2137,7 @@ elif assessment:
                                     st.write("#### Scores by Site")
                                     # df["normalized__site"] = df["Site__c"].apply(lambda x: str(x).strip().lower())
                                     # for norm_site, display_site in sites.items():
-                                    for site_row in site_loc:
+                                    for _, site_row in site_loc.iterrows():
                                         site = site_row["Site__c"]
                                         with st.expander(f"**{site}'s Results**"):
                                             ta = "teal_container_" + str(uuid.uuid4())
@@ -2145,7 +2145,7 @@ elif assessment:
                                             
                                             # sdf = df[df["normalized__site"].apply(lambda x: norm_site in x)]
                                             # if sdf is not None:
-                                            for column in site_row.columns:
+                                            for column in site_row.index:
                                                 
                                                 av = site_row[column]
                                                 # series = sdf[column]
@@ -2286,7 +2286,7 @@ elif assessment:
                             #     sites[normalized] = site
                             org_loc = org_loc = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
                             # for norm_org, display_org in normalized_org_map.items():
-                            for org_row in org_loc:
+                            for _, org_row in org_loc.iterrows():
                                 display_org = org_row["Organization__c"]
                                 w_prefix = str(uuid.uuid4())
                                 wa = f"white_container_{w_prefix}"
@@ -2302,7 +2302,7 @@ elif assessment:
 
                               
                                     with st.expander("**Scores by Standards and Indicators**"):
-                                        for column in org_row.columns:
+                                        for column in org_row.index:
                                     
 
                                             # series = torg_df[column]
@@ -2315,9 +2315,8 @@ elif assessment:
                                 
                                                 if "Overall Score" in normed_col: 
                                                     continue
-                                                if "Standard" or "Indicator" or "Percent" in column:
                                                     # standard_scores[display_org].append((norm_col(column), av))
-                                                    render_score_card(av, normed_col, display_org)
+                                                render_score_card(av, normed_col, display_org)
                                                 if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
                                                     st.write(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_org))
                                                 else:
@@ -2336,13 +2335,13 @@ elif assessment:
                                     if sites:
                                         # torg_df["normalized__site"] = torg_df["Site__c"].apply(lambda x: [i.strip().lower() for i in x] if isinstance(x, list) else [str(x).strip().lower()])
                                         # for norm_site, display_site in sites.items():
-                                        for site in sites:
+                                        for _, site in sites.iterrows():
                                             display_site = site["Site__c"]
                                             # sdf = torg_df[torg_df["normalized__site"].apply(lambda x: norm_site in x)]
                                             # if sdf is not None:
                                             with st.expander(f"**{display_site}**"):
                                             
-                                                for column in site.columns:
+                                                for column in site.index:
                                                     
 
                                                     # series = sdf[column]
