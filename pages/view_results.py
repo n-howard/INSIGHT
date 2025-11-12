@@ -18,7 +18,7 @@ from streamlit_extras.stylable_container import stylable_container
 import numpy as np
 import time
 from simple_salesforce import Salesforce
-from streamlit_integration import create_sf, get_org_records, get_all_org_records, get_all_overall, get_overall, get_recs_desc
+from streamlit_integration import create_sf, get_org_records, get_all_org_records, get_all_overall, get_overall, get_recs_desc, get_avg_records, get_avg_overall, get_all_avg_overall
 from collections import defaultdict
 
 cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
