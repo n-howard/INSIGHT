@@ -2115,7 +2115,8 @@ elif assessment:
                                 with st.container(key ="teal_container"):
                                     st.plotly_chart(draw_score_dial(overall_score), width='stretch')
                                 with st.expander("**Scores by Standards and Indicators**"):
-                                    for _, org_row in org_row.iterrows()
+                                    for _, org_row in org_row.iterrows():
+                        
                                         for column in org_row.index:
                                             normed_col = norm_col(column)
                                             if isinstance(org_row[column], float):
