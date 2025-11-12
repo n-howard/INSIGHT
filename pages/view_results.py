@@ -2145,7 +2145,7 @@ elif assessment:
                                             
                                             # sdf = df[df["normalized__site"].apply(lambda x: norm_site in x)]
                                             # if sdf is not None:
-                                            for column in site_row.index:
+                                            for column in site_row.columns:
                                                 
                                                 av = site_row[column]
                                                 # series = sdf[column]
@@ -2302,7 +2302,7 @@ elif assessment:
 
                               
                                     with st.expander("**Scores by Standards and Indicators**"):
-                                        for column in org_row.index:
+                                        for column in org_row.columns:
                                     
 
                                             # series = torg_df[column]
@@ -2341,7 +2341,7 @@ elif assessment:
                                             # if sdf is not None:
                                             with st.expander(f"**{display_site}**"):
                                             
-                                                for column in site.index:
+                                                for column in site.columns:
                                                     
 
                                                     # series = sdf[column]
