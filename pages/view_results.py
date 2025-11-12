@@ -943,7 +943,7 @@ if assessment == "all":
                                     with st.container(key=f"teal_container_{w_prefix}_{j}"):
                                         st.plotly_chart(draw_score_dial(avg), width='stretch')
                 else:
-                    
+
                     avg = results["records"][0]["Overall_Score__c"]
                     w_prefix = str(uuid.uuid4())
                     wa = f"white_container_{w_prefix}"
@@ -2127,8 +2127,8 @@ elif assessment:
                                             if "Overall Score" in normed_col:
                                                 continue
                                             
-                                            
-                                            render_score_card(av, normed_col)
+                                            if "Standard" or "Indicator" or "Percent" in col:
+                                                render_score_card(av, normed_col)
                                             if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
                                                 st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", org_input))
                                             else:
