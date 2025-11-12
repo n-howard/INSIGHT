@@ -104,7 +104,7 @@ def get_overall(org_input, sf, name, is_admin, access_level, email):
     """
     org_escaped = org_input.replace("'", "\'")
     if access_level:
-        results = sf.query_all(f"SELECT Overall_Score__c, Organization__c, Timestamp__c FROM INSIGHT_Results__c WHERE Element__c='{name}' AND ((Organization__c NOT LIKE '%Average%') AND (Site__c NOT LIKE '%Average%'))")
+        results = sf.query_all(f"SELECT Overall_Score__c, Organization__c, Timestamp__c FROM INSIGHT_Results__c WHERE Element__c='{name}' AND (Organization__c NOT LIKE '%Average%') AND (Site__c NOT LIKE '%Average%')")
         return results
     if is_admin:
         results = sf.query_all(f"SELECT Overall_Score__c, Contact_Name__c, Timestamp__c FROM INSIGHT_Results__c WHERE Organization__c='{org_escaped}' AND Element__c='{name}' AND (Organization__c NOT LIKE '%Average%') AND (Site__c NOT LIKE '%Average%')")
