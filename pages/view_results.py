@@ -2309,7 +2309,7 @@ elif assessment:
                                             # series = pd.to_numeric(series, errors="coerce")
                                             # av = series.mean()
                                             av = org_row[column]
-                                    
+                                            st.write(av)
                                             if pd.notna(av):
                                                 normed_col = norm_col(column)
                                 
