@@ -2502,9 +2502,9 @@ elif assessment:
                             #                 score = pd.to_numeric(row[col], errors="coerce")
                             #                 if pd.notna(score):
                             #                     timestamp_score_triples.append((ts, score, org_name))
-                            time_df = pd.DataFrame.from_dict(overall["records"])
+                            tdf = pd.DataFrame.from_dict(overall["records"])
                             timestamp_score_triples = []
-                            for index, d in df.iterrows():
+                            for index, d in tdf.iterrows():
                                 ts = pd.to_datetime(d["Timestamp__c"], errors='coerce')
                                 
                                 
