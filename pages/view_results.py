@@ -742,7 +742,7 @@ if assessment == "all":
             
             # df = all_data[f"{assessment}|Scores"]["df"]
 
-            results = get_avg_overall(org_input, sf, assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
+            results = get_all_avg_overall(org_input, sf, assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
 
             # df = pd.DataFrame.from_dict(results["records"])
 
