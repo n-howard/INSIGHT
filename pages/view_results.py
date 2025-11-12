@@ -2128,9 +2128,9 @@ elif assessment:
                             # for site in all_sites:
                             #     normalized = site.strip().lower()
                             #     sites[normalized] = site
-                            site_loc = org_loc = df.loc[df["Site__c"].str.contains("Average", case=False, na=False)]
+                            site_loc = df.loc[df["Site__c"].str.contains("Average", case=False, na=False)]
 
-                            if site_loc:
+                            if not site_loc.empty():
                                 w_prefix = str(uuid.uuid4())
                                 wa = "white_container_" + w_prefix
                                 st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
@@ -2333,7 +2333,7 @@ elif assessment:
                                         & (df["Organization__c"] == display_org)
                                     ]
 
-                                    if sites:
+                                    if not sites.empty():
                                         # torg_df["normalized__site"] = torg_df["Site__c"].apply(lambda x: [i.strip().lower() for i in x] if isinstance(x, list) else [str(x).strip().lower()])
                                         # for norm_site, display_site in sites.items():
                                         for _, site in sites.iterrows():
