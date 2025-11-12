@@ -920,10 +920,13 @@ if assessment == "all":
                 #         </div>
                 #     """)
                 #     continue
-                vals = []
-                orgs = defaultdict(list)
+                i = 0
+                j = 1
+                
                 for li in results["records"]:
                     for avg in li.values():
+                        i+=1
+                        j+=1
                         # if isinstance(val, float) and val is not None:
                         #     vals.append(val)
 
