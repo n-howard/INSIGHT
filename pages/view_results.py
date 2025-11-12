@@ -2143,26 +2143,26 @@ elif assessment:
                                             
                                             # sdf = df[df["normalized__site"].apply(lambda x: norm_site in x)]
                                             # if sdf is not None:
-                                                for column in site_row.columns:
-                                                    
-                                                    av = site_row[column]
-                                                    # series = sdf[column]
-                                                    # series = pd.to_numeric(series, errors="coerce")
-                                                    # av = series.mean()
-                                            
-                                                    if pd.notna(av):
-                                                        normed_col = norm_col(column)
+                                            for column in site_row.columns:
+                                                
+                                                av = site_row[column]
+                                                # series = sdf[column]
+                                                # series = pd.to_numeric(series, errors="coerce")
+                                                # av = series.mean()
                                         
-                                                        if "Overall Score" in normed_col: 
-                                                            with st.container(key =ta):
-                                                                st.plotly_chart(draw_score_dial(av, "Overall Score"), width='stretch')
-                                                            continue
-                                                        if "Standard" or "Indicator" or "Percent" in column:
-                                                            render_score_card(av, normed_col)
-                                                        if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
-                                                            st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_site))
-                                                        else:
-                                                            st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
+                                                if pd.notna(av):
+                                                    normed_col = norm_col(column)
+                                    
+                                                    if "Overall Score" in normed_col: 
+                                                        with st.container(key =ta):
+                                                            st.plotly_chart(draw_score_dial(av, "Overall Score"), width='stretch')
+                                                        continue
+                                                    if "Standard" or "Indicator" or "Percent" in column:
+                                                        render_score_card(av, normed_col)
+                                                    if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
+                                                        st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_site))
+                                                    else:
+                                                        st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
 
                         #             for label, score in standard_scores:
                         #                 if pd.isna(score):
