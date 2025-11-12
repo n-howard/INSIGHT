@@ -2505,19 +2505,17 @@ elif assessment:
                             tdf = pd.DataFrame.from_dict(overall["records"])
                             timestamp_score_triples = []
                             for index, d in tdf.iterrows():
-                                ts = pd.to_datetime(d["Timestamp__c"], errors='coerce')
-                                
-                                
-                            
-                                scores = d["Overall_Score__c"]
-                                if st.session_state.access:
-                                    display_org = d["Organization__c"]
-                                    label = display_org + ": " + ts.strftime("%B %d, %Y").replace(" 0", " ") 
-                                    timestamp_score_triples.append((label, scores, display_org))
-                                else:
-                                    contact_display = d["Contact_Name__c"]
-                                    label =  contact_display + ": " + ts.strftime("%B %d, %Y").replace(" 0", " ") 
-                                    timestamp_score_triples.append((label, scores, st.session_state.org_input))
+                                if d["Timestamp__c"] is not None:
+                                    ts = pd.to_datetime(d["Timestamp__c"], errors='coerce')
+                                    scores = d["Overall_Score__c"]
+                                    if st.session_state.access:
+                                        display_org = d["Organization__c"]
+                                        label = display_org + ": " + ts.strftime("%B %d, %Y").replace(" 0", " ") 
+                                        timestamp_score_triples.append((label, scores, display_org))
+                                    else:
+                                        contact_display = d["Contact_Name__c"]
+                                        label =  contact_display + ": " + ts.strftime("%B %d, %Y").replace(" 0", " ") 
+                                        timestamp_score_triples.append((label, scores, st.session_state.org_input))
                             
                             
                             # for key in submissions:
@@ -2713,10 +2711,11 @@ elif assessment:
                
                             
                             for index, d in df.iterrows():
-                                ts = pd.to_datetime(d["Timestamp__c"], errors='coerce')
-                                label = ts.strftime("%B %d, %Y").replace(" 0", " ")
-                                score = d["Overall_Score__c"]
-                                timestamp_score_triples.append((label, score, st.session_state.org_input))
+                                if d["Timestamp__c"] is not None:
+                                    ts = pd.to_datetime(d["Timestamp__c"], errors='coerce')
+                                    label = ts.strftime("%B %d, %Y").replace(" 0", " ")
+                                    score = d["Overall_Score__c"]
+                                    timestamp_score_triples.append((label, score, st.session_state.org_input))
                             
                             # org_name = st.session_state.get("org_input", "Unknown Org")
                             # subms = {}

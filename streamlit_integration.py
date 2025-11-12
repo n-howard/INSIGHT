@@ -109,7 +109,7 @@ def get_overall(org_input, sf, name, is_admin, access_level, email):
     if is_admin:
         results = sf.query_all(f"SELECT Overall_Score__c, Contact_Name__c, Timestamp__c FROM INSIGHT_Results__c WHERE Organization__c='{org_escaped}' AND Element__c='{name}'")
     else:
-        results = sf.query_all(f"SELECT Overall_Score__c FROM INSIGHT_Results__c, Timestamp__c WHERE Contact_Email__c='{email}' AND Element__c='{name}'")
+        results = sf.query_all(f"SELECT Overall_Score__c, Timestamp__c FROM INSIGHT_Results__c WHERE Contact_Email__c='{email}' AND Element__c='{name}'")
     return results
 
 def get_all_overall(org_input, sf, is_admin, access_level, email):
