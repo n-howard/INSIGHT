@@ -203,7 +203,7 @@ def get_all_avg_overall(org_input, sf, is_admin, access_level, email):
         return sf.query_all(query)
 
 
-def get_average_records(org_input, sf, assessment, name, is_admin, access_level, email):
+def get_avg_records(org_input, sf, assessment, name, is_admin, access_level, email):
     """
     Retrieves average records (org/site averages) for a specific element.
     Access-level: all averages for all orgs.
