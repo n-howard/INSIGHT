@@ -1071,7 +1071,7 @@ elif assessment:
         #     st.error("Could not find the column with organization/program name. Please check your form question titles.")
         #     st.stop()
 
-        overall = get_overall(org_input, sf, assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
+        # overall = get_overall(org_input, sf, assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
         overall_score = 1000
         # over_scores = {}
         # all_orgs = []
@@ -2150,7 +2150,7 @@ elif assessment:
                                     # df["normalized__site"] = df["Site__c"].apply(lambda x: str(x).strip().lower())
                                     # for norm_site, display_site in sites.items():
                                     for _, site_row in site_loc.iterrows():
-                                        site = site_row["Site__c"]
+                                        site = site_row["Site__c"].split("Average")[0]
                                         with st.expander(f"**{site}'s Results**"):
                                             ta = "teal_container_" + str(uuid.uuid4())
                                             st.html(f"""<style>.st-key-{ta}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
@@ -2296,7 +2296,7 @@ elif assessment:
                             # for site in all_sites:
                             #     normalized = site.strip().lower()
                             #     sites[normalized] = site
-                            org_loc = org_loc = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
+                            org_loc = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
                             # for norm_org, display_org in normalized_org_map.items():
                             for _, org_row in org_loc.iterrows():
                                 display_org = org_row["Organization__c"]
@@ -2348,7 +2348,7 @@ elif assessment:
                                         # torg_df["normalized__site"] = torg_df["Site__c"].apply(lambda x: [i.strip().lower() for i in x] if isinstance(x, list) else [str(x).strip().lower()])
                                         # for norm_site, display_site in sites.items():
                                         for _, site in sites.iterrows():
-                                            display_site = site["Site__c"]
+                                            display_site = site["Site__c"].split("Average")[0]
                                             # sdf = torg_df[torg_df["normalized__site"].apply(lambda x: norm_site in x)]
                                             # if sdf is not None:
                                             with st.expander(f"**{display_site}**"):
