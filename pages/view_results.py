@@ -742,7 +742,7 @@ if assessment == "all":
             
             # df = all_data[f"{assessment}|Scores"]["df"]
 
-            results = get_all_avg_overall(org_input, sf, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
+            results = get_avg_overall(org_input, sf, assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
 
             # df = pd.DataFrame.from_dict(results["records"])
 
@@ -920,12 +920,10 @@ if assessment == "all":
                 #         </div>
                 #     """)
                 #     continue
-                i = 0
                 j = 1
                 
                 for li in results["records"]:
                     for avg in li.values():
-                        i+=1
                         j+=1
                         if isinstance(avg, float):
                         # if isinstance(val, float) and val is not None:
@@ -949,7 +947,8 @@ if assessment == "all":
                                     render_overall_score(f"Average Overall Score for {assessment}", avg, key_suffix=f"{assessment}__{i}_{i}{i}")
                                     with st.container(key=f"teal_container_{w_prefix}"):
                                         st.plotly_chart(draw_score_dial(avg), width='stretch')
-                    
+                    # else:
+
                 
                 # avg = sum(vals) / len(vals)
 
