@@ -670,6 +670,13 @@ elif assessment:
             overall_score = get_avg_overall(org_input, sf, assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)["records"][0]["Overall_Score__c"]
 
 
+        desc = get_recs_desc(sf, ASSESSMENTS[assessment], assessment, "Descriptions")
+
+        recs = None
+
+        if st.session_state.is_admin or st.session_state.access:
+
+            recs = get_recs_desc(sf, ASSESSMENTS[assessment], assessment, "Recommendations")
 
         def render_score_card(score, label, org_name: str = st.session_state.get("org_input")):
                 if score <=4.0:
