@@ -2106,6 +2106,27 @@ elif assessment:
                         st.write(f"**No {assessment} results were found.**")
                 else:
                     with col1:
+                        def collapse_average(text):
+                            if not isinstance(text, str):
+                                return text
+                            # Replace multiple "Average" repeats (case-insensitive)
+                            return re.sub(r'(\bAverage\b\s*){2,}', 'Average ', text, flags=re.IGNORECASE).strip()
+
+                        df["Organization__c"] = df["Organization__c"].apply(collapse_average)
+                        df["Site__c"] = df["Site__c"].apply(collapse_average)
+                        df["Organization__c"] = (
+                            df["Organization__c"]
+                            .astype(str)
+                            .str.strip()
+                            .apply(collapse_average)
+                        )
+                        df["Site__c"] = (
+                            df["Site__c"]
+                            .astype(str)
+                            .str.strip()
+                            .apply(collapse_average)
+                        )
+
                         # if not all_orgs:
                         if st.session_state.is_admin and not st.session_state.access:
                             # all_sites = [site for site in df["Site__c"] if site is not None]
