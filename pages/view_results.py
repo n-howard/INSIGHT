@@ -921,33 +921,38 @@ if assessment == "all":
                 #     """)
                 #     continue
                 j = 1
-                
-                for li in results["records"]:
-                    for avg in li.values():
-                        j+=1
-                        if isinstance(avg, float):
-                        # if isinstance(val, float) and val is not None:
-                        #     vals.append(val)
+                if st.session_state.access:
+                    for li in results["records"]:
+                        for avg in li.values():
+                            j+=1
+                            if isinstance(avg, float):
+                            # if isinstance(val, float) and val is not None:
+                            #     vals.append(val)
 
-                        #     if st.session_state.access == True:
-                        #         this_org = li["Organization__c"]
-                        #         orgs[f"{this_org}'s"].append(val)
-                            w_prefix = str(uuid.uuid4())
-                            wa = f"white_container_{w_prefix}"
-                            st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
-                            st.html(f"""<style>.st-key-teal_container_{w_prefix}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
-                            with st.container(key=wa):
-                                if st.session_state.access:
+                            #     if st.session_state.access == True:
+                            #         this_org = li["Organization__c"]
+                            #         orgs[f"{this_org}'s"].append(val)
+                                w_prefix = str(uuid.uuid4())
+                                wa = f"white_container_{w_prefix}"
+                                st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
+                                st.html(f"""<style>.st-key-teal_container_{w_prefix}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
+                                with st.container(key=wa):
                                     org = li["Organization__c"]
                                     render_overall_score(f"{org}'s Average Overall Score for {assessment}", avg, key_suffix=f"{assessment}__{i}_{j}")
                                     st.html(f"""<style>.st-key-teal_container_{w_prefix}_{j}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
                                     with st.container(key=f"teal_container_{w_prefix}_{j}"):
                                         st.plotly_chart(draw_score_dial(avg), width='stretch')
-                                else:
-                                    render_overall_score(f"Average Overall Score for {assessment}", avg, key_suffix=f"{assessment}__{i}_{i}{i}")
-                                    with st.container(key=f"teal_container_{w_prefix}"):
-                                        st.plotly_chart(draw_score_dial(avg), width='stretch')
-                                    break
+                else:
+                    avg = results["records"][0]["Overall_Score__c"]
+                    w_prefix = str(uuid.uuid4())
+                    wa = f"white_container_{w_prefix}"
+                    st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
+                    st.html(f"""<style>.st-key-teal_container_{w_prefix}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
+                    with st.container(key=wa):
+                        render_overall_score(f"Average Overall Score for {assessment}", avg, key_suffix=f"{assessment}__{i}_{i}{i}")
+                        with st.container(key=f"teal_container_{w_prefix}"):
+                            st.plotly_chart(draw_score_dial(avg), width='stretch')
+                    
                     # else:
 
                 
