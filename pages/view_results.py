@@ -2309,14 +2309,14 @@ elif assessment:
                                             # series = pd.to_numeric(series, errors="coerce")
                                             # av = series.mean()
                                             av = org_row[column]
-                                            st.write(av)
                                             if pd.notna(av):
                                                 normed_col = norm_col(column)
                                 
                                                 if "Overall Score" in normed_col: 
                                                     continue
                                                     # standard_scores[display_org].append((norm_col(column), av))
-                                                render_score_card(av, normed_col, display_org)
+                                                if "Standard" or "Indicator" or "Percent" in column:
+                                                    render_score_card(av, normed_col, display_org)
                                                 if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
                                                     st.write(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_org))
                                                 else:
