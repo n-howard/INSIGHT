@@ -2110,13 +2110,14 @@ elif assessment:
                         if st.session_state.is_admin and not st.session_state.access:
                             # all_sites = [site for site in df["Site__c"] if site is not None]
                             org_rows = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
+                
                             with st.container(key ="white_container_1"):
                                 
                                 with st.container(key ="teal_container"):
                                     st.plotly_chart(draw_score_dial(overall_score), width='stretch')
                                 with st.expander("**Scores by Standards and Indicators**"):
                                     for _, org_row in org_rows.iterrows():
-                        
+                                        st.write(org_row)
                                         for column in org_row.index:
                                             normed_col = norm_col(column)
                                             if isinstance(org_row[column], float):
