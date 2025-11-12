@@ -107,8 +107,7 @@ def get_overall(org_input, sf, name, is_admin, access_level, email):
         results = sf.query_all(f"SELECT Overall_Score__c, Organization__c, Timestamp__c FROM INSIGHT_Results__c WHERE Element__c='{name}' AND (NOT (Organization__c LIKE '%Average%'))")
         return results
     if is_admin:
-        org_lower = org_escaped.lower()
-        results = sf.query_all(f"SELECT Overall_Score__c, Contact_Name__c, Timestamp__c FROM INSIGHT_Results__c WHERE LOWER(Organization__c)='{org_lower}' AND Element__c='{name}'")
+        results = sf.query_all(f"SELECT Overall_Score__c, Contact_Name__c, Timestamp__c FROM INSIGHT_Results__c WHERE Organization__c='{org_escaped}' AND Element__c='{name}'")
     else:
         results = sf.query_all(f"SELECT Overall_Score__c, Timestamp__c FROM INSIGHT_Results__c WHERE Contact_Email__c='{email}' AND Element__c='{name}'")
     return results
@@ -122,8 +121,7 @@ def get_all_overall(org_input, sf, is_admin, access_level, email):
         results = sf.query_all(f"SELECT Overall_Score__c, Element__c, Organization__c FROM INSIGHT_Results__c WHERE (NOT (Organization__c LIKE '%Average%'))")
         return results
     if is_admin:
-        org_lower = org_escaped.lower()
-        results = sf.query_all(f"SELECT Overall_Score__c, Element__c, Contact_Name__c FROM INSIGHT_Results__c WHERE LOWER(Organization__c)='{org_lower}'")
+        results = sf.query_all(f"SELECT Overall_Score__c, Element__c, Contact_Name__c FROM INSIGHT_Results__c WHERE Organization__c='{org_escaped}'")
     else:
         results = sf.query_all(f"SELECT Overall_Score__c, Element__c FROM INSIGHT_Results__c WHERE Contact_Email__c='{email}'")
     return results
@@ -150,11 +148,10 @@ def get_avg_overall(org_input, sf, name, is_admin, access_level, email):
 
     elif is_admin:
         # Admin: only averages for their own org
-        org_lower = org_escaped.lower()
         query = (
             f"SELECT Overall_Score__c, Contact_Name__c, Organization__c, Site__c "
             f"FROM INSIGHT_Results__c "
-            f"WHERE LOWER(Organization__c)='{org_lower}' "
+            f"WHERE Organization__c='{org_escaped}' "
             f"AND Element__c='{element_escaped}' "
             f"AND ((Organization__c LIKE '%Average%') OR (Site__c LIKE '%Average%'))"
         )
