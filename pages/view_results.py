@@ -943,6 +943,7 @@ if assessment == "all":
                                     with st.container(key=f"teal_container_{w_prefix}_{j}"):
                                         st.plotly_chart(draw_score_dial(avg), width='stretch')
                 else:
+                    
                     avg = results["records"][0]["Overall_Score__c"]
                     w_prefix = str(uuid.uuid4())
                     wa = f"white_container_{w_prefix}"
