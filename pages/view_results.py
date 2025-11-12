@@ -981,9 +981,11 @@ elif assessment:
 
 
     org_input = st.session_state.org_input
-
-    results = get_avg_records(st.session_state.org_input, sf, ASSESSMENTS[assessment], assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
-
+    results = {}
+    if st.session_state.is_admin or st.session_state.access:
+        results = get_avg_records(st.session_state.org_input, sf, ASSESSMENTS[assessment], assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
+    else:
+        results = get_org_records(st.session_state.org_input, sf, ASSESSMENTS[assessment], assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
     
     if len(results["records"]) == 0:
     # if df is None:
@@ -1059,15 +1061,14 @@ elif assessment:
         #     st.error("Could not find the column with organization/program name. Please check your form question titles.")
         #     st.stop()
 
-        overall = get_avg_overall(org_input, sf, assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
+        overall = get_overall(org_input, sf, assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
         overall_score = 1000
         # over_scores = {}
         # all_orgs = []
         if len(overall["records"])==0:
             overall_score = 1000
         else:
-            overall_l = [x["Overall_Score__c"] for x in overall["records"]]
-            overall_score = sum(overall_l)/len(overall_l)
+            overall_score = get_avg_overall(org_input, sf, assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)["records"][0]["Overall_Score__c"]
         # if st.session_state.access:
         #     all_scores_orgs = defaultdict(list)
         #     for li in overall["records"]:
@@ -2501,6 +2502,7 @@ elif assessment:
                             #                 score = pd.to_numeric(row[col], errors="coerce")
                             #                 if pd.notna(score):
                             #                     timestamp_score_triples.append((ts, score, org_name))
+                            time_df = pd.DataFrame.from_dict(overall["records"])
                             timestamp_score_triples = []
                             for index, d in df.iterrows():
                                 ts = pd.to_datetime(d["Timestamp__c"], errors='coerce')
@@ -2542,11 +2544,13 @@ elif assessment:
 
                     with col3:
                         with st.container(key ="white_container_3"):
-                            if "Contact_Name__c" in df.columns:
+                            all_recs = get_org_records(st.session_state.org_input, sf, ASSESSMENTS[assessment], assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
+                            cdf = pd.DataFrame.from_dict(all_recs["records"])
+                            if "Contact_Name__c" in cdf.columns:
                 
-                                original_names = df.dropna(subset=["Contact_Name__c"])["Contact_Name__c"]
+                                original_names = cdf.dropna(subset=["Contact_Name__c"])["Contact_Name__c"]
                                 normalized_map = {name.strip().lower(): name for name in original_names.unique()}
-                                df["__normalized_contact__"] = df["Contact_Name__c"].astype(str).str.strip().str.lower()
+                                cdf["__normalized_contact__"] = cdf["Contact_Name__c"].astype(str).str.strip().str.lower()
 
                                 contacts_to_show = list(normalized_map.keys())
                                 staff_scores_num = {}
@@ -2554,7 +2558,7 @@ elif assessment:
                                 for contact_norm in contacts_to_show:
                                     contact_display = normalized_map[contact_norm]
         
-                                    contact_df = df[df["__normalized_contact__"] == contact_norm]
+                                    contact_df = cdf[cdf["__normalized_contact__"] == contact_norm]
                                     if contact_df.empty:
                                         continue
 
@@ -2568,7 +2572,7 @@ elif assessment:
                                 for contact_norm in contacts_to_show:
                                     contact_display = normalized_map[contact_norm]
         
-                                    contact_df = df[df["__normalized_contact__"] == contact_norm]
+                                    contact_df = cdf[cdf["__normalized_contact__"] == contact_norm]
                                     if contact_df.empty:
                                         continue
                                     with st.expander(f"**{contact_display}'s Results**"):
