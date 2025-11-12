@@ -2112,7 +2112,7 @@ elif assessment:
                                     st.plotly_chart(draw_score_dial(overall_score), width='stretch')
                                 with st.expander("**Scores by Standards and Indicators**"):
 
-                                    for column in org_row:
+                                    for column in org_row.index:
                                         normed_col = norm_col(column)
                                         if isinstance(org_row[column], float):
                                             av = org_row[column]
