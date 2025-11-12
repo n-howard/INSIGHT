@@ -187,7 +187,7 @@ def get_all_avg_overall(org_input, sf, is_admin, access_level, email):
 
     elif is_admin:
         query = (
-            f"SELECT Overall_Score__c, Element__c, Contact_Name__c, Site__c "
+            f"SELECT Overall_Score__c, Element__c, Contact_Name__c, Organization__c, Site__c  "
             f"FROM INSIGHT_Results__c "
             f"WHERE Organization__c='{org_escaped}' "
             f"AND ((Organization__c LIKE '%Average%') OR (Site__c LIKE '%Average%'))"
@@ -226,6 +226,7 @@ def get_avg_records(org_input, sf, assessment, name, is_admin, access_level, ema
         return sf.query_all(query)
 
     elif is_admin:
+        opts += ", Organization__c"
         query = (
             f"SELECT {opts} "
             f"FROM INSIGHT_Results__c "
