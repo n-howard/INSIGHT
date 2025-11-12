@@ -2310,7 +2310,7 @@ elif assessment:
                                             # av = series.mean()
                                             av = org_row[column]
 
-                                            st.write(av)
+                                            st.write(org_row)
                                             if pd.notna(av):
                                                 normed_col = norm_col(column)
                                 
