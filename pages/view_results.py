@@ -660,98 +660,106 @@ elif assessment:
                 col = col.replace("_", " ")
             return col
 
+        overall = get_overall(org_input, sf, assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
+        overall_score = 1000
+        # over_scores = {}
+        # all_orgs = []
+        if len(overall["records"])==0:
+            overall_score = 1000
+        else:
+            overall_score = get_avg_overall(org_input, sf, assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)["records"][0]["Overall_Score__c"]
 
 
 
+        def render_score_card(score, label, org_name: str = st.session_state.get("org_input")):
+                if score <=4.0:
+                    max_score = 4.0
+                    percent = score / max_score
+                else:
+                    max_score = 100.0
+                    percent = score / max_score
 
-    def render_score_card(score, label, org_name: str = st.session_state.get("org_input")):
-            if score <=4.0:
-                max_score = 4.0
-                percent = score / max_score
-            else:
-                max_score = 100.0
-                percent = score / max_score
+                                # --- Create circular progress ring with Plotly ---
+            
+                fig = go.Figure(go.Pie(
+                    values=[percent, 1 - percent],
+                    labels=["", ""],
+                    marker_colors=["#D3F3FD", "#013747"],  
+                    hole=0.8,
+                    sort=False,
+                    direction="clockwise",
+                    textinfo="none"
+                ))
+                fig.update_layout(
+                    margin=dict(l=0, r=0, t=0, b=0),
+                    width=60,
+                    height=60,
+                    showlegend=False,
+                    paper_bgcolor="rgba(0,0,0,0)",
+                )
+                buffer = io.StringIO()
+                fig.write_html(buffer, config= {'displaylogo': False, 'modeBarButtonsToRemove': ['toImage']}, include_plotlyjs='cdn')  # or include_plotlyjs=True if you want to bundle it
+                html_string = buffer.getvalue()
+                if "Percent" in label:
+                    s = f"{score:.0f}%"
+                else:
+                    s = f"{score:.3f}"
+                # --- Create custom styled card ---
+                card_html = """<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+                <style>
+                .card-container {
+                    margin: 0px 0px 0px 0px;
+                    background-color: #084C61;
+                    border-radius: 12px;
+                    padding: 0.8rem 1.2rem;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    max-width: 100%;
+                    height: fit-content;
+                }
+                .card-left {
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                }
+                .card-score {
+                    font-family: 'Poppins', sans-serif;
+                    font-size: 20px;
+                    font-weight: 600;
+                    color: white;
+                    margin-bottom: 0px;
+                }
+                .card-label {
+                    font-family: 'Poppins', sans-serif;
+                    font-size: 14px;
+                    font-weight: 400;
+                    color: white;
+                }
+                .desc-display {
+                    font-size: 0.9rem;
+                    color: #084c61;
+                    font-family: 'Poppins', sans-serif;
 
-                            # --- Create circular progress ring with Plotly ---
-        
-            fig = go.Figure(go.Pie(
-                values=[percent, 1 - percent],
-                labels=["", ""],
-                marker_colors=["#D3F3FD", "#013747"],  
-                hole=0.8,
-                sort=False,
-                direction="clockwise",
-                textinfo="none"
-            ))
-            fig.update_layout(
-                margin=dict(l=0, r=0, t=0, b=0),
-                width=60,
-                height=60,
-                showlegend=False,
-                paper_bgcolor="rgba(0,0,0,0)",
-            )
-            buffer = io.StringIO()
-            fig.write_html(buffer, config= {'displaylogo': False, 'modeBarButtonsToRemove': ['toImage']}, include_plotlyjs='cdn')  # or include_plotlyjs=True if you want to bundle it
-            html_string = buffer.getvalue()
-            if "Percent" in label:
-                s = f"{score:.0f}%"
-            else:
-                s = f"{score:.3f}"
-            # --- Create custom styled card ---
-            card_html = """<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-            <style>
-            .card-container {
-                margin: 0px 0px 0px 0px;
-                background-color: #084C61;
-                border-radius: 12px;
-                padding: 0.8rem 1.2rem;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                max-width: 100%;
-                height: fit-content;
-            }
-            .card-left {
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-            }
-            .card-score {
-                font-family: 'Poppins', sans-serif;
-                font-size: 20px;
-                font-weight: 600;
-                color: white;
-                margin-bottom: 0px;
-            }
-            .card-label {
-                font-family: 'Poppins', sans-serif;
-                font-size: 14px;
-                font-weight: 400;
-                color: white;
-            }
-            .desc-display {
-                font-size: 0.9rem;
-                color: #084c61;
-                font-family: 'Poppins', sans-serif;
+                }
+                </style>
+                <div class="card-container">
+                    <div class="card-left">
+                        <div class="card-score">""" + f"{s}" + """</div>
+                        <div class="card-label">"""+ f"{label}" + """</div>
+                    </div>
+                    <div class="card-ring">""" + f"{html_string}" + """</div></div>"""
+            
 
-            }
-            </style>
-            <div class="card-container">
-                <div class="card-left">
-                    <div class="card-score">""" + f"{s}" + """</div>
-                    <div class="card-label">"""+ f"{label}" + """</div>
-                </div>
-                <div class="card-ring">""" + f"{html_string}" + """</div></div>"""
-        
+                # Estimate height based on content
+                base_height = 85
+                line_height = 15
+                num_lines = 2 if len(label) > 30 else 1  # crude logic
+                card_height = base_height + (num_lines * line_height)
+                components.html(card_html, height=card_height)
 
-            # Estimate height based on content
-            base_height = 85
-            line_height = 15
-            num_lines = 2 if len(label) > 30 else 1  # crude logic
-            card_height = base_height + (num_lines * line_height)
-            components.html(card_html, height=card_height)
-
-         
+            
+            
 
 
 
