@@ -2115,24 +2115,24 @@ elif assessment:
                                 with st.container(key ="teal_container"):
                                     st.plotly_chart(draw_score_dial(overall_score), width='stretch')
                                 with st.expander("**Scores by Standards and Indicators**"):
-
-                                    for column in org_row.columns:
-                                        normed_col = norm_col(column)
-                                        if isinstance(org_row[column], float):
-                                            av = org_row[column]
-                                            # series = df[column]
-                                            # series = pd.to_numeric(series, errors="coerce")
-                                            # av = series.mean()
-                                            # if pd.notna(av):
-                                            if "Overall Score" in normed_col:
-                                                continue
-                                            
-                                            if "Standard" or "Indicator" or "Percent" in col:
-                                                render_score_card(av, normed_col)
-                                            if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
-                                                st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", org_input))
-                                            else:
-                                                st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
+                                    for _, org_row in org_row.iterrows()
+                                        for column in org_row.index:
+                                            normed_col = norm_col(column)
+                                            if isinstance(org_row[column], float):
+                                                av = org_row[column]
+                                                # series = df[column]
+                                                # series = pd.to_numeric(series, errors="coerce")
+                                                # av = series.mean()
+                                                # if pd.notna(av):
+                                                if "Overall Score" in normed_col:
+                                                    continue
+                                                
+                                                if "Standard" or "Indicator" or "Percent" in col:
+                                                    render_score_card(av, normed_col)
+                                                if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
+                                                    st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", org_input))
+                                                else:
+                                                    st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
                             # sites = {}
                             # for site in all_sites:
                             #     normalized = site.strip().lower()
