@@ -87,6 +87,7 @@ def get_org_records(org_input, sf, assessment, name, is_admin, access_level, ema
     return results
 
 
+
 def get_all_org_records(org_input, sf, is_admin, access_level, email):
     """
     get_all_org_records(org_input, sf, is_admin, access_level, email)
@@ -125,7 +126,127 @@ def get_all_overall(org_input, sf, is_admin, access_level, email):
         results = sf.query_all(f"SELECT Overall_Score__c, Element__c FROM INSIGHT_Results__c WHERE Contact_Email__c='{email}'")
     return results
 
-# results = get_org_records("Nat Testing", create_sf(), ASSESSMENTS["Program Management"], "Program Management", True, False, "nat.howard@oregonask.org")
+def get_avg_overall(org_input, sf, name, is_admin, access_level, email):
+    """
+    Retrieves average Overall_Score__c values for:
+      - Access-level users: all org/site averages for all orgs
+      - Admins: org-specific averages
+      - Regular users: their own submissions
+    """
+    org_escaped = org_input.replace("'", "''")
+    element_escaped = name.replace("'", "''")
+
+    if access_level:
+        # Access-level: all averages across orgs for this element
+        query = (
+            f"SELECT Overall_Score__c, Organization__c, Site__c "
+            f"FROM INSIGHT_Results__c "
+            f"WHERE Element__c='{element_escaped}' "
+            f"AND ((Organization__c LIKE '%Average%') OR (Site__c LIKE '%Average%'))"
+        )
+        return sf.query_all(query)
+
+    elif is_admin:
+        # Admin: only averages for their own org
+        query = (
+            f"SELECT Overall_Score__c, Contact_Name__c, Organization__c, Site__c "
+            f"FROM INSIGHT_Results__c "
+            f"WHERE Organization__c='{org_escaped}' "
+            f"AND Element__c='{element_escaped}' "
+            f"AND ((Organization__c LIKE '%Average%') OR (Site__c LIKE '%Average%'))"
+        )
+        return sf.query_all(query)
+
+    else:
+        # Regular user: only their personal records (no averages)
+        query = (
+            f"SELECT Overall_Score__c, Element__c, Timestamp__c "
+            f"FROM INSIGHT_Results__c "
+            f"WHERE Contact_Email__c='{email}' "
+            f"AND Element__c='{element_escaped}'"
+        )
+        return sf.query_all(query)
+
+
+def get_all_avg_overall(org_input, sf, is_admin, access_level, email):
+    """
+    Retrieves all Overall_Score__c averages across all elements.
+    Access-level: all org/site averages for all orgs.
+    Admin: averages for the given org only.
+    Regular users: their own records (no averages).
+    """
+    org_escaped = org_input.replace("'", "''")
+
+    if access_level:
+        query = (
+            "SELECT Overall_Score__c, Element__c, Organization__c, Site__c "
+            "FROM INSIGHT_Results__c "
+            "WHERE ((Organization__c LIKE '%Average%') OR (Site__c LIKE '%Average%'))"
+        )
+        return sf.query_all(query)
+
+    elif is_admin:
+        query = (
+            f"SELECT Overall_Score__c, Element__c, Contact_Name__c, Site__c "
+            f"FROM INSIGHT_Results__c "
+            f"WHERE Organization__c='{org_escaped}' "
+            f"AND ((Organization__c LIKE '%Average%') OR (Site__c LIKE '%Average%'))"
+        )
+        return sf.query_all(query)
+
+    else:
+        query = (
+            f"SELECT Overall_Score__c, Element__c "
+            f"FROM INSIGHT_Results__c "
+            f"WHERE Contact_Email__c='{email}'"
+        )
+        return sf.query_all(query)
+
+
+def get_average_records(org_input, sf, assessment, name, is_admin, access_level, email):
+    """
+    Retrieves average records (org/site averages) for a specific element.
+    Access-level: all averages for all orgs.
+    Admin: averages for their own org.
+    Regular users: their own records only.
+    """
+    fields = assessment["fields"]
+    opts = ", ".join(fields)
+    org_escaped = org_input.replace("'", "''")
+    element_escaped = name.replace("'", "''")
+
+    if access_level:
+        opts += ", Organization__c, Site__c"
+        query = (
+            f"SELECT {opts} "
+            f"FROM INSIGHT_Results__c "
+            f"WHERE Element__c='{element_escaped}' "
+            f"AND ((Organization__c LIKE '%Average%') OR (Site__c LIKE '%Average%'))"
+        )
+        return sf.query_all(query)
+
+    elif is_admin:
+        query = (
+            f"SELECT {opts} "
+            f"FROM INSIGHT_Results__c "
+            f"WHERE Organization__c='{org_escaped}' "
+            f"AND Element__c='{element_escaped}' "
+            f"AND ((Organization__c LIKE '%Average%') OR (Site__c LIKE '%Average%'))"
+        )
+        return sf.query_all(query)
+
+    else:
+        query = (
+            f"SELECT {opts} "
+            f"FROM INSIGHT_Results__c "
+            f"WHERE Contact_Email__c='{email}' "
+            f"AND Element__c='{element_escaped}'"
+        )
+        return sf.query_all(query)
+
+
+# results = get_avg_records("Nat Testing", create_sf(), ASSESSMENTS["Program Management"], "Program Management", True, True, "nat.howard@oregonask.org")
+
 
 # st.write(results)
 # st.write(pd.DataFrame.from_dict(results["records"]))
