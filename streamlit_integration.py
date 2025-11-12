@@ -151,7 +151,7 @@ def get_avg_overall(org_input, sf, name, is_admin, access_level, email):
         query = (
             f"SELECT Overall_Score__c, Contact_Name__c, Organization__c, Site__c "
             f"FROM INSIGHT_Results__c "
-            f"WHERE Organization__c='{org_escaped}' "
+            f"WHERE Organization__c LIKE '%{org_escaped}%' "
             f"AND Element__c='{element_escaped}' "
             f"AND ((Organization__c LIKE '%Average%') OR (Site__c LIKE '%Average%'))"
         )
@@ -189,7 +189,7 @@ def get_all_avg_overall(org_input, sf, is_admin, access_level, email):
         query = (
             f"SELECT Overall_Score__c, Element__c, Contact_Name__c, Organization__c, Site__c  "
             f"FROM INSIGHT_Results__c "
-            f"WHERE Organization__c='{org_escaped}' "
+            f"WHERE Organization__c LIKE '%{org_escaped}%' "
             f"AND ((Organization__c LIKE '%Average%') OR (Site__c LIKE '%Average%'))"
         )
         return sf.query_all(query)
@@ -230,7 +230,7 @@ def get_avg_records(org_input, sf, assessment, name, is_admin, access_level, ema
         query = (
             f"SELECT {opts} "
             f"FROM INSIGHT_Results__c "
-            f"WHERE Organization__c='{org_escaped}' "
+            f"WHERE Organization__c LIKE '%{org_escaped}%' "
             f"AND Element__c='{element_escaped}' "
             f"AND ((Organization__c LIKE '%Average%') OR (Site__c LIKE '%Average%'))"
         )
