@@ -2110,7 +2110,7 @@ elif assessment:
                         if st.session_state.is_admin and not st.session_state.access:
                             # all_sites = [site for site in df["Site__c"] if site is not None]
                             org_rows = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
-                
+                            st.write(org_rows)
                             with st.container(key ="white_container_1"):
                                 
                                 with st.container(key ="teal_container"):
