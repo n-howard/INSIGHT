@@ -2109,8 +2109,7 @@ elif assessment:
                         # if not all_orgs:
                         if st.session_state.is_admin and not st.session_state.access:
                             # all_sites = [site for site in df["Site__c"] if site is not None]
-                            org_rows = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
-                            st.write(org_rows)
+
                             with st.container(key ="white_container_1"):
                                 
                                 with st.container(key ="teal_container"):
@@ -2143,6 +2142,7 @@ elif assessment:
                             site_loc = df.loc[df["Site__c"].str.contains("Average", case=False, na=False)]
 
                             if not site_loc.empty:
+                                site_loc = site_loc.drop_duplicates(subset=["Organization__c", "Site__c"], keep="first")
                                 w_prefix = str(uuid.uuid4())
                                 wa = "white_container_" + w_prefix
                                 st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
