@@ -1078,7 +1078,7 @@ elif assessment:
                                                 # torg_df["normalized__site"] = torg_df["Site__c"].apply(lambda x: [i.strip().lower() for i in x] if isinstance(x, list) else [str(x).strip().lower()])
                                                 # for norm_site, display_site in sites.items():
                                                 for _, site in sites.iterrows():
-                                                    display_site = sites["Site__c"].split("Average")[0].strip()
+                                                    display_site = site["Site__c"].split("Average")[0].strip()
                                                     # sdf = torg_df[torg_df["normalized__site"].apply(lambda x: norm_site in x)]
                                                     # if sdf is not None:
                                                     with st.expander(f"**{display_site}**"):
