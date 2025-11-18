@@ -1252,7 +1252,7 @@ elif assessment:
                                                             la = "teal_container_" + that_prefix
                                                             st.html(f"""<style>.st-key-{la}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
                                                             with st.container(key = la):
-                                                            st.plotly_chart(draw_score_dial(avg, "Overall Score"), width='stretch')
+                                                                st.plotly_chart(draw_score_dial(avg, "Overall Score"), width='stretch')
                                                             
                                                             continue
                                                         
