@@ -898,289 +898,376 @@ elif assessment:
                 else:
                     
                     with col1:
-                        def collapse_average(text):
-                            if not isinstance(text, str):
-                                return text
-                            # Replace multiple "Average" repeats (case-insensitive)
-                            return re.sub(r'(\bAverage\b\s*){2,}', 'Average ', text, flags=re.IGNORECASE).strip()
+                        with stylable_container(f"score_breakdown", css_styles="""
+                        button {
+                            font-weight: 600;
+                            font-size: .9rem;
+                            padding: 1rem 2rem;
+                            border: none;
+                            border-radius: 2rem;
+                            cursor: pointer;
+                            text-align: center;
+                            text-decoration: none;
+                            min-width: 33.33%;
+                            max-width: 100%;
+                            width: 100%;
+                            transition: background-color 0.2s;
+                            background-color: #d6e3e7;
+                            color: #333;
+                            margin-bottom: 10%;
+                        }
 
-                        df["Organization__c"] = df["Organization__c"].apply(collapse_average)
-                        df["Site__c"] = df["Site__c"].apply(collapse_average)
-                        df["Organization__c"] = (
-                            df["Organization__c"]
-                            .astype(str)
-                            .str.strip()
-                            .apply(collapse_average)
-                        )
-                        df["Site__c"] = (
-                            df["Site__c"]
-                            .astype(str)
-                            .str.strip()
-                            .apply(collapse_average)
-                        )
+                        button:focus,
+                        button:active, 
+                        button:hover {
+                            background-color: #084C61 !important;
+                            color: white !important;
+                            outline: none;
+                            box-shadow: none;
+                        }
+                    """):
+                        if st.button("View Score Breakdown", width='stretch'):
+                            def collapse_average(text):
+                                if not isinstance(text, str):
+                                    return text
+                                # Replace multiple "Average" repeats (case-insensitive)
+                                return re.sub(r'(\bAverage\b\s*){2,}', 'Average ', text, flags=re.IGNORECASE).strip()
 
-                        # if not all_orgs:
-                        if st.session_state.is_admin and not st.session_state.access:
-                            # all_sites = [site for site in df["Site__c"] if site is not None]
-                            org_rows = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
-                            with st.container(key ="white_container_1"):
-                                
-                                with st.container(key ="teal_container"):
-                                    st.plotly_chart(draw_score_dial(overall_score), width='stretch')
-                                with st.expander("**Scores by Standards and Indicators**"):
-                                    for _, org_row in org_rows.iterrows():
-                                        for column in org_row.index:
-                                            normed_col = norm_col(column)
-                                            if isinstance(org_row[column], float):
-                                                
-                                                av = org_row[column]
-                                                # series = df[column]
-                                                # series = pd.to_numeric(series, errors="coerce")
-                                                # av = series.mean()
-                                                if pd.notna(av):
-                                                    if "Overall Score" in normed_col:
-                                                        continue
+                            df["Organization__c"] = df["Organization__c"].apply(collapse_average)
+                            df["Site__c"] = df["Site__c"].apply(collapse_average)
+                            df["Organization__c"] = (
+                                df["Organization__c"]
+                                .astype(str)
+                                .str.strip()
+                                .apply(collapse_average)
+                            )
+                            df["Site__c"] = (
+                                df["Site__c"]
+                                .astype(str)
+                                .str.strip()
+                                .apply(collapse_average)
+                            )
+
+                            # if not all_orgs:
+                            if st.session_state.is_admin and not st.session_state.access:
+                                # all_sites = [site for site in df["Site__c"] if site is not None]
+                                org_rows = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
+                                with st.container(key ="white_container_1"):
+                                    
+                                    with st.container(key ="teal_container"):
+                                        st.plotly_chart(draw_score_dial(overall_score), width='stretch')
+                                    with st.expander("**Scores by Standards and Indicators**"):
+                                        for _, org_row in org_rows.iterrows():
+                                            for column in org_row.index:
+                                                normed_col = norm_col(column)
+                                                if isinstance(org_row[column], float):
                                                     
-                                                    if "Standard" or "Indicator" or "Percent" in column:
-                                                        render_score_card(av, normed_col)
-                                                    if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
-                                                        st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", org_input))
-                                                    else:
-                                                        st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
-                            # sites = {}
-                            # for site in all_sites:
-                            #     normalized = site.strip().lower()
-                            #     sites[normalized] = site
-                            site_loc = df.loc[df["Site__c"].str.contains("Average", case=False, na=False)]
-
-                            if not site_loc.empty:
-                                site_loc = site_loc.drop_duplicates(subset=["Organization__c", "Site__c"], keep="first")
-                                w_prefix = str(uuid.uuid4())
-                                wa = "white_container_" + w_prefix
-                                st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
-                                with st.container(key=wa):
-                                    st.write("#### Scores by Site")
-                                    # df["normalized__site"] = df["Site__c"].apply(lambda x: str(x).strip().lower())
-                                    # for norm_site, display_site in sites.items():
-                                    for _, site_row in site_loc.iterrows():
-                                        site = site_row["Site__c"].split("Average")[0].strip()
-                                        with st.expander(f"**{site}'s Results**"):
-                                            ta = "teal_container_" + str(uuid.uuid4())
-                                            st.html(f"""<style>.st-key-{ta}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
-                                            
-                                            # sdf = df[df["normalized__site"].apply(lambda x: norm_site in x)]
-                                            # if sdf is not None:
-                                            for column in site_row.index:
-                                                if isinstance(site_row[column], float):
-                                                    av = site_row[column]
-                                                    # series = sdf[column]
+                                                    av = org_row[column]
+                                                    # series = df[column]
                                                     # series = pd.to_numeric(series, errors="coerce")
                                                     # av = series.mean()
-                                            
                                                     if pd.notna(av):
-                                                        normed_col = norm_col(column)
-                                        
-                                                        if "Overall Score" in normed_col: 
-                                                            with st.container(key =ta):
-                                                                st.plotly_chart(draw_score_dial(av, "Overall Score"), width='stretch')
+                                                        if "Overall Score" in normed_col:
                                                             continue
+                                                        
                                                         if "Standard" or "Indicator" or "Percent" in column:
                                                             render_score_card(av, normed_col)
                                                         if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
-                                                            st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_site))
+                                                            st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", org_input))
                                                         else:
                                                             st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
+                                # sites = {}
+                                # for site in all_sites:
+                                #     normalized = site.strip().lower()
+                                #     sites[normalized] = site
+                                site_loc = df.loc[df["Site__c"].str.contains("Average", case=False, na=False)]
 
-                
-                        else:
-                        
-                            
-                                
-                            j = 0
-
-                           
-                            org_loc = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
-                            for _, org_row in org_loc.iterrows():
-                                display_org = org_row["Organization__c"]
-                                w_prefix = str(uuid.uuid4())
-                                wa = f"white_container_{w_prefix}"
-                                st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
-                                st.html(f"""<style>.st-key-teal_container_{w_prefix}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
-                                with st.container(key=wa):
-                                    st.write(f"#### {display_org}'s Scores")
-                                    with st.container(key=f"teal_container_{w_prefix}"):
-                                            st.plotly_chart(draw_score_dial(org_row["Overall_Score__c"], "Overall Score"), width='stretch')
-
-                
-                                    # torg_df = df[df["__normalized_extracted_orgs__"].apply(lambda x: norm_org in x)]
-
-                              
-                                    with st.expander("**Scores by Standards and Indicators**"):
-                                        for column in org_row.index:
-                                    
-                                            if isinstance(org_row[column], float):
-                                                # series = torg_df[column]
-                                                # series = pd.to_numeric(series, errors="coerce")
-                                                # av = series.mean()
-                                                av = org_row[column]
-                                                if pd.notna(av):
-                                                    normed_col = norm_col(column)
-                                    
-                                                    if "Overall Score" in normed_col: 
-                                                        continue
-                                                        # standard_scores[display_org].append((norm_col(column), av))
-                                                    if "Standard" or "Indicator" or "Percent" in column:
-                                                        render_score_card(av, normed_col, display_org)
-                                                    if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
-                                                        st.write(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_org))
-                                                    else:
-                                                        st.write(f"**{normed_col}:** " + desc["records"][0][column]) 
-
-                                    # torg_sites = [site for site in torg_df["Site__c"] if site is not None]
-                                    # sites = {}
-                                    # for site in torg_sites:
-                                    #     normalized = site.strip().lower()
-                                    #     sites[normalized] = site
-                                    sites = df.loc[
-                                        df["Site__c"].str.contains("Average", case=False, na=False)
-                                        & (df["Organization__c"] == display_org)
-                                    ]
-
-                                    if not sites.empty:
-                                        # torg_df["normalized__site"] = torg_df["Site__c"].apply(lambda x: [i.strip().lower() for i in x] if isinstance(x, list) else [str(x).strip().lower()])
+                                if not site_loc.empty:
+                                    site_loc = site_loc.drop_duplicates(subset=["Organization__c", "Site__c"], keep="first")
+                                    w_prefix = str(uuid.uuid4())
+                                    wa = "white_container_" + w_prefix
+                                    st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
+                                    with st.container(key=wa):
+                                        st.write("#### Scores by Site")
+                                        # df["normalized__site"] = df["Site__c"].apply(lambda x: str(x).strip().lower())
                                         # for norm_site, display_site in sites.items():
-                                        for _, site in sites.iterrows():
-                                            display_site = sites["Site__c"].split("Average")[0].strip()
-                                            # sdf = torg_df[torg_df["normalized__site"].apply(lambda x: norm_site in x)]
-                                            # if sdf is not None:
-                                            with st.expander(f"**{display_site}**"):
-                                            
-                                                for column in site.index:
-                                                    
-                                                    if isinstance(site[column], float):
-                                                    # series = sdf[column]
-                                                    # series = pd.to_numeric(series, errors="coerce")
-                                                    # av = series.mean()
-                                                        av = site[column]
+                                        for _, site_row in site_loc.iterrows():
+                                            site = site_row["Site__c"].split("Average")[0].strip()
+                                            with st.expander(f"**{site}'s Results**"):
+                                                ta = "teal_container_" + str(uuid.uuid4())
+                                                st.html(f"""<style>.st-key-{ta}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
+                                                
+                                                # sdf = df[df["normalized__site"].apply(lambda x: norm_site in x)]
+                                                # if sdf is not None:
+                                                for column in site_row.index:
+                                                    if isinstance(site_row[column], float):
+                                                        av = site_row[column]
+                                                        # series = sdf[column]
+                                                        # series = pd.to_numeric(series, errors="coerce")
+                                                        # av = series.mean()
                                                 
                                                         if pd.notna(av):
                                                             normed_col = norm_col(column)
                                             
                                                             if "Overall Score" in normed_col: 
-                                                                ta = "teal_container_" + str(uuid.uuid4())
-                                                                st.html(f"""<style>.st-key-{ta}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
                                                                 with st.container(key =ta):
                                                                     st.plotly_chart(draw_score_dial(av, "Overall Score"), width='stretch')
                                                                 continue
                                                             if "Standard" or "Indicator" or "Percent" in column:
-                                                                render_score_card(av, normed_col, display_site)
+                                                                render_score_card(av, normed_col)
                                                             if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
                                                                 st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_site))
                                                             else:
                                                                 st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
 
-                            
-                    with col2:
-                        with st.container(key ="white_container_2"):
-                        
-
-                        
-                            tdf = pd.DataFrame.from_dict(overall["records"])
-                            timestamp_score_triples = []
-                            for index, d in tdf.iterrows():
-                                if d["Timestamp__c"] is not None:
-                                    ts = pd.to_datetime(d["Timestamp__c"], errors='coerce')
-                                    scores = d["Overall_Score__c"]
-                                    if st.session_state.access:
-                                        display_org = d["Organization__c"]
-                                        label = display_org + ": " + ts.strftime("%B %d, %Y").replace(" 0", " ") 
-                                        timestamp_score_triples.append((label, scores, display_org))
-                                    else:
-                                        contact_display = d["Contact_Name__c"]
-                                        label =  contact_display + ": " + ts.strftime("%B %d, %Y").replace(" 0", " ") 
-                                        timestamp_score_triples.append((label, scores, st.session_state.org_input))
-                            
-                            
-                         
-                            fig = score_trend(timestamp_score_triples)
-                            st.plotly_chart(fig, width='stretch')
-                            if st.session_state.access:
-                                st.write(f"This chart shows the overall scores for {assessment} by organization over time.")
+                
                             else:
-                                st.write(f"This chart shows {org_input}'s overall scores for {assessment} over time.")
-                            with st.expander("**Overall Score Over Time**"):
-                                # for label, score in submissions.items():
-                                for label, score, org in timestamp_score_triples:
-                                    if pd.isna(score):
-                                        continue
-                                    # render_score_card(sheet3_data, sheet2_data, score, label)
+                            
+                                
+                                    
+                                j = 0
 
-                                    render_score_card(score, label, org)
+                            
+                                org_loc = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
+                                for _, org_row in org_loc.iterrows():
+                                    display_org = org_row["Organization__c"]
+                                    w_prefix = str(uuid.uuid4())
+                                    wa = f"white_container_{w_prefix}"
+                                    st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
+                                    st.html(f"""<style>.st-key-teal_container_{w_prefix}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
+                                    with st.container(key=wa):
+                                        st.write(f"#### {display_org}'s Scores")
+                                        with st.container(key=f"teal_container_{w_prefix}"):
+                                                st.plotly_chart(draw_score_dial(org_row["Overall_Score__c"], "Overall Score"), width='stretch')
+
+                    
+                                        # torg_df = df[df["__normalized_extracted_orgs__"].apply(lambda x: norm_org in x)]
+
+                                
+                                        with st.expander("**Scores by Standards and Indicators**"):
+                                            for column in org_row.index:
+                                        
+                                                if isinstance(org_row[column], float):
+                                                    # series = torg_df[column]
+                                                    # series = pd.to_numeric(series, errors="coerce")
+                                                    # av = series.mean()
+                                                    av = org_row[column]
+                                                    if pd.notna(av):
+                                                        normed_col = norm_col(column)
+                                        
+                                                        if "Overall Score" in normed_col: 
+                                                            continue
+                                                            # standard_scores[display_org].append((norm_col(column), av))
+                                                        if "Standard" or "Indicator" or "Percent" in column:
+                                                            render_score_card(av, normed_col, display_org)
+                                                        if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
+                                                            st.write(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_org))
+                                                        else:
+                                                            st.write(f"**{normed_col}:** " + desc["records"][0][column]) 
+
+                                        # torg_sites = [site for site in torg_df["Site__c"] if site is not None]
+                                        # sites = {}
+                                        # for site in torg_sites:
+                                        #     normalized = site.strip().lower()
+                                        #     sites[normalized] = site
+                                        sites = df.loc[
+                                            df["Site__c"].str.contains("Average", case=False, na=False)
+                                            & (df["Organization__c"] == display_org)
+                                        ]
+
+                                        if not sites.empty:
+                                            # torg_df["normalized__site"] = torg_df["Site__c"].apply(lambda x: [i.strip().lower() for i in x] if isinstance(x, list) else [str(x).strip().lower()])
+                                            # for norm_site, display_site in sites.items():
+                                            for _, site in sites.iterrows():
+                                                display_site = sites["Site__c"].split("Average")[0].strip()
+                                                # sdf = torg_df[torg_df["normalized__site"].apply(lambda x: norm_site in x)]
+                                                # if sdf is not None:
+                                                with st.expander(f"**{display_site}**"):
+                                                
+                                                    for column in site.index:
+                                                        
+                                                        if isinstance(site[column], float):
+                                                        # series = sdf[column]
+                                                        # series = pd.to_numeric(series, errors="coerce")
+                                                        # av = series.mean()
+                                                            av = site[column]
+                                                    
+                                                            if pd.notna(av):
+                                                                normed_col = norm_col(column)
+                                                
+                                                                if "Overall Score" in normed_col: 
+                                                                    ta = "teal_container_" + str(uuid.uuid4())
+                                                                    st.html(f"""<style>.st-key-{ta}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
+                                                                    with st.container(key =ta):
+                                                                        st.plotly_chart(draw_score_dial(av, "Overall Score"), width='stretch')
+                                                                    continue
+                                                                if "Standard" or "Indicator" or "Percent" in column:
+                                                                    render_score_card(av, normed_col, display_site)
+                                                                if ("Indicator" in column and av < 3.0) or ("Percent_Complete" in column and av<75.0) or ("Percent_in" in column and av>50.0):
+                                                                    st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", display_site))
+                                                                else:
+                                                                    st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
+
+                                
+                    with col2:
+                        with stylable_container(f"over_time", css_styles="""
+                        button {
+                            font-weight: 600;
+                            font-size: .9rem;
+                            padding: 1rem 2rem;
+                            border: none;
+                            border-radius: 2rem;
+                            cursor: pointer;
+                            text-align: center;
+                            text-decoration: none;
+                            min-width: 33.33%;
+                            max-width: 100%;
+                            width: 100%;
+                            transition: background-color 0.2s;
+                            background-color: #d6e3e7;
+                            color: #333;
+                            margin-bottom: 10%;
+                        }
+
+                        button:focus,
+                        button:active, 
+                        button:hover {
+                            background-color: #084C61 !important;
+                            color: white !important;
+                            outline: none;
+                            box-shadow: none;
+                        }
+                    """):
+                        if st.button("View Scores Over Time", width='stretch'):
+                            with st.container(key ="white_container_2"):
+                            
+
+                            
+                                tdf = pd.DataFrame.from_dict(overall["records"])
+                                timestamp_score_triples = []
+                                for index, d in tdf.iterrows():
+                                    if d["Timestamp__c"] is not None:
+                                        ts = pd.to_datetime(d["Timestamp__c"], errors='coerce')
+                                        scores = d["Overall_Score__c"]
+                                        if st.session_state.access:
+                                            display_org = d["Organization__c"]
+                                            label = display_org + ": " + ts.strftime("%B %d, %Y").replace(" 0", " ") 
+                                            timestamp_score_triples.append((label, scores, display_org))
+                                        else:
+                                            contact_display = d["Contact_Name__c"]
+                                            label =  contact_display + ": " + ts.strftime("%B %d, %Y").replace(" 0", " ") 
+                                            timestamp_score_triples.append((label, scores, st.session_state.org_input))
+                                
+                                
+                            
+                                fig = score_trend(timestamp_score_triples)
+                                st.plotly_chart(fig, width='stretch')
+                                if st.session_state.access:
+                                    st.write(f"This chart shows the overall scores for {assessment} by organization over time.")
+                                else:
+                                    st.write(f"This chart shows {org_input}'s overall scores for {assessment} over time.")
+                                with st.expander("**Overall Score Over Time**"):
+                                    # for label, score in submissions.items():
+                                    for label, score, org in timestamp_score_triples:
+                                        if pd.isna(score):
+                                            continue
+                                        # render_score_card(sheet3_data, sheet2_data, score, label)
+
+                                        render_score_card(score, label, org)
                                     
 
 
                     with col3:
-                        with st.container(key ="white_container_3"):
-                            all_recs = get_org_records(st.session_state.org_input, sf, ASSESSMENTS[assessment], assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
-                            cdf = pd.DataFrame.from_dict(all_recs["records"])
-                            if "Contact_Name__c" in cdf.columns:
-                
-                                original_names = cdf.dropna(subset=["Contact_Name__c"])["Contact_Name__c"]
-                                normalized_map = {name.strip().lower(): name for name in original_names.unique()}
-                                cdf["__normalized_contact__"] = cdf["Contact_Name__c"].astype(str).str.strip().str.lower()
+                        with stylable_container(f"contact_btn", css_styles="""
+                        button {
+                            font-weight: 600;
+                            font-size: .9rem;
+                            padding: 1rem 2rem;
+                            border: none;
+                            border-radius: 2rem;
+                            cursor: pointer;
+                            text-align: center;
+                            text-decoration: none;
+                            min-width: 33.33%;
+                            max-width: 100%;
+                            width: 100%;
+                            transition: background-color 0.2s;
+                            background-color: #d6e3e7;
+                            color: #333;
+                            margin-bottom: 10%;
+                        }
 
-                                contacts_to_show = list(normalized_map.keys())
-                                staff_scores_num = {}
-                                
-                                for contact_norm in contacts_to_show:
-                                    contact_display = normalized_map[contact_norm]
-        
-                                    contact_df = cdf[cdf["__normalized_contact__"] == contact_norm]
-                                    if contact_df.empty:
-                                        continue
+                        button:focus,
+                        button:active, 
+                        button:hover {
+                            background-color: #084C61 !important;
+                            color: white !important;
+                            outline: none;
+                            box-shadow: none;
+                        }
+                    """):
+                        if st.button("View Scores By Contact", width='stretch'):
+                            with st.container(key ="white_container_3"):
+                                all_recs = get_org_records(st.session_state.org_input, sf, ASSESSMENTS[assessment], assessment, st.session_state.is_admin, st.session_state.access, st.session_state.user_email)
+                                cdf = pd.DataFrame.from_dict(all_recs["records"])
+                                if "Contact_Name__c" in cdf.columns:
+                    
+                                    original_names = cdf.dropna(subset=["Contact_Name__c"])["Contact_Name__c"]
+                                    normalized_map = {name.strip().lower(): name for name in original_names.unique()}
+                                    cdf["__normalized_contact__"] = cdf["Contact_Name__c"].astype(str).str.strip().str.lower()
 
-                                    series = contact_df["Overall_Score__c"]
-                                    series = pd.to_numeric(series, errors="coerce")
-                                    avg = series.mean()
-                                    if pd.notna(avg):
-                                        staff_scores_num[contact_display] = avg
-                                st.plotly_chart(staff_bar(staff_scores_num), width='stretch')
-                                st.write(f"This chart shows the overall score for {assessment} for each staff member.")
-                                for contact_norm in contacts_to_show:
-                                    contact_display = normalized_map[contact_norm]
-        
-                                    contact_df = cdf[cdf["__normalized_contact__"] == contact_norm]
-                                    if contact_df.empty:
-                                        continue
-                                    with st.expander(f"**{contact_display}'s Results**"):
-                                        for column in contact_df.columns:
-                                            series = contact_df[column]#.replace('%', '', regex=True)
-                                            series = pd.to_numeric(series, errors="coerce")
-                                            avg = series.mean()
-                                            if pd.notna(avg):
-                                                normed_col = norm_col(column)
-                                            
-                                                if "Overall_Score__c" in column:
-                                                    that_prefix = str(uuid.uuid4())
-                                                    la = "teal_container_" + that_prefix
-                                                    st.html(f"""<style>.st-key-{la}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
-                                                    with st.container(key = la):
-                                                       st.plotly_chart(draw_score_dial(avg, "Overall Score"), width='stretch')
-                                                    
-                                                    continue
+                                    contacts_to_show = list(normalized_map.keys())
+                                    staff_scores_num = {}
+                                    
+                                    for contact_norm in contacts_to_show:
+                                        contact_display = normalized_map[contact_norm]
+            
+                                        contact_df = cdf[cdf["__normalized_contact__"] == contact_norm]
+                                        if contact_df.empty:
+                                            continue
+
+                                        series = contact_df["Overall_Score__c"]
+                                        series = pd.to_numeric(series, errors="coerce")
+                                        avg = series.mean()
+                                        if pd.notna(avg):
+                                            staff_scores_num[contact_display] = avg
+                                    st.plotly_chart(staff_bar(staff_scores_num), width='stretch')
+                                    st.write(f"This chart shows the overall score for {assessment} for each staff member.")
+                                    for contact_norm in contacts_to_show:
+                                        contact_display = normalized_map[contact_norm]
+            
+                                        contact_df = cdf[cdf["__normalized_contact__"] == contact_norm]
+                                        if contact_df.empty:
+                                            continue
+                                        with st.expander(f"**{contact_display}'s Results**"):
+                                            for column in contact_df.columns:
+                                                series = contact_df[column]#.replace('%', '', regex=True)
+                                                series = pd.to_numeric(series, errors="coerce")
+                                                avg = series.mean()
+                                                if pd.notna(avg):
+                                                    normed_col = norm_col(column)
                                                 
-                                                elif "Standard" or "Indicator" or "Percent" in column:
+                                                    if "Overall_Score__c" in column:
+                                                        that_prefix = str(uuid.uuid4())
+                                                        la = "teal_container_" + that_prefix
+                                                        st.html(f"""<style>.st-key-{la}{{background-color: #084C61; border-radius: 20px; padding: 5%;}}</style>""")
+                                                        with st.container(key = la):
+                                                        st.plotly_chart(draw_score_dial(avg, "Overall Score"), width='stretch')
+                                                        
+                                                        continue
                                                     
-                                                    render_score_card(avg, normed_col, contact_display)
-                                                    if ("Indicator" in column and avg < 3.0) or ("Percent_Complete" in column and avg<75.0) or ("Percent_in" in column and avg>50.0):
-                                                        if not st.session_state.access:
-                                                            st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", org_input))
+                                                    elif "Standard" or "Indicator" or "Percent" in column:
+                                                        
+                                                        render_score_card(avg, normed_col, contact_display)
+                                                        if ("Indicator" in column and avg < 3.0) or ("Percent_Complete" in column and avg<75.0) or ("Percent_in" in column and avg>50.0):
+                                                            if not st.session_state.access:
+                                                                st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", org_input))
+                                                            else:
+                                                                st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", contact_display))
                                                         else:
-                                                            st.markdown(f"**{ind_col(column)} INSIGHT:** " + recs["records"][0][column].replace("{YOUR PROGRAM NAME}", contact_display))
-                                                    else:
-                                                        st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
+                                                            st.markdown(f"**{normed_col}:** " + desc["records"][0][column])
 
-                                       
+                                        
         else:
             email = st.session_state.user_email
             with st.container(key = "white_container_big"):
