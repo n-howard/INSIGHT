@@ -1029,7 +1029,7 @@ elif assessment:
                                 
                                     org_loc = df.loc[df["Organization__c"].str.contains("Average", case=False, na=False)]
                                     for _, org_row in org_loc.iterrows():
-                                        display_org = org_row["Organization__c"]
+                                        display_org = org_row["Organization__c"].split("Average")[0].strip()
                                         w_prefix = str(uuid.uuid4())
                                         wa = f"white_container_{w_prefix}"
                                         st.html(f"""<style>.st-key-{wa}{{background-color: white; filter:drop-shadow(2px 2px 2px grey); border-radius: 20px; padding: 5%;}}</style>""")
