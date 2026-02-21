@@ -31,6 +31,7 @@ if "org_input" not in st.session_state:
     if cookie_org:
         st.session_state["org_input"] = cookie_org
         st.session_state["site_input"] = cookie_site or ""
+        org_input = st.session_state.org_input
 
 if "admin_input" not in st.session_state:  
     cookie_admin = cookies.get("admin_input")
@@ -46,17 +47,17 @@ if "email" not in st.session_state:
     if email:
         st.session_state["user_email"] = email
 
-org_input = st.session_state.org_input
-
-if not st.session_state.access:
-    st.session_state.access = False
-
-if not st.session_state.is_admin:
-    st.switch_page("pages/home.py")
 
 
-if not st.session_state.org_input:
-    st.switch_page("pages/home.py")
+# if not st.session_state.access:
+#     st.session_state.access = False
+
+# if not st.session_state.is_admin:
+#     st.switch_page("pages/home.py")
+
+
+# if not st.session_state.org_input:
+#     st.switch_page("pages/home.py")
 
 
 sf = create_sf()
