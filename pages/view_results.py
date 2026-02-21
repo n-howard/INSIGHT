@@ -26,13 +26,21 @@ if not cookies.ready():
     st.stop()
 
 st.session_state.org_input = str(cookies.get("org_input", "No Org"))
-st.session_state.access = st.session_state.access
-st.session_state.is_admin = st.session_state.is_admin
+st.session_state.access = str(cookies.get("access_level"))
+st.session_state.is_admin = str(cookies.get("admin_input"))
+st.session_state["user_email"] = cookies.get("user_email")
 
 org_input = st.session_state.org_input
 
+if not st.session_state.access:
+    st.session_state.access = False
+
+if not st.session_state.is_admin:
+    st.switch_page("pages/home.py")
 
 
+if not st.session_state.org_input:
+    st.switch_page("pages/home.py")
 
 
 sf = create_sf()
@@ -960,9 +968,10 @@ elif assessment:
                                             for _, org_row in org_rows.iterrows():
                                                 for column in org_row.index:
                                                     normed_col = norm_col(column)
+                                                    av = org_row[column]
                                                     if isinstance(org_row[column], float):
                                                         
-                                                        av = org_row[column]
+                                                        
                                                         # series = df[column]
                                                         # series = pd.to_numeric(series, errors="coerce")
                                                         # av = series.mean()
