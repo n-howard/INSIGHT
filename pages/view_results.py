@@ -25,10 +25,26 @@ cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SEC
 if not cookies.ready():
     st.stop()
 
-st.session_state.org_input = str(cookies.get("org_input", "No Org"))
-st.session_state.access = str(cookies.get("access_level"))
-st.session_state.is_admin = str(cookies.get("admin_input"))
-st.session_state["user_email"] = cookies.get("user_email")
+if "org_input" not in st.session_state:
+    cookie_org = cookies.get("org_input")
+    cookie_site = cookies.get("site_input")
+    if cookie_org:
+        st.session_state["org_input"] = cookie_org
+        st.session_state["site_input"] = cookie_site or ""
+
+if "admin_input" not in st.session_state:  
+    cookie_admin = cookies.get("admin_input")
+    if cookie_admin:
+        st.session_state["admin_input"] = cookie_admin
+if "access_level" not in st.session_state:
+    cookie_access = cookies.get("access_level")
+    if cookie_access:
+        st.session_state["access_level"] = cookie_access
+
+if "email" not in st.session_state:
+    email = cookies.get("user_email")
+    if email:
+        st.session_state["user_email"] = email
 
 org_input = st.session_state.org_input
 
