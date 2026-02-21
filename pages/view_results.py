@@ -59,6 +59,8 @@ if "email" not in st.session_state:
 # if not st.session_state.org_input:
 #     st.switch_page("pages/home.py")
 
+org_input = st.session_state.org_input
+
 
 sf = create_sf()
 
