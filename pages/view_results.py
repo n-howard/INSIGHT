@@ -23,7 +23,7 @@ from collections import defaultdict
 
 cookies = EncryptedCookieManager(prefix="myapp_", password=st.secrets.COOKIE_SECRET)
 if not cookies.ready():
-    st.stop()
+    st.stop()Bob Howard
 
 if "org_input" not in st.session_state:
     cookie_org = cookies.get("org_input")

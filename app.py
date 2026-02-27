@@ -181,7 +181,11 @@ elif st.session_state["mode"] == "reset_password":
                 else:
                     if update_user_password(record["email"], new_pw):
                         st.success("Password updated. You can now log in.")
+                        # Clear the token from the URL and state
+                        st.query_params.clear() 
                         st.session_state["mode"] = "login"
+                        st.rerun() # Force a rerun to show the login screen
+
                     else:
                         st.error("Error updating password.")
 
