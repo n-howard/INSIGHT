@@ -19,7 +19,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       # Step 3: Install Supabase Client
       - name: Install Supabase Client
@@ -39,15 +39,12 @@ jobs:
               console.log('Pinging ' + config.name + '...');
               const supabase = createClient(config.url, config.key);
 
-              // This is the critical part: an actual DB query
               const { data, error } = await supabase
                 .from('users')
                 .select('id')
                 .limit(1);
 
               if (error) {
-                // Even a 401 or Permission Denied counts as DB activity 
-                // because Postgres had to process the request!
                 console.log('  Database reached. Status: ' + error.message);
               } else {
                 console.log('  Success: Activity logged.');
@@ -57,7 +54,7 @@ jobs:
           "
 
 
-              // Summary
+ 
               console.log('\n' + '-'.repeat(60));
               console.log('Summary:');
               console.log('  Successful:', successCount);
