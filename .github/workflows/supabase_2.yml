@@ -2,77 +2,57 @@ name: Ping Supabase to Prevent Pausing
 
 on:
   schedule:
-    # Runs at 9:00 AM UTC every Monday and Thursday
     - cron: '0 9 * * *'
-  workflow_dispatch: # Allows manual triggering from the GitHub UI
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   ping:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
-      # Step 3: Install Supabase Client
       - name: Install Supabase Client
-        run: npm install @supabase/supabase-js --force
+        run: npm install @supabase/supabase-js
 
-      # Step 4: Ping Supabase Databases
       - name: Ping Supabase Databases
         env:
           SUPABASE_CONFIGS: ${{ secrets.SUPABASE_CONFIGS }}
         run: |
           node -e "
           (async () => {
-            const { createClient } = require('@supabase/supabase-js');
-            const configs = JSON.parse(process.env.SUPABASE_CONFIGS);
+            try {
+              const { createClient } = require('@supabase/supabase-js');
+              const configs = JSON.parse(process.env.SUPABASE_CONFIGS);
 
-            for (const config of configs) {
-              console.log('Pinging ' + config.name + '...');
-              const supabase = createClient(config.url, config.key);
+              for (const config of configs) {
+                console.log('Pinging ' + (config.name || 'Project') + '...');
+                const supabase = createClient(config.url, config.key);
 
-              const { data, error } = await supabase
-                .from('users')
-                .select('id')
-                .limit(1);
+                const { data, error } = await supabase
+                  .from('users')
+                  .select('id')
+                  .limit(1);
 
-              if (error) {
-                console.log('  Database reached. Status: ' + error.message);
-              } else {
-                console.log('  Success: Activity logged.');
+                if (error) {
+                  console.log('  Database contacted. Status: ' + error.message);
+                } else {
+                  console.log('  Success: Activity logged for ' + config.url);
+                }
               }
-            }
-          })();
-          "
-
-
- 
-              console.log('\n' + '-'.repeat(60));
-              console.log('Summary:');
-              console.log('  Successful:', successCount);
-              console.log('  Failed:', failCount);
-              console.log('  Total:', configs.length);
-              
-              if (failCount > 0) {
-                console.error('\nSome databases failed to ping');
-                process.exit(1);
-              }
-              
-              console.log('\nAll databases pinged successfully!');
-              
             } catch (err) {
-              console.error('\nFatal error:', err.message);
-              console.error('Make sure SUPABASE_CONFIGS is set as a JSON array:');
-              console.error('[{\"name\":\"My DB\",\"url\":\"https://xxx.supabase.co\",\"key\":\"your-key\"}]');
+              console.error('Fatal error:', err.message);
               process.exit(1);
             }
           })();
           "
+
